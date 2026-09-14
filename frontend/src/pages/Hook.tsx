@@ -5,7 +5,7 @@ import { openAssistant } from "../components/assistantBus";
 import { Team } from "../components/Team";
 import { Icon } from "../components/Icon";
 import { Wordmark } from "../components/Logo";
-import { MascotIntro } from "../components/Mascot";
+import { WordmarkHop } from "../components/WordmarkHop";
 import type { GeoKhk } from "../components/maps";
 import { Pill } from "../components/ui";
 import { useApi } from "../lib/api";
@@ -94,7 +94,7 @@ export function Hook() {
       <section className="hook-hero">
         <div>
           <div className="hook-kicker reveal">Hackathon Data KHK · tým Popojedem.</div>
-          <div className="hook-word reveal" style={{ "--i": 1 } as CSSProperties}><Wordmark /></div>
+          <div className="hook-word reveal" style={{ "--i": 1 } as CSSProperties}><WordmarkHop /></div>
           <div className="hook-sub reveal" style={{ "--i": 2 } as CSSProperties}>Krajský analytický model</div>
           <p className="hook-claim reveal" style={{ "--i": 3 } as CSSProperties}>Vidět, <em>kam to směřuje.</em></p>
           <p className="hook-lead reveal" style={{ "--i": 4 } as CSSProperties}>
@@ -105,7 +105,6 @@ export function Hook() {
             <Link to="/prehled" className="btn btn-primary btn-lg">Vstoupit do aplikace <Icon name="arrow-right" size={17} /></Link>
             <button className="btn btn-lg" onClick={() => openAssistant()}><Icon name="sparkle" size={17} /> Zeptat se asistenta</button>
           </div>
-          <MascotIntro />
         </div>
         <Visual />
       </section>

@@ -541,3 +541,84 @@ a.list-row:hover .list-title { color: var(--accent); }
 /* Po odmluvení bublina zmizí, ale maskot zůstane — je to postava, ne oznámení. */
 .ms-intro[data-stav="stoji"] .ms-bubble { opacity: 0; transform: translateY(4px) scale(.98); }
 @media (max-width: 560px) { .ms-bubble { font-size: .875rem; max-width: 22ch; } }
+
+/* ---------------------------------------------------------- skok po písmenech
+   Časová osa (celkem 2,4 s):
+     0,00–0,60  přiběhne zleva a dopadne na K
+     0,60–1,10  skok na A
+     1,10–1,60  skok na M
+     1,60–2,20  poslední skok dolů na místo tečky
+     2,20–2,40  usadí se a zmenší na velikost tečky
+
+   Vodorovný pohyb je rovnoměrný, svislý zrychluje dolů a zpomaluje nahoru —
+   proto dvě vnořené skupiny se dvěma křivkami. Jedna společná by z toho
+   udělala klouzavý oblouk místo skoku. */
+.wordmark.hop { overflow: visible; }
+.wordmark.hop .hop-mascot, .wordmark.hop .hop-x, .wordmark.hop .hop-y { will-change: transform; }
+
+/* Bez animace: maskot je schovaný a tečka je normální tečka. */
+.wordmark.hop .hop-x { opacity: 0; }
+.wordmark.hop.is-hraje .hop-x { opacity: 1; animation: hop-x 2.4s linear both; }
+.wordmark.hop.is-hraje .hop-y { animation: hop-y 2.4s both; }
+.wordmark.hop.is-hraje .hop-mascot { animation: hop-squish 2.4s both; }
+/* Tečka se objeví až ve chvíli, kdy na její místo dosedne maskot. */
+.wordmark.hop.is-hraje .hop-tecka { opacity: 0; animation: hop-tecka 2.4s step-end both; }
+
+@keyframes hop-x {
+  0%   { transform: translateX(-52px); }
+  25%  { transform: translateX(45px); }   /* K */
+  46%  { transform: translateX(146px); }  /* A */
+  67%  { transform: translateX(257px); }  /* M */
+  92%, 100% { transform: translateX(331px); } /* místo tečky */
+}
+/* Výška: -17 je „sedí na horní hraně písmen", 86 je úroveň tečky.
+   cubic-bezier nahoru zpomaluje, dolů zrychluje — to je ta tíha. */
+@keyframes hop-y {
+  0%   { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
+  12%  { transform: translateY(-96px); animation-timing-function: cubic-bezier(.33,.66,.66,1); }
+  25%  { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
+  35%  { transform: translateY(-88px); animation-timing-function: cubic-bezier(.33,.66,.66,1); }
+  46%  { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
+  56%  { transform: translateY(-88px); animation-timing-function: cubic-bezier(.33,.66,.66,1); }
+  67%  { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
+  78%  { transform: translateY(-74px); animation-timing-function: cubic-bezier(.4,.7,.6,1); }
+  92%, 100% { transform: translateY(86px); }
+}
+/* Maskot se při dopadu sám stlačí a v letu protáhne — bez toho vypadá jako
+   posouvaný kotouč. Na konci se zmenší na poloměr tečky (14/17). */
+@keyframes hop-squish {
+  0%, 10%   { transform: scale(1, 1); }
+  24%       { transform: scale(1.18, .82); }
+  27%       { transform: scale(.92, 1.08); }
+  33%       { transform: scale(1, 1); }
+  45%       { transform: scale(1.18, .82); }
+  48%       { transform: scale(.92, 1.08); }
+  54%       { transform: scale(1, 1); }
+  66%       { transform: scale(1.18, .82); }
+  69%       { transform: scale(.92, 1.08); }
+  75%       { transform: scale(1, 1); }
+  91%       { transform: scale(1.22, .8); }
+  95%       { transform: scale(.88, 1.06) ; }
+  100%      { transform: scale(.824, .824); }
+}
+@keyframes hop-tecka { 0%, 91% { opacity: 0; } 92%, 100% { opacity: 1; } }
+
+/* Písmena: stlačí se pod dopadem a pružinou se vrátí. Počátek transformace je
+   u paty písmene, aby se mačkalo k zemi a neuhýbalo do stran. */
+.wordmark.hop .ltr { transform-box: fill-box; transform-origin: bottom center; }
+.wordmark.hop.is-hraje .ltr-k { animation: ltr-mackni 2.4s both; animation-delay: 0s; }
+.wordmark.hop.is-hraje .ltr-a { animation: ltr-mackni 2.4s both; animation-delay: .5s; }
+.wordmark.hop.is-hraje .ltr-m { animation: ltr-mackni 2.4s both; animation-delay: 1s; }
+/* Klíčové snímky jsou stejné pro všechna písmena, liší se jen zpožděním:
+   dopad přijde na 25 % vlastní osy, pak pružina. */
+@keyframes ltr-mackni {
+  0%, 23%  { transform: scale(1, 1); }
+  26%      { transform: scale(1.07, .9); }
+  30%      { transform: scale(.98, 1.03); }
+  34%      { transform: scale(1.01, .99); }
+  38%, 100% { transform: scale(1, 1); }
+}
+
+:root[data-motion="reduce"] .wordmark.hop .hop-x,
+:root[data-motion="reduce"] .wordmark.hop .ltr { animation: none !important; }
+:root[data-motion="reduce"] .wordmark.hop .hop-tecka { opacity: 1; animation: none !important; }
