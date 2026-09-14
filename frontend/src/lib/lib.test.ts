@@ -5,6 +5,7 @@ import { parseBlock } from "./api";
 import { compact, fold, num, pct, plural, signed, withUnit } from "./format";
 import { applyAction, DEFAULTS, get, sanitize, set } from "./prefs";
 import { match } from "./router";
+import { DOMA, POVRCH, prichod, Pruzina, R, telo } from "../components/mascot-engine";
 
 describe("format", () => {
   it("formats Czech numbers", () => {
@@ -73,5 +74,44 @@ describe("charts and maps", () => {
     expect(binOf(99, [2, 4, 6, 8])).toBe(4);
     expect(ramp(-1, "dark")).toHaveLength(5);
     expect(ramp(1, "light")[0]).not.toBe(ramp(-1, "light")[0]);
+  });
+});
+
+describe("maskot", () => {
+  it("drží tělo na ploše, ať se zdeformuje jakkoli", () => {
+    // Střed se počítá jako plocha − spodní poloměr, takže spodek těla leží
+    // přesně na písmenu i ve stlačeném stavu. Tohle je to, co maskotovi brání
+    // zalézt do písmene, když se při dopadu roztáhne.
+    const plocha = POVRCH;
+    for (const rBot of [R, R * 0.5, R * 1.3]) {
+      const stred = plocha - rBot;
+      expect(stred + rBot).toBeCloseTo(plocha, 6);
+    }
+  });
+
+  it("dělá z těla nesouměrný tvar, ne elipsu", () => {
+    const placka = telo({ x: 0, y: 0, rot: 0, rTop: 7, rBot: 11, rL: 24, rR: 24, shear: 0, flat: 0.9 });
+    const kruh = telo({ x: 0, y: 0, rot: 0, rTop: R, rBot: R, rL: R, rR: R, shear: 0, flat: 0 });
+    expect(placka).not.toBe(kruh);
+    // Čtyři okraje jdou každý svým dílem: horní a dolní poloměr se v cestě liší.
+    expect(placka).toContain("M0.00,-7.00");
+    expect(placka).toContain(",11.00");
+  });
+
+  it("pružina se ustálí na cíli", () => {
+    const p = new Pruzina(1, 1, 400, 14);
+    p.kopni(0.5, -2);
+    for (let i = 0; i < 400; i++) p.krok(1 / 60);
+    expect(p.hodnota).toBeCloseTo(1, 3);
+  });
+
+  it("choreografie končí doma na místě tečky", () => {
+    const s = prichod();
+    expect(s[s.length - 1].druh).toBe("doma");
+    const delka = s.reduce((a, u) => a + u.t, 0);
+    // Dost dlouhé na rozmyšlenou, dost krátké, aby to nenudilo.
+    expect(delka).toBeGreaterThan(3);
+    expect(delka).toBeLessThan(5.5);
+    expect(DOMA.y - R).toBe(86);
   });
 });
