@@ -1,0 +1,20 @@
+# Co se nemá nahrávat do Cloud Buildu. Bez tohohle souboru by gcloud použil
+# .gitignore — ten sice databázi taky vynechá, ale tady je to explicitní.
+.git/
+.claude/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/cache/
+data/secret.key
+data/*.log
+.env
+secrets.env
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+firebase-debug.log
