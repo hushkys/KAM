@@ -1,126 +1,125 @@
 # Nasazení KAM
 
+**Produkce běží:** <https://hack-a-ton-hushkys.web.app>
+Za HTTP Basic — uživatel `kam`, heslo v `secrets.env` (necommituje se).
+
 KAM je **jeden proces**: FastAPI obsluhuje API i sestavený frontend. Potřebuje
 proto hosting, který umí běžet nepřetržitě — ne jen statické soubory.
 
-| Co | Čím | Proč |
+| Co | Kde | Poznámka |
 |---|---|---|
-| Aplikace | kontejner z `Dockerfile` | Python + pozadí (zahřátí modelu, plánovaná aktualizace dat) |
-| Databáze | PostgreSQL (Neon) | `data/kam.db` má ~190 MB a disk kontejneru deploy nepřežije |
-| Geometrie | v image (1,3 MB) | mapa ji potřebuje při každém požadavku, mezi sklizněmi se nemění |
-| Heslo | HTTP Basic v aplikaci | funguje na každém hostingu, nepotřebuje účty |
+| Aplikace | Cloud Run `kam`, `europe-west1` | kontejner z `Dockerfile` |
+| Veřejná adresa | Firebase Hosting | přepisuje `**` na Cloud Run |
+| Databáze | Neon PostgreSQL, `eu-central-1` | `data/kam.db` má ~190 MB a disk kontejneru deploy nepřežije |
+| Geometrie | v image (1,3 MB) | mapa ji potřebuje při každém požadavku |
 | Model | Gemini přes API klíč | na serveru neběží LM Studio |
 
-> **Firebase Hosting samo o sobě aplikaci neutáhne** — umí jen statické soubory.
-> Projekt `hack-a-ton-hushkys` je zároveň projekt Google Cloudu, takže se
-> aplikace nasadí do **Cloud Run** v témže projektu a Firebase Hosting na ni
-> jen přepíše provoz. Veřejná adresa pak je
-> `https://hack-a-ton-hushkys.web.app`. Cloud Run vyžaduje zapnutou fakturaci
-> (plán Blaze); při běžném provozu tohohle typu se to pohybuje v jednotkách
-> dolarů měsíčně, s `--min-instances=1` (bez studeného startu) zhruba
-> 10–15 $/měsíc.
+> **Firebase Hosting samo aplikaci neutáhne** — umí jen statické soubory.
+> Projekt `hack-a-ton-hushkys` je zároveň projekt Google Cloudu, takže
+> aplikace běží v Cloud Runu v témže projektu a Hosting na ni jen přepisuje
+> provoz. Přepis pokrývá **všechny** cesty schválně: kdyby se frontend
+> servíroval z CDN, byl by shell aplikace přístupný bez hesla.
 
----
+## Parametry běžící služby
 
-## 0. Co je potřeba jednou připravit
+```
+--min-instances 1 --max-instances 3 --cpu 1 --memory 1Gi --timeout 300
+--port 8000 --allow-unauthenticated
+```
 
-Vyplňte `secrets.env` (vznikl z `secrets.env.example`, je v `.gitignore`).
-Předvyplněné už je: `KAM_SECRET_KEY`, `GEMINI_API_KEY`, `FIREBASE_PROJECT_ID`.
-Chybí:
+`--allow-unauthenticated` znamená jen „Cloud Run nevyžaduje IAM token" —
+veřejná je pouze výzva k zadání hesla, gate hlídá aplikace.
+`--min-instances 1` drží instanci vzhůru, takže není studený start; stojí to
+zhruba 10–15 $/měsíc. S `0` je to zdarma, ale první návštěva po pauze čeká ~3 s.
 
-- `DATABASE_URL` — z Neonu (viz krok 1)
-- `KAM_AUTH_PASSWORD` — heslo, kterým se bude vstupovat
-- `GCP_SERVICE_ACCOUNT_KEY_FILE` **nebo** `RENDER_API_KEY` — podle zvolené cesty
+## Postup od nuly
 
-## 1. Databáze (Neon)
-
-1. <https://console.neon.tech> → **New project**, region `eu-central-1`.
-2. Zkopírovat connection string a upravit prefix na `postgresql+psycopg://`
-   a přidat `?sslmode=require`:
-   ```
-   postgresql+psycopg://user:heslo@ep-xxx.eu-central-1.aws.neon.tech/kam?sslmode=require
-   ```
-3. Zapsat do `secrets.env` jako `DATABASE_URL`.
-4. Nahrát snímek (trvá pár minut, ~190 MB):
-   ```bash
-   python scripts/migrate_to_postgres.py "$DATABASE_URL"
-   ```
-   Skript vytvoří schéma, každou tabulku vyprázdní a naplní, a srovná
-   sekvence. Po každé nové sklizni se dá spustit znovu.
-
-## 2a. Cesta A — Firebase / Cloud Run (chtěná)
+### 1. Databáze
 
 ```bash
-npm install -g firebase-tools           # firebase CLI
-# gcloud SDK: https://cloud.google.com/sdk/docs/install
+# Neon → New project → eu-central-1, connection string upravit na
+# postgresql+psycopg://…?sslmode=require a zapsat do secrets.env
+python scripts/migrate_to_postgres.py "$DATABASE_URL"
+```
 
-firebase login
-firebase projects:create hack-a-ton-hushkys --display-name "KAM"
+Skript vytvoří schéma, každou tabulku vyprázdní a naplní a srovná sekvence.
+Po každé nové sklizni se dá spustit znovu. Poslední běh: 470 354 řádků.
+
+### 2. Google Cloud
+
+```bash
 gcloud auth login
 gcloud config set project hack-a-ton-hushkys
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
 ```
 
-Nasazení kontejneru (build proběhne v Cloud Buildu, lokální Docker není potřeba):
+### 3. Nasazení
+
+Proměnné se předávají souborem, ne `--set-env-vars` — connection string
+obsahuje znaky, které by se v seznamu odděleném čárkami rozbily:
 
 ```bash
-gcloud run deploy kam \
-  --source . \
-  --region europe-west1 \
-  --allow-unauthenticated \
-  --min-instances 1 --max-instances 3 \
-  --cpu 1 --memory 1Gi --timeout 300 \
-  --set-env-vars "$(grep -E '^(DATABASE_URL|KAM_AUTH_USER|KAM_AUTH_PASSWORD|KAM_SECRET_KEY|GEMINI_API_KEY|GEMINI_MODEL|LOCAL_LLM_BASE_URL|KAM_BACKGROUND)=' secrets.env | paste -sd, -)"
+gcloud run deploy kam --source . --region europe-west1 \
+  --allow-unauthenticated --min-instances 1 --max-instances 3 \
+  --cpu 1 --memory 1Gi --timeout 300 --port 8000 \
+  --env-vars-file env.yaml
 ```
 
-`--allow-unauthenticated` znamená jen „Cloud Run nevyžaduje IAM token“ —
-heslo hlídá aplikace, takže veřejná je pouze výzva k přihlášení.
-`--min-instances 1` drží instanci vzhůru (žádný studený start).
+`env.yaml` (mimo repozitář) nese `DATABASE_URL`, `KAM_AUTH_USER`,
+`KAM_AUTH_PASSWORD`, `KAM_SECRET_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
+`LOCAL_LLM_BASE_URL`, `KAM_BACKGROUND`.
 
-Napojení veřejné adresy:
+### 4. Veřejná adresa
 
 ```bash
-firebase deploy --only hosting
+firebase deploy --only hosting --project hack-a-ton-hushkys
 ```
 
-`firebase.json` přepisuje **všechny** cesty na službu `kam`, takže i
-`index.html` a JS jde přes kontejner a je za heslem. Kdyby se frontend
-servíroval z CDN Firebase, byl by shell aplikace veřejný.
-
-## 2b. Cesta B — Render + Neon (levnější, rychlejší na rozjezd)
-
-1. Repozitář na GitHub.
-2. <https://dashboard.render.com> → **New → Blueprint** → vybrat repo.
-   Render přečte `render.yaml`.
-3. Doplnit v dashboardu hodnoty označené `sync: false`
-   (`DATABASE_URL`, `KAM_AUTH_PASSWORD`, `KAM_SECRET_KEY`, `GEMINI_API_KEY`).
-4. Plán **Starter** ($7/měsíc). Na free tieru služba po 15 minutách bez
-   provozu usne a probouzí se ~50 s — to není „neomezený běh“.
-
-Firebase se dá použít i tady: `firebase.json` přepsat z `run` na
-`{"source": "**", "destination": ...}` proxy na Render doménu nejde přímo —
-jednodušší je nechat adresu Renderu, nebo přidat vlastní doménu.
-
----
-
-## Po nasazení zkontrolovat
+### 5. Nastavení produkce
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://<adresa>/api/health        # 200, bez hesla
-curl -s -o /dev/null -w '%{http_code}\n' https://<adresa>/api/overview      # 401
-curl -s -u kam:<heslo> https://<adresa>/api/overview | head -c 300          # data
+# katalog se na serveru nepřesklízí sám — data se nahrávají migračním skriptem
+curl -u kam:HESLO -X PUT -H "Content-Type: application/json" \
+  -d '{"auto_refresh": false, "refresh_hours": 24}' https://…/api/settings/data
+# na serveru neběží lokální model, ať na něj router nečeká
+curl -u kam:HESLO -X PUT -H "Content-Type: application/json" \
+  -d '{"policy":"cloud_preferred"}' https://…/api/settings/ai
 ```
 
-V aplikaci pak: **Nastavení → Modely AI** má ukazovat Gemini jako dostupný,
-**Data** má hlásit stejné počty jako lokálně.
+## Na co se šlape
+
+- **Nativní binárky vázané na platformu patří do `optionalDependencies`.**
+  `@rolldown/binding-win32-x64-msvc` bylo v `devDependencies` a `npm ci`
+  v linuxovém image spadl na `EBADPLATFORM`. Jako volitelná závislost ji cizí
+  platforma přeskočí a Windows si ji dál nainstaluje. Lokální vývoj na Windows
+  tohle nikdy neodhalí.
+- **Přenosná instalace gcloudu si nemusí uložit přihlášení.**
+  `gcloud auth login` sice napsal `legacy_credentials/<účet>/adc.json`, ale do
+  `credentials.db` uložil nula řádků, takže `gcloud auth list` tvrdil, že žádný
+  účet není. `--cred-file` authorized-user soubory nebere. Řešení: z refresh
+  tokenu v `adc.json` vyrobit přístupový token a podat ho přes
+  `CLOUDSDK_AUTH_ACCESS_TOKEN`.
+- **gcloud bez Pythonu na PATH** potřebuje `CLOUDSDK_PYTHON`.
+- **Heslo v URL (`https://user:pass@host`) nestačí.** Prohlížeč ho použije jen
+  pro hlavní dokument, ne pro `fetch` — stránka se načte a API volání vrátí
+  401. Skutečný uživatel dostane nativní dialog a pak už to funguje všude.
+
+## Ověření po nasazení
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://hack-a-ton-hushkys.web.app/api/health    # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://hack-a-ton-hushkys.web.app/api/overview  # 401
+curl -s -u kam:HESLO https://hack-a-ton-hushkys.web.app/api/overview | head -c 300        # data
+```
+
+Naposledy ověřeno: 23 839 sad (21 998 s ověřeným odkazem), 407 134 pozorování,
+483 území, 11 616 zařízení, 134 ukazatelů. Asistent odpovídá přes Gemini za
+~3,8 s s citovanými zdroji.
 
 ## Údržba
 
 - **Nová data**: sklidit lokálně (`cd backend && python -m kam.ingest all`)
-  a nahrát `scripts/migrate_to_postgres.py`. Aplikace na serveru si navíc
-  jednou za `refresh_hours` (Nastavení → Data) sama obnoví katalog.
+  a nahrát `scripts/migrate_to_postgres.py`.
 - **Embeddingy**: vektorové vyhledávání potřebuje lokální embedding model.
-  Na serveru žádný není, takže RAG jede na BM25 — je to navržený fallback,
-  ne porucha.
-- **Změna hesla**: přepsat `KAM_AUTH_PASSWORD` v prostředí služby a nasadit
-  znovu; nic v databázi se nemění.
+  Na serveru žádný není, takže RAG jede na BM25 — navržený fallback, ne porucha.
+- **Změna hesla**: přepsat `KAM_AUTH_PASSWORD` v `env.yaml` a nasadit znovu.
