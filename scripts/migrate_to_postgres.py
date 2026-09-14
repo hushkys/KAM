@@ -51,13 +51,20 @@ def main(argv: list[str]) -> int:
     print(f"cíl   : {target_url.split('@')[-1]}")  # never echo the password
     Base.metadata.create_all(target)
 
+    # Vyprázdnit se musí všechno najednou a v opačném pořadí než se plní:
+    # mazat tabulku po tabulce v pořadí pro vkládání znamená smazat rodiče
+    # dřív než dítě, a cizí klíč to zastaví („update or delete on table
+    # cluster violates foreign key constraint on table report").
+    with target.begin() as dst:
+        for table in reversed(Base.metadata.sorted_tables):
+            dst.execute(delete(table))
+
     total = 0
     for table in Base.metadata.sorted_tables:
         t0 = time.time()
         with source.connect() as src:
             rows = [dict(r) for r in src.execute(select(table)).mappings()]
         with target.begin() as dst:
-            dst.execute(delete(table))
             for i in range(0, len(rows), BATCH):
                 chunk = rows[i:i + BATCH]
                 if chunk:
