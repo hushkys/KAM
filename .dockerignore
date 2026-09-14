@@ -1,0 +1,22 @@
+# The snapshot goes to PostgreSQL, never into the image (~190 MB).
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.log
+data/cache/
+data/secret.key
+
+# Secrets never travel in a layer; the platform injects them as env vars.
+.env
+secrets.env
+
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.claude/
+scripts/make_icons.py

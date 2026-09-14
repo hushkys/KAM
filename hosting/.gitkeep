@@ -1,0 +1,6 @@
+# Deliberately empty.
+#
+# Every request is rewritten to the Cloud Run service so that the HTTP Basic
+# gate in the container sees it. If the built frontend were served from the
+# Hosting CDN instead, the app shell and the JS bundle would be reachable
+# without the password — only the API would be protected.

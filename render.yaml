@@ -1,0 +1,44 @@
+# Render blueprint. `render.com/deploy` → "New Blueprint" → point at this repo.
+#
+# Everything secret is marked `sync: false`, which means Render asks for the
+# value in its dashboard instead of reading it from this file — nothing here is
+# a credential, so this file is safe to commit.
+#
+# The plan matters: on Render's free tier a web service sleeps after 15 minutes
+# of no traffic and takes ~50 s to wake, which is not "unlimited running". The
+# Starter plan ($7/month) stays up.
+services:
+  - type: web
+    name: kam
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # PostgreSQL (Neon, Render Postgres, Supabase — anything psycopg speaks).
+      # Neon needs ?sslmode=require on the end.
+      - key: DATABASE_URL
+        sync: false
+      # The shared password for the whole site. Empty = the site is open.
+      - key: KAM_AUTH_USER
+        value: kam
+      - key: KAM_AUTH_PASSWORD
+        sync: false
+      # Fernet key, so API keys stored in the database survive a redeploy.
+      # Generate: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      - key: KAM_SECRET_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      # No LM Studio on a server: point the local tier nowhere so the router
+      # goes straight to the cloud model instead of waiting for a timeout.
+      - key: LOCAL_LLM_BASE_URL
+        value: http://127.0.0.1:9/v1
+      # Warm-up and the scheduled refresh. Leave on: the refresh is what keeps
+      # the catalogue current without anyone re-running the ingest by hand.
+      - key: KAM_BACKGROUND
+        value: "1"

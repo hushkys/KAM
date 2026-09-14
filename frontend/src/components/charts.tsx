@@ -1,0 +1,373 @@
+// Charts drawn as plain SVG: one visual language for every graph in the
+// app, no library to theme, and a size that follows the container.
+// Lines draw in on first paint; hover (or touch) shows a crosshair tooltip.
+
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { num } from "../lib/format";
+
+export interface Point { year: number; value: number | null }
+export interface Series {
+  key: string;
+  label: string;
+  points: Point[];
+  color: string;
+  dashed?: boolean;
+  band?: { year: number; lo: number; hi: number }[];
+  width?: number;
+  /** Thin, translucent, not in the tooltip: example paths behind the main line. */
+  faint?: boolean;
+}
+
+function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
+  const ref = useRef<T>(null);
+  const [w, setW] = useState(600);
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver((e) => setW(Math.max(200, Math.round(e[0].contentRect.width))));
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w];
+}
+
+export function niceTicks(min: number, max: number, count = 4): number[] {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+  if (min === max) { min -= 1; max += 1; }
+  const span = max - min;
+  const step0 = span / count;
+  const mag = 10 ** Math.floor(Math.log10(step0));
+  const norm = step0 / mag;
+  // The nice step closest to the ideal one, so the axis keeps roughly
+  // `count` ticks instead of rounding up to two or three.
+  const nice = [1, 2, 5, 10].reduce((best, n) => (Math.abs(n - norm) < Math.abs(best - norm) ? n : best), 1);
+  const step = nice * mag;
+  const start = Math.floor(min / step) * step;
+  const out: number[] = [];
+  for (let v = start; v <= max + step * 0.5; v += step) out.push(Math.round(v / step) * step);
+  return out;
+}
+
+export function LineChart({ series, height = 260, unit = "", nowYear, refLine, format, yZero = false, ariaLabel }: {
+  series: Series[]; height?: number; unit?: string; nowYear?: number; refLine?: { value: number; label: string }; format?: (v: number) => string; yZero?: boolean; ariaLabel: string;
+}) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  const fmt = format ?? ((v: number) => num(v));
+  const pad = { l: 52, r: 14, t: 12, b: 28 };
+  const years = useMemo(() => [...new Set(series.flatMap((s) => s.points.map((p) => p.year)))].sort((a, b) => a - b), [series]);
+  const vals = series.flatMap((s) => [...s.points.map((p) => p.value), ...(s.band ?? []).flatMap((b) => [b.lo, b.hi])]).filter((v): v is number => v !== null && Number.isFinite(v));
+  if (refLine) vals.push(refLine.value);
+  if (!years.length || !vals.length) return <div className="chart muted small">Bez dat</div>;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (yZero) lo = Math.min(0, lo);
+  const padY = (hi - lo) * 0.08 || Math.abs(hi) * 0.05 || 1;
+  lo -= yZero && lo === 0 ? 0 : padY; hi += padY;
+  const ticks = niceTicks(lo, hi, height < 200 ? 3 : 4);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const x0 = years[0], x1 = years[years.length - 1];
+  const X = (y: number) => pad.l + ((y - x0) / Math.max(1, x1 - x0)) * (width - pad.l - pad.r);
+  const Y = (v: number) => pad.t + (1 - (v - lo) / (hi - lo)) * (height - pad.t - pad.b);
+  const every = Math.ceil(years.length / Math.max(2, Math.floor((width - 80) / 58)));
+  // The last year is always labelled; a regular tick too close to it is dropped.
+  const xTicks = years.filter((y, i) => y === x1 || (i % every === 0 && years.length - 1 - i >= Math.ceil(every * 0.6)));
+  const path = (pts: Point[]) => {
+    let d = "", pen = false;
+    for (const p of pts) {
+      if (p.value === null || !Number.isFinite(p.value)) { pen = false; continue; }
+      d += `${pen ? "L" : "M"}${X(p.year).toFixed(1)},${Y(p.value).toFixed(1)}`;
+      pen = true;
+    }
+    return d;
+  };
+  /** Points with nothing to connect to.
+   *
+   *  A stroked path made of a single `M` draws nothing at all, so a series with
+   *  one year — which is every Data KHK facility layer, they are snapshots —
+   *  came out as an empty chart with axes around it. The same goes for a value
+   *  stranded between two gaps in the middle of a series. */
+  const isolated = (pts: Point[]) => {
+    const solid = (p?: Point) => p !== undefined && p.value !== null && Number.isFinite(p.value);
+    return pts.filter((p, i) => solid(p) && !solid(pts[i - 1]) && !solid(pts[i + 1]));
+  };
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+    const xPx = ((e.clientX - r.left) / r.width) * width;
+    let best = years[0], dist = Infinity;
+    for (const y of years) { const d = Math.abs(X(y) - xPx); if (d < dist) { dist = d; best = y; } }
+    setHover(best);
+  };
+  return (
+    <div className="chart" ref={ref}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel} onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line className="grid-line" x1={pad.l} x2={width - pad.r} y1={Y(t)} y2={Y(t)} />
+            <text className="axis-label" x={pad.l - 8} y={Y(t) + 4} textAnchor="end">{fmt(t)}</text>
+          </g>
+        ))}
+        {xTicks.map((y) => <text key={y} className="axis-label" x={X(y)} y={height - 8} textAnchor="middle">{y}</text>)}
+        {nowYear && nowYear >= x0 && nowYear <= x1 && <line className="now-line" x1={X(nowYear)} x2={X(nowYear)} y1={pad.t} y2={height - pad.b} />}
+        {refLine && (
+          <g>
+            <line className="ref-line" x1={pad.l} x2={width - pad.r} y1={Y(refLine.value)} y2={Y(refLine.value)} />
+            <text className="axis-label" x={width - pad.r} y={Y(refLine.value) - 6} textAnchor="end">{refLine.label}</text>
+          </g>
+        )}
+        {series.map((s) => s.band && s.band.length > 1 && (
+          <path key={`${s.key}-band`} className="band chart-fade" fill={s.color}
+            d={`M${s.band.map((b) => `${X(b.year).toFixed(1)},${Y(b.hi).toFixed(1)}`).join("L")}L${[...s.band].reverse().map((b) => `${X(b.year).toFixed(1)},${Y(b.lo).toFixed(1)}`).join("L")}Z`} />
+        ))}
+        {series.filter((s) => s.faint).map((s) => (
+          <path key={s.key} className="line chart-fade" d={path(s.points)} stroke={s.color} strokeWidth={s.width ?? 1} strokeOpacity={0.38} />
+        ))}
+        {/* A dashed line cannot draw itself in — the dash pattern is the thing
+            being animated — so it fades in over the time the solid one takes
+            to arrive, and the two land together. */}
+        {series.filter((s) => !s.faint).map((s) => (
+          <path key={s.key} className={s.dashed ? "line chart-fade is-slow" : "line draw"} d={path(s.points)} stroke={s.color}
+            strokeWidth={s.width ?? 2.2} strokeDasharray={s.dashed ? "5 5" : undefined}
+            style={s.dashed ? undefined : { ["--len" as string]: 3000 }} pathLength={s.dashed ? undefined : 3000} />
+        ))}
+        {series.filter((s) => !s.faint).flatMap((s) => isolated(s.points).map((p) => (
+          <circle key={`${s.key}-solo-${p.year}`} className="dot spark-pop is-late" cx={X(p.year)} cy={Y(p.value as number)} r={4} fill={s.color} />
+        )))}
+        {hover !== null && (
+          <g>
+            <line className="now-line" x1={X(hover)} x2={X(hover)} y1={pad.t} y2={height - pad.b} style={{ stroke: "var(--text-mute)" }} />
+            {series.filter((s) => !s.faint).map((s) => {
+              const p = s.points.find((q) => q.year === hover);
+              return p && p.value !== null ? <circle key={s.key} className="dot" cx={X(hover)} cy={Y(p.value)} r={4.5} fill={s.color} /> : null;
+            })}
+          </g>
+        )}
+      </svg>
+      {hover !== null && (() => {
+        const rows = series.filter((s) => !s.faint).map((s) => ({ s, p: s.points.find((q) => q.year === hover) })).filter((r) => r.p && r.p.value !== null);
+        if (!rows.length) return null;
+        const minY = Math.min(...rows.map((r) => Y(r.p!.value!)));
+        return (
+          <div className="chart-tip glass" style={{ left: `${(X(hover) / width) * 100}%`, top: minY }}>
+            <div className="tip-year">{hover}</div>
+            {rows.map(({ s, p }) => (
+              <div className="tip-row" key={s.key}><span><i style={{ background: s.color }} /> {s.label}</span><strong className="num">{fmt(p!.value!)}{unit && unit !== "%" ? "" : unit}</strong></div>
+            ))}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+export function Legend({ items }: { items: { label: string; color: string; dashed?: boolean }[] }) {
+  return (
+    <div className="legend">
+      {items.map((i) => <span key={i.label}><i className={i.dashed ? "dash" : ""} style={{ background: i.color, color: i.color }} />{i.label}</span>)}
+    </div>
+  );
+}
+
+/** How a small series is drawn. One shape per kind of number, so a wall of
+ *  tiles stops reading as one repeated graphic:
+ *  - `line`  a plain trace (the default, and what a ratio wants),
+ *  - `area`  the same trace over a filled body, for stocks like population,
+ *  - `bars`  one column per year, for counts and flows that are not continuous,
+ *  - `step`  held values, for a series that only changes when someone changes it.
+ *  `outliers` marks the years the trend engine called a one-off spike, and
+ *  `baseline` draws the comparison value (usually the kraj) as a faint rule. */
+export type SparkVariant = "line" | "area" | "bars" | "step";
+
+export function Sparkline({ points, color = "var(--accent)", ariaLabel, variant = "line", outliers, baseline, height = 34 }: {
+  points: Point[]; color?: string; ariaLabel?: string; variant?: SparkVariant; outliers?: number[]; baseline?: number | null; height?: number;
+}) {
+  const rid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const pts = points.filter((p) => p.value !== null) as { year: number; value: number }[];
+  if (pts.length === 1) {
+    // One year is not a line, but it is not nothing either — an empty band
+    // reads as a chart that failed to load.
+    return (
+      <svg className="spark spark-solo" viewBox="0 0 120 34" preserveAspectRatio="none" style={{ height }}
+        role={ariaLabel ? "img" : undefined} aria-label={ariaLabel} aria-hidden={ariaLabel ? undefined : true}>
+        <line className="spark-ref" x1="0" x2="120" y1="17" y2="17" vectorEffect="non-scaling-stroke" />
+        <circle className="spark-pop" cx="60" cy="17" r="3" fill={color} />
+      </svg>
+    );
+  }
+  if (!pts.length) return <svg className="spark" style={{ height }} aria-hidden="true" />;
+  const w = 120, h = height;
+  const vals = pts.map((p) => p.value);
+  if (baseline !== null && baseline !== undefined && Number.isFinite(baseline)) vals.push(baseline);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const X = (i: number) => (i / (pts.length - 1)) * w;
+  const Y = (v: number) => (hi === lo ? h / 2 : 3 + (1 - (v - lo) / (hi - lo)) * (h - 6));
+  // useId, not a hash of the data: two tiles with the same shape used to get
+  // the same gradient id, and duplicate ids in one document are a coin flip.
+  const uid = `sp${rid}`;
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.value).toFixed(1)}`).join("");
+  const step = pts.map((p, i) => (i ? `H${X(i).toFixed(1)}V${Y(p.value).toFixed(1)}` : `M${X(i).toFixed(1)},${Y(p.value).toFixed(1)}`)).join("");
+  const d = variant === "step" ? step : line;
+  const last = pts[pts.length - 1];
+  const spikes = new Set(outliers ?? []);
+  const bw = Math.max(1.5, (w / pts.length) * 0.62);
+  return (
+    <svg className={`spark spark-${variant}`} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ height }}
+      role={ariaLabel ? "img" : undefined} aria-label={ariaLabel} aria-hidden={ariaLabel ? undefined : true}>
+      <defs>
+        {variant === "area" && (
+          <linearGradient id={`${uid}g`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.34" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        )}
+        {/* The area is revealed by a wiping rectangle rather than faded in, so
+            the fill arrives with the line that draws over it instead of
+            appearing under a line that is still halfway across. */}
+        <clipPath id={`${uid}c`}>
+          <rect className="spark-wipe" x="0" y="0" width={w} height={h} />
+        </clipPath>
+      </defs>
+      {variant === "area" && (
+        <path d={`${line}L${w},${h}L0,${h}Z`} fill={`url(#${uid}g)`} stroke="none" clipPath={`url(#${uid}c)`} />
+      )}
+      {baseline !== null && baseline !== undefined && Number.isFinite(baseline) && (
+        <line className="spark-ref" x1="0" x2={w} y1={Y(baseline)} y2={Y(baseline)} vectorEffect="non-scaling-stroke" />
+      )}
+      {variant === "bars" ? pts.map((p, i) => (
+        <rect className="spark-bar" key={p.year} x={X(i) - bw / 2} y={Y(p.value)} width={bw} height={Math.max(1, h - 2 - Y(p.value))}
+          fill={color} opacity={spikes.has(p.year) ? 1 : 0.55 + (0.45 * i) / (pts.length - 1)} rx="0.8"
+          style={{ ["--i" as string]: i, ["--n" as string]: pts.length }} />
+      )) : (
+        // pathLength normalises every series to the same dash budget, so a
+        // 20-year line and a 5-year line finish drawing together.
+        <path className="l spark-draw" d={d} stroke={color} vectorEffect="non-scaling-stroke" pathLength={1000} />
+      )}
+      {pts.filter((p) => spikes.has(p.year)).map((p) => (
+        <circle key={`o${p.year}`} cx={X(pts.indexOf(p))} cy={Y(p.value)} r="2.2" className="spark-spike spark-pop is-late" vectorEffect="non-scaling-stroke" />
+      ))}
+      {variant !== "bars" && <circle className="spark-pop is-late" cx={X(pts.length - 1)} cy={Y(last.value)} r="2.6" fill={color} />}
+    </svg>
+  );
+}
+
+/** A share on a dial. Only for values that really run 0–100 %, with the
+ *  comparison territory as a notch on the same arc — the number and how it
+ *  stands relative to the kraj in one shape instead of a line plus a caption. */
+export function Gauge({ value, reference, color = "var(--accent)", size = 74, label }: {
+  value: number; reference?: number | null; color?: string; size?: number; label?: string;
+}) {
+  const pct = Math.max(0, Math.min(100, value));
+  const r = 26, c = Math.PI * r; // half circle
+  const arc = `M4,30 A${r},${r} 0 0 1 ${4 + r * 2},30`;
+  const at = (p: number) => {
+    const a = Math.PI * (1 - Math.max(0, Math.min(100, p)) / 100);
+    return [4 + r + r * Math.cos(a), 30 - r * Math.sin(a)];
+  };
+  const [rx, ry] = reference !== null && reference !== undefined ? at(reference) : [0, 0];
+  return (
+    // The dial fills from empty on mount. A CSS transition cannot do that —
+    // the first render already carries the final offset, so there is nothing
+    // to transition from; the keyframes take the start and end from these two
+    // custom properties instead.
+    <svg className="gauge" viewBox="0 0 60 36" style={{ width: size, ["--len" as string]: c, ["--to" as string]: c * (1 - pct / 100) }}
+      role="img" aria-label={label ?? `${pct} %`}>
+      <path d={arc} className="gauge-track" />
+      <path d={arc} stroke={color} className="gauge-fill" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} />
+      {reference !== null && reference !== undefined && Number.isFinite(reference) && (
+        <circle cx={rx} cy={ry} r="2.4" className="gauge-ref spark-pop is-late" />
+      )}
+    </svg>
+  );
+}
+
+/** A count drawn as the things it counts. Data KHK facility layers are a
+ *  snapshot of one year, so there is no line to draw — but "four libraries"
+ *  is worth seeing as four marks rather than as another lonely numeral.
+ *  Above `cap` the dots would stop being countable, so the number speaks. */
+export function Dots({ value, cap = 24, color = "var(--accent)", label }: { value: number; cap?: number; color?: string; label?: string }) {
+  const n = Math.max(0, Math.round(value));
+  if (n === 0) return <span className="dots is-none" role="img" aria-label={label ?? "žádné"}>žádné</span>;
+  if (n > cap) return <span className="dots is-many" role="img" aria-label={label ?? `${n}`} style={{ color }}>{"●".repeat(6)}<em>+{n - 6}</em></span>;
+  return (
+    <span className="dots" role="img" aria-label={label ?? `${n}`}>
+      {Array.from({ length: n }, (_, i) => <i key={i} style={{ background: color, ["--i" as string]: i }} />)}
+    </span>
+  );
+}
+
+/** Value against its reference on one track. For counts and rates that have a
+ *  kraj value to beat but no meaningful 0–100 range. */
+export function Bullet({ value, reference, verdict }: { value: number; reference: number; verdict?: string }) {
+  const m = Math.max(value, reference) * 1.18 || 1;
+  return (
+    <div className={`bullet ${verdict ?? ""}`} role="img" aria-label={`${value} proti ${reference}`}>
+      <span className="bullet-track"><span className="bullet-fill" style={{ width: `${Math.min(100, (value / m) * 100)}%` }} /></span>
+      <span className="bullet-ref" style={{ left: `${Math.min(100, (reference / m) * 100)}%` }} />
+    </div>
+  );
+}
+
+export function BarList({ items, format, max, color }: { items: { label: ReactNode; value: number; key: string; hint?: ReactNode }[]; format?: (v: number) => string; max?: number; color?: string }) {
+  const m = max ?? Math.max(1, ...items.map((i) => i.value));
+  const f = format ?? ((v: number) => num(v));
+  return (
+    <div className="bar-list">
+      {items.map((it, idx) => (
+        <div className="bar-item" key={it.key}>
+          <span className="bar-label">{it.label}</span>
+          <span className="bar-value">{f(it.value)}</span>
+          <span className="bar-track"><span className="bar-fill" style={{ width: `${(it.value / m) * 100}%`, background: color, ["--i" as string]: idx }} /></span>
+          {it.hint && <span className="xsmall mute" style={{ gridColumn: "1 / -1" }}>{it.hint}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Vertical bars by year (e.g. observations per year). */
+export function Columns({ items, height = 140, format, ariaLabel }: { items: { label: string; value: number }[]; height?: number; format?: (v: number) => string; ariaLabel: string }) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  const m = Math.max(1, ...items.map((i) => i.value));
+  const gap = 3, bw = Math.max(2, (width - gap * (items.length - 1)) / Math.max(1, items.length));
+  const f = format ?? ((v: number) => num(v));
+  return (
+    <div className="chart" ref={ref}>
+      <svg viewBox={`0 0 ${width} ${height + 18}`} role="img" aria-label={ariaLabel} onPointerLeave={() => setHover(null)}>
+        {items.map((it, i) => {
+          const h = (it.value / m) * height;
+          return (
+            <g key={it.label} onPointerEnter={() => setHover(i)}>
+              <rect x={i * (bw + gap)} y={height - h} width={bw} height={Math.max(1, h)} rx={Math.min(4, bw / 3)} fill={hover === i ? "var(--accent-strong)" : "var(--accent)"} opacity={hover === null || hover === i ? 1 : 0.55}
+                style={{ transformOrigin: `0 ${height}px`, animation: `col-grow 600ms var(--ease-out) ${i * 18}ms both` }} />
+              {(i % Math.ceil(items.length / 8) === 0 || i === items.length - 1) && <text className="axis-label" x={i * (bw + gap) + bw / 2} y={height + 14} textAnchor="middle">{it.label}</text>}
+            </g>
+          );
+        })}
+      </svg>
+      {hover !== null && (
+        <div className="chart-tip glass" style={{ left: `${((hover * (bw + gap) + bw / 2) / width) * 100}%`, top: height - (items[hover].value / m) * height }}>
+          <div className="tip-year">{items[hover].label}</div>
+          <strong className="num">{f(items[hover].value)}</strong>
+        </div>
+      )}
+      <style>{"@keyframes col-grow{from{transform:scaleY(0)}}"}</style>
+    </div>
+  );
+}
+
+/** Stacked horizontal bar for shares (e.g. age structure). */
+export function ShareBar({ parts }: { parts: { label: string; value: number; color: string }[] }) {
+  const total = parts.reduce((a, p) => a + p.value, 0) || 1;
+  return (
+    <div>
+      <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", gap: 2 }}>
+        {parts.map((p, i) => (
+          <span key={p.label} className="share-part" title={`${p.label}: ${num((100 * p.value) / total, 1)} %`}
+            style={{ width: `${(100 * p.value) / total}%`, background: p.color, ["--i" as string]: i }} />
+        ))}
+      </div>
+      <div className="legend">
+        {parts.map((p) => <span key={p.label}><i style={{ background: p.color, height: 8, width: 8, borderRadius: 2 }} />{p.label} <strong className="num">{num((100 * p.value) / total, 1)} %</strong></span>)}
+      </div>
+    </div>
+  );
+}

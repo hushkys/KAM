@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / build
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# Data z ingestu. Snímek databáze má ~190 MB — přes limit GitHubu (100 MB na
+# soubor) a hlavně nemá opouštět tenhle počítač. Do produkce se dostane přes
+# scripts/migrate_to_postgres.py, ne přes repozitář.
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.log
+data/cache/
+# Klíč, kterým se šifrují API klíče v databázi. Nikdy necommitovat.
+data/secret.key
+# Geometrie ČÚZK (1,3 MB) se commituje schválně: potřebuje ji mapa při každém
+# požadavku a build image ji kopíruje dovnitř.
+!data/geo/
+
+# Tajemství
+.env
+secrets.env
+
+# Nástroje
+firebase-debug.log
+*.log

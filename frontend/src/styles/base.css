@@ -1,0 +1,372 @@
+/* KAM — design system: tokens, base, layout, chrome, motion.
+ *
+ * Green on near-black, taken from the brand sheet: the lime dot is the only
+ * saturated thing and appears in the mark and at single focal points; the
+ * working accent is a calmer spring green. Glass is for chrome only (navbar,
+ * dock, sheets, menus) — content surfaces stay opaque because text on a blur
+ * is worse text. Radius is a scale with meaning, not one value everywhere.
+ */
+
+:root {
+  --font: "Manrope Variable", "Manrope", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-scale: 1;
+
+  --lime: #7fd957;
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-emph: cubic-bezier(.32, .72, 0, 1);
+  --ease-spring: linear(0, 0.007, 0.029 2.2%, 0.116 5.1%, 0.44 11.4%, 0.727 16.6%, 0.867 20.2%, 0.945, 0.995 26.6%, 1.015, 1.028 32%, 1.032 36.4%, 1.028 41%, 1.011 50.6%, 1.002 59.5%, 0.998 73.2%, 1 100%);
+  --t-xs: 130ms;
+  --t-sm: 200ms;
+  --t-md: 300ms;
+  --t-lg: 440ms;
+
+  --nav-h: 60px;
+  --dock-h: 66px;
+  --side-w: 88px;
+  --maxw: 1320px;
+  --pad: clamp(14px, 3.2vw, 32px);
+  --gap: 16px;
+  --card-pad: 20px;
+
+  /* light */
+  --bg: #f2f5f2;
+  --surface: #ffffff;
+  --surface-2: #f5f8f5;
+  --surface-3: #eaefea;
+  --border: rgba(18, 32, 24, .09);
+  --border-strong: rgba(18, 32, 24, .17);
+  --text: #0e1511;
+  --text-dim: #4a5850;
+  --text-mute: #77847d;
+  --accent: #3c7a2b;
+  --accent-strong: #2e6320;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(60, 122, 43, .1);
+  --accent-line: rgba(60, 122, 43, .38);
+  --ok: #2e7d3a;
+  --warn: #a4660b;
+  --bad: #b43e2c;
+  --crit: #8c1d12;
+  --info: #2b6a9a;
+  --glass: rgba(255, 255, 255, .66);
+  --glass-strong: rgba(255, 255, 255, .9);
+  --glass-edge: rgba(255, 255, 255, .95);
+  --glass-hair: rgba(18, 32, 24, .1);
+  --glass-shadow: 0 14px 40px -16px rgba(16, 32, 22, .3);
+  --blur: 22px;
+  --sat: 165%;
+  --scrim: rgba(10, 16, 12, .32);
+  --grid-line: rgba(18, 32, 24, .07);
+  --glow: rgba(60, 122, 43, .08);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #090c0b;
+  --surface: #111614;
+  --surface-2: #161c19;
+  --surface-3: #1c2420;
+  --border: rgba(220, 238, 226, .075);
+  --border-strong: rgba(220, 238, 226, .15);
+  --text: #e7eee9;
+  --text-dim: #a0ada6;
+  --text-mute: #6d7a73;
+  --accent: #8fcb6b;
+  --accent-strong: #a9da8b;
+  --accent-fg: #0a120c;
+  --accent-soft: rgba(143, 203, 107, .12);
+  --accent-line: rgba(143, 203, 107, .4);
+  --ok: #74c282;
+  --warn: #e2ad54;
+  --bad: #ec7c66;
+  --crit: #ff9784;
+  --info: #7db6de;
+  --glass: rgba(18, 24, 21, .6);
+  --glass-strong: rgba(16, 21, 19, .92);
+  --glass-edge: rgba(255, 255, 255, .07);
+  --glass-hair: rgba(220, 238, 226, .09);
+  --glass-shadow: 0 18px 50px -18px rgba(0, 0, 0, .75);
+  --scrim: rgba(0, 0, 0, .5);
+  --grid-line: rgba(220, 238, 226, .055);
+  --glow: rgba(143, 203, 107, .06);
+  color-scheme: dark;
+}
+
+:root[data-contrast="high"] {
+  --text: #000;
+  --text-dim: #1f2a24;
+  --text-mute: #3c4842;
+  --border: rgba(0, 0, 0, .35);
+  --border-strong: rgba(0, 0, 0, .6);
+  --accent: #245316;
+}
+:root[data-theme="dark"][data-contrast="high"] {
+  --text: #fff;
+  --text-dim: #e1e8e3;
+  --text-mute: #b9c4be;
+  --border: rgba(255, 255, 255, .32);
+  --border-strong: rgba(255, 255, 255, .55);
+  --accent: #b6e89a;
+}
+:root[data-transparency="off"] {
+  --glass: var(--surface);
+  --glass-strong: var(--surface);
+}
+:root[data-density="compact"] {
+  --gap: 12px;
+  --card-pad: 15px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  font-size: calc(100% * var(--font-scale));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--nav-h) + 24px);
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font);
+  font-size: .9375rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv05";
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+}
+/* The ambient glow sits on a fixed, viewport-sized layer instead of
+   `background-attachment: fixed` — iOS ignores that property, and on desktop
+   it forces a full repaint of the page background on every scroll frame. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 8% -8%, var(--glow), transparent 62%),
+    radial-gradient(900px 520px at 100% 0%, var(--glow), transparent 60%);
+}
+img, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; text-underline-offset: 3px; }
+a:hover { text-decoration: underline; }
+:root[data-underline="on"] a { text-decoration: underline; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.18; letter-spacing: -.022em; font-weight: 750; text-wrap: balance; }
+h1 { font-size: clamp(1.55rem, 1.2rem + 1.6vw, 2.25rem); }
+h2 { font-size: 1.1875rem; letter-spacing: -.015em; }
+h3 { font-size: 1rem; letter-spacing: -.01em; }
+p { margin: 0; text-wrap: pretty; }
+ul, ol { margin: 0; padding: 0; }
+.num, .tabular { font-variant-numeric: tabular-nums; }
+::selection { background: var(--accent-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+:root[data-focus="strong"] :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 6px var(--accent-soft); }
+
+.skip-link {
+  position: fixed; left: 12px; top: -80px; z-index: 1000;
+  background: var(--surface); color: var(--text); padding: 10px 14px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+}
+.skip-link:focus { top: 12px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--text) 16%, transparent); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ------------------------------------------------------------- glass */
+.glass {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-hair);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-transparency="on"] .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+    backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  }
+  /* The rim that makes a pane read as a pane: a specular highlight along
+     the top edge that fades out, over the tint. */
+  :root[data-transparency="on"] .glass::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(180deg, color-mix(in oklab, white 9%, transparent), transparent 42%);
+    mix-blend-mode: soft-light;
+  }
+}
+
+/* ------------------------------------------------------------- shell */
+.shell { min-height: 100dvh; }
+.page {
+  position: relative;
+  width: 100%;
+  max-width: calc(var(--maxw) + 2 * var(--pad));
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 28px + env(safe-area-inset-top)) var(--pad) calc(var(--dock-h) + 52px + env(safe-area-inset-bottom));
+  min-width: 0;
+}
+.page.is-bare { padding-top: 0; padding-bottom: 0; max-width: none; }
+@media (min-width: 900px) {
+  :root[data-dock="side"] .page:not(.is-bare) { padding-left: calc(var(--side-w) + 26px + var(--pad)); padding-bottom: 56px; }
+}
+
+/* ------------------------------------------------------------- navbar */
+.navbar {
+  position: fixed; z-index: 60;
+  top: calc(10px + env(safe-area-inset-top)); left: 12px; right: 12px;
+  height: var(--nav-h);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 10px 0 16px;
+  border-radius: var(--r-lg);
+  transition: transform var(--t-md) var(--ease-emph), opacity var(--t-md) var(--ease-out);
+}
+.navbar-brand { display: flex; align-items: center; gap: 12px; color: var(--text); min-width: 0; flex: 0 1 auto; }
+.navbar-brand:hover { text-decoration: none; }
+.navbar-brand .wordmark { height: 20px; width: auto; flex: none; }
+.navbar-divider { width: 1px; height: 22px; background: var(--border-strong); flex: none; }
+.navbar-title { font-weight: 650; font-size: .9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.navbar-spacer { flex: 1 1 auto; min-width: 8px; }
+.navbar-search {
+  display: flex; align-items: center; gap: 8px;
+  width: min(360px, 34vw); height: 38px; padding: 0 10px 0 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  color: var(--text-mute); cursor: pointer; font-size: .875rem;
+  transition: border-color var(--t-xs), background var(--t-xs);
+}
+.navbar-search:hover { border-color: var(--border-strong); color: var(--text-dim); }
+.navbar-search span { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navbar-search svg { width: 17px; height: 17px; flex: none; }
+kbd {
+  font-family: var(--font); font-size: .6875rem; font-weight: 650; color: var(--text-mute);
+  border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; background: var(--surface-2);
+}
+.navbar-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+@media (max-width: 720px) {
+  .navbar { left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); padding: 0 6px 0 12px; gap: 6px; height: 54px; }
+  :root { --nav-h: 54px; }
+  .navbar-search { width: 38px; padding: 0; justify-content: center; border-radius: 50%; }
+  .navbar-search span, .navbar-search kbd { display: none; }
+  .navbar-divider, .navbar-brand .wordmark-sub { display: none; }
+}
+@media (max-width: 340px) { .navbar-title { display: none; } }
+
+/* ------------------------------------------------------------- dock */
+.dock {
+  position: fixed; z-index: 55;
+  left: 50%; bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex; align-items: stretch; gap: 2px;
+  padding: 6px;
+  border-radius: calc(var(--r-lg) + 4px);
+  max-width: calc(100vw - 20px);
+}
+.dock-item {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-width: 64px; height: 54px; padding: 4px 8px;
+  border-radius: var(--r-md);
+  color: var(--text-dim);
+  font-size: .6875rem; font-weight: 650; letter-spacing: .005em;
+  border: 0; background: transparent; cursor: pointer;
+  text-decoration: none !important;
+  transition: background-color var(--t-sm) var(--ease-out), color var(--t-sm) var(--ease-out);
+}
+.dock-item svg.module { width: 26px; height: 26px; transition: transform var(--t-md) var(--ease-spring), filter var(--t-sm); filter: saturate(.7); opacity: .9; }
+.dock-item:hover { background: color-mix(in oklab, var(--text) 7%, transparent); color: var(--text); }
+.dock-item:hover svg.module { transform: translateY(-2px) scale(1.06); filter: none; opacity: 1; }
+.dock-item:active svg.module { transform: scale(.92); }
+/* No background of its own: the highlight is one shape that travels (see
+   .dock-morph), so a per-item background would make it appear twice. */
+.dock-item[aria-current="page"] { color: var(--text); }
+.dock-item[aria-current="page"] svg.module { filter: none; opacity: 1; }
+.dock-item[aria-current="page"]::after {
+  content: ""; position: absolute; bottom: 3px; left: 50%; width: 16px; height: 3px; margin-left: -8px;
+  border-radius: 3px; background: var(--accent);
+  animation: dock-mark 380ms var(--ease-spring) 120ms both;
+}
+/* The accent bar cannot travel with the pill — it would have to live inside
+   the goo layer and be dissolved by it — so it arrives just behind, once the
+   pill has set off. */
+@keyframes dock-mark { from { opacity: 0; transform: scale(.2); } }
+
+/* The travelling highlight. Positions are written by the hook in Dock.tsx;
+   everything here is only what the two shapes are made of. */
+.dock-morph { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .1; }
+:root[data-theme="dark"] .dock-morph { opacity: .16; }
+.dock-morph[data-empty="true"] { opacity: 0; }
+.dock-pill {
+  position: absolute; left: 0; top: 0; display: block;
+  border-radius: var(--r-md); background: var(--text);
+  transform-origin: center; will-change: transform, width;
+}
+.dock-trail { opacity: .55; }
+.dock-morph { filter: url("#dock-goo"); }
+/* The filter is what makes the two shapes one liquid body; without motion
+   there is no journey to smear, and the blur only costs paint time. */
+:root[data-motion="reduce"] .dock-morph { filter: none; }
+:root[data-motion="reduce"] .dock-trail { display: none; }
+:root[data-motion="reduce"] .dock-item[aria-current="page"]::after { animation: none; }
+.goo-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.dock-label { white-space: nowrap; line-height: 1.1; }
+:root[data-dock-labels="off"] .dock-label { display: none; }
+:root[data-dock-labels="off"] .dock-item { min-width: 52px; height: 50px; }
+.dock-sep { width: 1px; margin: 8px 3px; background: var(--border-strong); flex: none; }
+@media (min-width: 900px) {
+  :root[data-dock="side"] .dock {
+    left: 12px; top: calc(var(--nav-h) + 22px); bottom: auto; transform: none;
+    flex-direction: column; width: var(--side-w); padding: 8px 6px; max-height: calc(100dvh - var(--nav-h) - 40px); overflow-y: auto;
+  }
+  :root[data-dock="side"] .dock-item { min-width: 0; width: 100%; height: 58px; }
+  :root[data-dock="side"] .dock-item[aria-current="page"]::after { left: 0; bottom: auto; top: 50%; width: 3px; height: 18px; margin: -9px 0 0; }
+  :root[data-dock="side"] .dock-sep { width: auto; height: 1px; margin: 4px 10px; }
+}
+@media (max-width: 720px) {
+  .dock { left: 8px; right: 8px; transform: none; justify-content: space-between; bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .dock-item { flex: 1 1 0; min-width: 0; padding: 4px 2px; }
+  .dock-item.is-extra { display: none; }
+  .dock-sep { display: none; }
+  .dock-label { font-size: .65rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+}
+.dock-more { display: none; }
+@media (max-width: 720px) { .dock-more { display: flex; } }
+
+/* Virtual keyboard open (set by src/lib/keyboard.ts): the dock steps out of
+   the way instead of floating over the field being typed into. */
+.dock { transition: transform var(--t-md) var(--ease-emph), opacity var(--t-sm) var(--ease-out); }
+:root[data-kb="open"] .dock { opacity: 0; pointer-events: none; transform: translate(-50%, 140%); }
+@media (max-width: 720px) { :root[data-kb="open"] .dock { transform: translateY(140%); } }
+:root[data-kb="open"] .toasts { bottom: 12px; }
+
+/* No 300ms wait for a double-tap that this app never uses, and no grey flash
+   over the element the finger happens to land on. */
+a, button, [role="button"], input, select, textarea, label, summary { touch-action: manipulation; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ------------------------------------------------------------- motion */
+/* Entrance motion only: opacity and a few pixels of rise, nothing that
+   rescales content. Children stagger slightly after their page. */
+.reveal { animation: reveal var(--t-md) var(--ease-out) both; animation-delay: calc(60ms + var(--i, 0) * 35ms); }
+@keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-in 260ms var(--ease-out) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; scroll-behavior: auto !important;
+}
+
+@media print {
+  .navbar, .dock, .no-print, .toasts, .assistant-drawer { display: none !important; }
+  body { background: #fff; color: #000; }
+  .page { padding: 0 !important; }
+}
