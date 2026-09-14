@@ -6,9 +6,10 @@
 // kolik z toho jde do majetku a jestli si to obec platí sama.
 
 import { ChartSwitch, Columns, Donut, LineChart, Legend, Waterfall } from "../components/charts";
+import { FinanceHook } from "../components/FinanceHook";
 import { Icon } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Card, ErrorBox, InfoHint, KindTag, PageHeader, Stat } from "../components/ui";
+import { Card, ErrorBox, InfoHint, KindTag, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
@@ -49,9 +50,13 @@ export function Finance() {
 
   return (
     <>
-      <PageHeader eyebrow="Hospodaření" title="Vydělává obec na tom, jak hospodaří?"
-        lead="Obec nespekuluje na burze. Zhodnocuje tím, že z běžného provozu něco zbyde a to něco promění v majetek. Tady je vidět, kolik zbývá, kolik jde do majetku a jestli si to obec platí sama."
-        actions={<Link className="btn" to={`/obce/${tid}`}><Icon name="home" size={16} /> Profil území</Link>} />
+      <FinanceHook roky={roky.map((r) => ({ year: r.year, provozni: r.provozni, kapital: r.kapital }))}
+        kryti={s?.kryti ?? null} territory={data?.territory.name}>
+        <div className="row" style={{ marginTop: 18 }}>
+          <Link className="btn" to={`/obce/${tid}`}><Icon name="home" size={16} /> Profil území</Link>
+          <Link className="btn" to={`/dotace?t=${tid}`}><Icon name="coins" size={16} /> Dotace</Link>
+        </div>
+      </FinanceHook>
       <div className="stack-y">
         <div className="toolbar-card reveal">
           <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setQuery({ t: id })} label="Území" /></div>

@@ -7,9 +7,10 @@
 // než když mu rovnou ukážeme, kde se dívat.
 
 import { BarList, ChartSwitch, LineChart } from "../components/charts";
+import { DotaceHook } from "../components/DotaceHook";
 import { Icon } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Card, ErrorBox, KindTag, PageHeader, Stat } from "../components/ui";
+import { Card, ErrorBox, KindTag, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
@@ -68,9 +69,11 @@ export function Dotace() {
 
   return (
     <>
-      <PageHeader eyebrow="Dotace" title="Kolik do území doteklo a kam se obrátit"
-        lead="Přijaté dotace z rozpočtu obce, dotace kraje do jejího ORP a rozcestník vyhlašovatelů podle oblastí, kde má území problém."
-        actions={<Link className="btn" to={`/hospodareni?t=${tid}`}><Icon name="coins" size={16} /> Hospodaření</Link>} />
+      <DotaceHook cerpani={rada} territory={data?.territory.name}>
+        <div className="row" style={{ marginTop: 18 }}>
+          <Link className="btn" to={`/hospodareni?t=${tid}`}><Icon name="coins" size={16} /> Hospodaření</Link>
+        </div>
+      </DotaceHook>
       <div className="stack-y">
         <div className="toolbar-card reveal">
           <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setQuery({ t: id })} label="Území" /></div>

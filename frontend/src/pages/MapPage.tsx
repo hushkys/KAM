@@ -4,7 +4,9 @@
 import { lazy, Suspense, useMemo } from "react";
 import { Icon } from "../components/Icon";
 import { CzMap, KhkMap, MapLegend } from "../components/maps";
-import { Card, KindTag, PageHeader, Segmented, Severity } from "../components/ui";
+import { MapaHook } from "../components/MapaHook";
+import { useTerritories } from "../components/TerritoryPicker";
+import { Card, KindTag, Segmented, Severity } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num, withUnit } from "../lib/format";
 import { Link, navigate, setQuery, useLocation } from "../lib/router";
@@ -35,6 +37,13 @@ export function MapPage() {
   const khk = useApi<KhkData>(view === "khk" ? `/map/khk?indicator=${ind}&level=${level}` : null);
   const sources = useApi<Sources>("/sources");
   const prof = useApi<Profile>(view === "khk" && sel ? `/territories/${sel}` : null);
+  // Kolik pater mapa má, se nepíše ručně — spočítá se ze seznamu území,
+  // který stránka stejně stahuje kvůli vyhledávání.
+  const uzemi = useTerritories().data;
+  const pocty = useMemo(() => ({
+    orp: (uzemi ?? []).filter((t) => t.level === "orp").length,
+    obce: (uzemi ?? []).filter((t) => t.level === "obec").length,
+  }), [uzemi]);
 
   const czValues = useMemo(() => {
     const out: Record<number, number | null> = {};
@@ -49,8 +58,11 @@ export function MapPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Mapa" title={view === "cz" ? "Česko po krajích" : "Královéhradecký kraj"} lead={view === "cz" ? "Každý kraj a jeho otevřená data v Národním katalogu. Vyberte kraj." : "Obce a správní obvody ORP. Klepněte na území pro detail."}
-        actions={<Segmented label="Pohled" value={view} onChange={(v) => setQuery({ view: v === "cz" ? null : v, sel: null })} options={[{ value: "cz", label: "Česko", icon: "globe" }, { value: "khk", label: "Královéhradecký kraj", icon: "map" }]} />} />
+      <MapaHook kraje={cz.data?.kraje ?? []} orp={pocty.orp} obce={pocty.obce}>
+        <div className="row" style={{ marginTop: 14 }}>
+          <Segmented label="Pohled" value={view} onChange={(v) => setQuery({ view: v === "cz" ? null : v, sel: null })} options={[{ value: "cz", label: "Česko", icon: "globe" }, { value: "khk", label: "Královéhradecký kraj", icon: "map" }]} />
+        </div>
+      </MapaHook>
       <div className="grid">
         <Card span={8} i={1} title={view === "cz" ? (metric === "datasets" ? "Otevřené datové sady podle území" : cz.data?.indicator.name ?? "") : khk.data?.indicator.name ?? "Ukazatel"} icon="map"
           actions={view === "cz" ? (

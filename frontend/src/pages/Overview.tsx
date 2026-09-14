@@ -2,7 +2,8 @@ import { useState, type CSSProperties } from "react";
 import { ChartSwitch, Donut, LineChart, Legend, Sparkline, Waterfall } from "../components/charts";
 import { Icon } from "../components/Icon";
 import { KhkMap, MapLegend } from "../components/maps";
-import { Card, ErrorBox, KindTag, LoadingCard, PageHeader, Segmented, Severity } from "../components/ui";
+import { PrehledHook } from "../components/PrehledHook";
+import { Card, ErrorBox, KindTag, LoadingCard, Segmented, Severity } from "../components/ui";
 import { useApi } from "../lib/api";
 import { ago, date, num, signed, withUnit } from "../lib/format";
 import { Link, navigate } from "../lib/router";
@@ -29,8 +30,12 @@ export function Overview() {
   const d = ov.data;
   return (
     <>
-      <PageHeader eyebrow="Královéhradecký kraj" title="Co se v kraji děje" lead={d ? <>Poslední data ČSÚ za rok {d.model.years[1]}, {num(d.datasets.verified)} funkčních otevřených datových sad, {num(d.model.observations)} měřených hodnot.</> : "Načítám…"}
-        actions={<><Link className="btn" to="/mapa"><Icon name="map" size={16} /> Mapa</Link><Link className="btn btn-primary" to="/scenare"><Icon name="split" size={16} /> Simulovat zásah</Link></>} />
+      <PrehledHook kpis={d?.kpis ?? []} pozorovani={d?.model.observations}>
+        <div className="row" style={{ marginTop: 20 }}>
+          <Link className="btn" to="/mapa"><Icon name="map" size={16} /> Mapa</Link>
+          <Link className="btn btn-primary" to="/scenare"><Icon name="split" size={16} /> Simulovat zásah</Link>
+        </div>
+      </PrehledHook>
       <ErrorBox error={ov.error} retry={ov.reload} />
 
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
