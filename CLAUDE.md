@@ -79,6 +79,7 @@ ingest/  → models.Observation (+ Dataset, Territory, Poi, Fact)
 - `ingest/catalog.py` treats NKOD as authoritative and merges portal records onto it by normalised title within the same kraj *or* by download URL; a series of ≥ `SERIES_MIN` (30) daily slices collapses into one record.
 - Two harvester rules that are easy to break and expensive to notice:
   - **Page NKOD over IRIs, never over result rows.** `_page_filter` takes an explicit batch from `_all_iris`. The metadata query drops datasets whose title is neither Czech nor untagged, so a full window can return short; the old "short page ⇒ last page" rule silently lost ~60 % of every publisher (NKOD reports 1 943 datasets for KHK, the catalogue held 800).
+  - **Call `_ensure_source` before `_store`.** `Dataset.source_id` is a foreign key, so a harvester that stores rows for a brand-new source fails the whole insert at the end of a ten-minute run with nothing but `FOREIGN KEY constraint failed`.
   - **Build the duplicate index without the source being harvested** (`_titles_by_region(exclude)` / `_urls(exclude)`). A feed compared against its own previous harvest matches every row as a duplicate of itself, stores none, and `_store` then deletes the lot.
 - Assumptions in `analytics/simulate.py::ASSUMPTIONS` carry a value and a reason and are overridable per request.
 - The LLM never computes numbers: `ai/tools.py` produces labelled briefs (FAKT/TREND/MODEL/SCÉNÁŘ) that the model explains.

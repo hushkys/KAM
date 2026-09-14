@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 
 from ..territory import HOME_KRAJ
-from .catalog import _save_source, _store, _usage
+from .catalog import _ensure_source, _save_source, _store, _usage
 from .common import USER_AGENT, client, job, norm
 
 TOC = "https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/txt"
@@ -115,25 +115,13 @@ def _probe(session: httpx.Client, code: str, title: str) -> dict | None:
     return None
 
 
-def harvest() -> dict[str, int]:
-    job("eurostat", "running", "Stahuji katalog Eurostatu")
-    c = client(180)
-    codes = _toc(c)
-    job("eurostat", "running", f"Ověřuji {len(codes)} sad na území kraje", 0.05)
+def build_rows(found: list[dict]) -> list[dict]:
+    """Ověřené sady na řádky katalogu.
 
-    session = httpx.Client(timeout=60, follow_redirects=True, headers={"User-Agent": USER_AGENT},
-                           limits=httpx.Limits(max_connections=WORKERS + 4, max_keepalive_connections=WORKERS))
-    found: list[dict] = []
-    try:
-        with ThreadPoolExecutor(WORKERS) as ex:
-            for i, res in enumerate(ex.map(lambda t: _probe(session, *t), codes), 1):
-                if res:
-                    found.append(res)
-                if i % 500 == 0:
-                    job("eurostat", "running", f"{i}/{len(codes)} ověřeno, {len(found)} má data o kraji", 0.05 + 0.9 * i / len(codes))
-    finally:
-        session.close()
-
+    `region_code` je území, které sada popisuje, ne vydavatel — proto ho nese
+    jen ta část, která je opravdu za kraj. Sada za Severovýchod pokrývá tři
+    kraje naráz, takže nepatří žádnému z nich a na mapu krajů nejde.
+    """
     rows = []
     for f in found:
         narrow = f.get("narrow")
@@ -156,7 +144,31 @@ def harvest() -> dict[str, int]:
             "periodicity": "", "modified": f["updated"], "freshness": "neznama",
             "usage": _usage(f["region"], "neznama"),
         })
+    return rows
 
+
+def harvest() -> dict[str, int]:
+    job("eurostat", "running", "Stahuji katalog Eurostatu")
+    c = client(180)
+    codes = _toc(c)
+    job("eurostat", "running", f"Ověřuji {len(codes)} sad na území kraje", 0.05)
+
+    session = httpx.Client(timeout=60, follow_redirects=True, headers={"User-Agent": USER_AGENT},
+                           limits=httpx.Limits(max_connections=WORKERS + 4, max_keepalive_connections=WORKERS))
+    found: list[dict] = []
+    try:
+        with ThreadPoolExecutor(WORKERS) as ex:
+            for i, res in enumerate(ex.map(lambda t: _probe(session, *t), codes), 1):
+                if res:
+                    found.append(res)
+                if i % 500 == 0:
+                    job("eurostat", "running", f"{i}/{len(codes)} ověřeno, {len(found)} má data o kraji", 0.05 + 0.9 * i / len(codes))
+    finally:
+        session.close()
+
+    rows = build_rows(found)
+    # Dataset.source_id je cizí klíč — řádek zdroje musí být dřív než sady.
+    _ensure_source(SOURCE_ID, "api", "Eurostat — regionální statistika pro Královéhradecký kraj")
     _store(SOURCE_ID, rows)
     _save_source(SOURCE_ID, name="Eurostat — regionální statistika pro Královéhradecký kraj", kind="api",
                  url=DATA, portal_url=PORTAL, group="core", publisher="Eurostat",

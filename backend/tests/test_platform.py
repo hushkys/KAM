@@ -188,3 +188,23 @@ def test_relief_bbox_matches_the_map_projection():
     assert (round(x1), round(y1)) == (round(p.width), round(p.height))
     # And the kraj itself is inside, with the padding around it.
     assert west < 15.2 and east > 16.6 and south < 50.1 and north > 50.7
+
+
+def test_eurostat_rows_say_what_territory_they_cover():
+    """Coverage decides `region_code`, and a narrowed link keeps its filter."""
+    from kam.ingest.eurostat import build_rows
+
+    kraj, sever = build_rows([
+        {"code": "demo_r_pjangrp3", "title": "Population on 1 January by NUTS 3 region", "geo": "CZ052",
+         "region": 86, "coverage": "Královéhradecký kraj (NUTS3 CZ052)", "values": 66, "updated": "2026-03-19",
+         "narrow": False, "first": "2014", "last": "2025", "dims": ["Age class", "Sex"]},
+        {"code": "lfst_r_lfe2en2", "title": "Employment by age and NUTS 2 region", "geo": "CZ05",
+         "region": 0, "coverage": "region soudržnosti Severovýchod (NUTS2 CZ05)", "values": 12, "updated": "2026-04-01",
+         "narrow": True, "first": "2025", "last": "2025", "dims": []},
+    ])
+    assert kraj["region_code"] == 86 and "mapa" in kraj["usage"]
+    assert "2014–2025" in kraj["description"] and kraj["download_url"].endswith("geo=CZ052")
+    # Three krajs at once belongs to none of them, so it stays off the kraj map.
+    assert sever["region_code"] == 0 and "mapa" not in sever["usage"]
+    assert sever["download_url"].endswith("lastTimePeriod=1")
+    assert "poslední zveřejněné období 2025" in sever["description"]
