@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { LineChart, Legend, Sparkline } from "../components/charts";
+import { ChartSwitch, Donut, LineChart, Legend, Sparkline, Waterfall } from "../components/charts";
 import { Icon } from "../components/Icon";
 import { KhkMap, MapLegend } from "../components/maps";
 import { Card, ErrorBox, KindTag, LoadingCard, PageHeader, Segmented, Severity } from "../components/ui";
@@ -71,16 +71,50 @@ export function Overview() {
 
         <Card span={6} i={3} title="Kam kraj směřuje" icon="trend-up" actions={<><KindTag kind="MODEL" /><Link to="/vyhled" className="btn btn-quiet btn-sm">Výhled</Link></>}>
           {fc.data?.available ? (
-            <>
-              <LineChart ariaLabel="Počet obyvatel kraje a výhled do roku 2040" height={230} nowYear={fc.data.base_year}
-                series={[
-                  { key: "h", label: "Skutečnost", color: "var(--text)", points: fc.data.history.map((r) => ({ year: r.year, value: r.population })) },
-                  { key: "p", label: "Pravděpodobný", color: "var(--accent)", points: [{ year: fc.data.base_year, value: fc.data.base_population }, ...fc.data.scenarios.pravdepodobny.map((r) => ({ year: r.year, value: r.population }))], band: fc.data.scenarios.pravdepodobny.map((r) => ({ year: r.year, lo: r.lower, hi: r.upper })) },
-                  { key: "o", label: "Optimistický", color: "var(--info)", dashed: true, points: fc.data.scenarios.optimisticky.map((r) => ({ year: r.year, value: r.population })) },
-                  { key: "r", label: "Rizikový", color: "var(--warn)", dashed: true, points: fc.data.scenarios.rizikovy.map((r) => ({ year: r.year, value: r.population })) },
-                ]} />
-              <Legend items={[{ label: "Skutečnost (ČSÚ)", color: "var(--text)" }, { label: "Pravděpodobný + 90% pásmo", color: "var(--accent)" }, { label: "Optimistický", color: "var(--info)", dashed: true }, { label: "Rizikový", color: "var(--warn)", dashed: true }]} />
-            </>
+            <ChartSwitch id="prehled-vyhled" views={[
+              {
+                key: "vyvoj", label: "Vývoj a scénáře", icon: "trend-up", render: () => (
+                  <>
+                    <LineChart ariaLabel="Počet obyvatel kraje a výhled do roku 2040" height={230} nowYear={fc.data!.base_year}
+                      series={[
+                        { key: "h", label: "Skutečnost", color: "var(--text)", points: fc.data!.history.map((r) => ({ year: r.year, value: r.population })) },
+                        { key: "p", label: "Pravděpodobný", color: "var(--accent)", points: [{ year: fc.data!.base_year, value: fc.data!.base_population }, ...fc.data!.scenarios.pravdepodobny.map((r) => ({ year: r.year, value: r.population }))], band: fc.data!.scenarios.pravdepodobny.map((r) => ({ year: r.year, lo: r.lower, hi: r.upper })) },
+                        { key: "o", label: "Optimistický", color: "var(--info)", dashed: true, points: fc.data!.scenarios.optimisticky.map((r) => ({ year: r.year, value: r.population })) },
+                        { key: "r", label: "Rizikový", color: "var(--warn)", dashed: true, points: fc.data!.scenarios.rizikovy.map((r) => ({ year: r.year, value: r.population })) },
+                      ]} />
+                    <Legend items={[{ label: "Skutečnost (ČSÚ)", color: "var(--text)" }, { label: "Pravděpodobný + 90% pásmo", color: "var(--accent)" }, { label: "Optimistický", color: "var(--info)", dashed: true }, { label: "Rizikový", color: "var(--warn)", dashed: true }]} />
+                  </>
+                ),
+              },
+              {
+                // Proč kraj ubývá: tři složky, které se sčítají do rozdílu.
+                key: "slozeni", label: "Z čeho se změna skládá", icon: "split", render: () => {
+                  const s = fc.data!.scenarios.pravdepodobny;
+                  const sum = (k: "births" | "deaths" | "migration") => Math.round(s.reduce((a, r) => a + (r[k] ?? 0), 0));
+                  return (
+                    <Waterfall ariaLabel="Z čeho se skládá změna počtu obyvatel kraje" height={230} steps={[
+                      { label: String(fc.data!.base_year), value: Math.round(fc.data!.base_population), total: true },
+                      { label: "narození", value: sum("births") },
+                      { label: "zemřelí", value: -sum("deaths") },
+                      { label: "migrace", value: sum("migration") },
+                      { label: String(s[s.length - 1].year), value: Math.round(s[s.length - 1].population), total: true },
+                    ]} />
+                  );
+                },
+              },
+              ...(() => {
+                const last = fc.data!.scenarios.pravdepodobny[fc.data!.scenarios.pravdepodobny.length - 1];
+                return last?.age_0_14 && last?.age_65 ? [{
+                  key: "struktura", label: `Věková struktura ${last.year}`, icon: "users", render: () => (
+                    <Donut ariaLabel={`Věková struktura kraje v roce ${last.year}`} caption={`obyvatel ${last.year}`} size={168} parts={[
+                      { label: "Děti 0–14", value: Math.round(last.age_0_14!), color: "var(--info)" },
+                      { label: "15–64 let", value: Math.round(last.population - last.age_0_14! - last.age_65!), color: "var(--accent)" },
+                      { label: "Senioři 65+", value: Math.round(last.age_65!), color: "var(--warn)" },
+                    ]} />
+                  ),
+                }] : [];
+              })(),
+            ]} />
           ) : <span className="skeleton" style={{ height: 230, width: "100%" }} />}
           {d?.outlook.milestones && (
             <div className="milestones">

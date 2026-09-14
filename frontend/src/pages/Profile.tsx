@@ -4,7 +4,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { openAssistant, setAssistantTerritory } from "../components/assistantBus";
-import { Bullet, Dots, Gauge, LineChart, Legend, Sparkline } from "../components/charts";
+import { Bullet, ChartSwitch, Columns, Dots, Gauge, LineChart, Legend, Sparkline, Waterfall } from "../components/charts";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, Severity } from "../components/ui";
 import { api, useApi } from "../lib/api";
@@ -108,14 +108,39 @@ function SeriesModal({ tid, card, onClose }: { tid: string; card: IndicatorCard 
         <span className="muted small">{card.derived ? `Výpočet: ${card.formula}` : `${card.source}${card.origin ? ` · ${card.origin}` : ""}`}</span>
       </div>
       {data ? (
-        <>
-          <LineChart ariaLabel={card.name} height={260} unit={card.unit === "%" ? "%" : ""}
-            series={[
-              { key: "t", label: "Území", color: "var(--accent)", points: data.series },
-              ...(data.reference ? [{ key: "r", label: data.reference.name, color: "var(--text-mute)", dashed: true, points: data.reference.series }] : []),
-            ]} />
-          <Legend items={[{ label: "Toto území", color: "var(--accent)" }, ...(data.reference ? [{ label: data.reference.name, color: "var(--text-mute)", dashed: true }] : [])]} />
-        </>
+        <ChartSwitch id={`profil-${card.code}`} views={[
+          {
+            key: "vyvoj", label: "Vývoj v čase", icon: "trend-up", render: () => (
+              <>
+                <LineChart ariaLabel={card.name} height={260} unit={card.unit === "%" ? "%" : ""}
+                  series={[
+                    { key: "t", label: "Území", color: "var(--accent)", points: data.series },
+                    ...(data.reference ? [{ key: "r", label: data.reference.name, color: "var(--text-mute)", dashed: true, points: data.reference.series }] : []),
+                  ]} />
+                <Legend items={[{ label: "Toto území", color: "var(--accent)" }, ...(data.reference ? [{ label: data.reference.name, color: "var(--text-mute)", dashed: true }] : [])]} />
+              </>
+            ),
+          },
+          ...(data.series.length > 1 ? [{
+            key: "sloupce", label: "Sloupce po letech", icon: "chart", render: () => (
+              <Columns ariaLabel={`${card.name} po letech`} height={230}
+                items={data.series.map((p) => ({ label: String(p.year), value: p.value }))} />
+            ),
+          }] : []),
+          // Odchylka od srovnávacího území rok po roce. Dvě čáry blízko sebe se
+          // čtou špatně; rozdíl mezi nimi je přesně to, co je na území jiné.
+          ...(data.reference && data.reference.series.length > 1 ? [{
+            key: "odchylka", label: `Rozdíl proti ${data.reference.name}`, icon: "split", render: () => {
+              const ref = new Map(data.reference!.series.map((p) => [p.year, p.value]));
+              return (
+                <Waterfall ariaLabel={`Rozdíl proti ${data.reference!.name}`} height={230}
+                  format={(v) => num(v, 1)}
+                  steps={data.series.filter((p) => ref.has(p.year)).slice(-8)
+                    .map((p) => ({ label: String(p.year), value: p.value - (ref.get(p.year) as number), total: true }))} />
+              );
+            },
+          }] : []),
+        ]} />
       ) : <span className="skeleton" style={{ height: 260, width: "100%" }} />}
       <div className="section-gap" />
       <div className="facts-list">
