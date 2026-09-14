@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 220" width="520" height="220" role="img" aria-label="KAM. — maskot">
+  <title>Maskot KAM.</title>
+  <desc>Tečka z loga KAM. jako postava. Dvě plochy, bez přechodů — připraveno pro sítotisk.</desc>
+  <!--
+    Tiskový list maskota KAM. Tým Popojedem.
+
+    Dvě barvy a nic víc:
+      limetka #7fd957  (tělo, zorničky)
+      tmavá   #0a120c  (písmo, oči, ústa)
+
+    Žádné přechody, stíny ani průhlednost — sítotisk je plocha a rastr se
+    tiskne mizerně. Na světlé tričko se tiskne takhle; na tmavé stačí písmo
+    přebarvit na #f2f7f3, limetka zůstává.
+
+    Křivky jsou geometrie, ne text, takže to nepotřebuje font.
+  -->
+  <g fill="#0a120c" fill-rule="evenodd" transform="translate(28 62) scale(0.95)">
+    <path d="M0 0h24v41L58 0h30L46 47l44 53H59L32 66l-8 8.6V100H0z"/>
+    <path d="M97 100L133 0h27l36 100h-25l-7.2-21h-37L119.6 100zM133.6 58h23l-11.5-34.5z"/>
+    <path d="M205 100V0h29l23.5 57L281 0h29v100h-23V43l-19.8 47h-15.4L228 43v57z"/>
+  </g>
+
+  <!-- Tečka za M, která ožila. Střed sedí přesně tam, kde je tečka v logu. -->
+  <g transform="translate(404 106)">
+    <circle cx="0" cy="0" r="46" fill="#7fd957"/>
+    <ellipse cx="-16" cy="-7" rx="7.5" ry="9" fill="#0a120c"/>
+    <ellipse cx="16" cy="-7" rx="7.5" ry="9" fill="#0a120c"/>
+    <circle cx="-13.4" cy="-7.6" r="3.1" fill="#7fd957"/>
+    <circle cx="18.6" cy="-7.6" r="3.1" fill="#7fd957"/>
+    <path d="M-11.5 11c3.4 6.4 19.6 6.4 23 0" fill="none" stroke="#0a120c" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -5,6 +5,7 @@ import { openAssistant } from "../components/assistantBus";
 import { Team } from "../components/Team";
 import { Icon } from "../components/Icon";
 import { Wordmark } from "../components/Logo";
+import { MascotIntro } from "../components/Mascot";
 import type { GeoKhk } from "../components/maps";
 import { Pill } from "../components/ui";
 import { useApi } from "../lib/api";
@@ -104,6 +105,7 @@ export function Hook() {
             <Link to="/prehled" className="btn btn-primary btn-lg">Vstoupit do aplikace <Icon name="arrow-right" size={17} /></Link>
             <button className="btn btn-lg" onClick={() => openAssistant()}><Icon name="sparkle" size={17} /> Zeptat se asistenta</button>
           </div>
+          <MascotIntro />
         </div>
         <Visual />
       </section>

@@ -500,3 +500,41 @@ a.list-row:hover .list-title { color: var(--accent); }
 .wf-value { fill: var(--text); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
   animation: chart-fade 300ms var(--ease-out) both; animation-delay: calc(360ms + var(--i, 0) * 70ms); }
 .wf-label { fill: var(--text-mute); font-size: 10.5px; font-weight: 650; }
+
+/* ---------------------------------------------------------- maskot
+   Dvě plochy a nic víc: limetkové tělo, tmavý obličej. Žádné přechody ani
+   stíny — na tričku je to sítotisk a rastr se tiskne mizerně. */
+.mascot { display: block; overflow: visible; }
+.mascot .ms-body { fill: var(--lime); }
+.mascot .ms-eye { fill: #0a120c; }
+.mascot .ms-pupil { fill: var(--lime); }
+.mascot .ms-mouth { fill: none; stroke: #0a120c; stroke-width: 4.5; stroke-linecap: round; }
+.mascot .ms-mouth.is-open { fill: #0a120c; stroke: none; }
+/* Oči se hýbou samy: mrknutí je to, co odliší postavu od piktogramu. */
+.mascot .ms-eye { animation: ms-blink 6.2s steps(1, end) infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ms-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.12); } }
+
+/* Příchod: kutálí se zleva, otáčení je vázané na posun, takže se nesmýká. */
+.ms-intro { position: relative; display: flex; align-items: center; gap: 14px; margin-top: 26px; min-height: 76px; cursor: default; }
+.ms-runner { flex: none; }
+.ms-intro[data-stav="ceka"] .ms-runner { opacity: 0; }
+.ms-intro[data-stav="jede"] .ms-runner { animation: ms-roll 1.35s cubic-bezier(.32,.72,0,1) both; }
+@keyframes ms-roll {
+  from { opacity: 1; transform: translateX(-160px) rotate(-540deg); }
+  to   { opacity: 1; transform: translateX(0) rotate(0deg); }
+}
+/* Doskok: po zastavení se tělo krátce stlačí, jako by mělo váhu. */
+.ms-intro[data-stav="mluvi"] .ms-runner { animation: ms-land 620ms var(--ease-spring) both; }
+@keyframes ms-land { 0% { transform: scale(1.14, .86); } 100% { transform: scale(1, 1); } }
+
+.ms-bubble {
+  position: relative; margin: 0; padding: 11px 16px; border-radius: 16px 16px 16px 4px;
+  background: var(--surface); border: 1px solid var(--border-strong); color: var(--text);
+  font-weight: 700; font-size: .9375rem; letter-spacing: -.01em; max-width: 30ch;
+  opacity: 0; transform: translateY(6px) scale(.96); transform-origin: left bottom;
+  transition: opacity var(--t-sm) var(--ease-out), transform var(--t-md) var(--ease-spring);
+}
+.ms-intro[data-stav="mluvi"] .ms-bubble { opacity: 1; transform: none; }
+/* Po odmluvení bublina zmizí, ale maskot zůstane — je to postava, ne oznámení. */
+.ms-intro[data-stav="stoji"] .ms-bubble { opacity: 0; transform: translateY(4px) scale(.98); }
+@media (max-width: 560px) { .ms-bubble { font-size: .875rem; max-width: 22ch; } }
