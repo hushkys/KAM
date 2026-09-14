@@ -1,4 +1,4 @@
-import { BarList, Columns, ShareBar } from "../components/charts";
+import { BarList, ChartSwitch, Columns, Donut, ShareBar } from "../components/charts";
 import { Card, PageHeader, Pill, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { ago, compact, num } from "../lib/format";
@@ -31,10 +31,26 @@ export function Stats() {
       </div>
       <div className="grid">
         <Card span={6} i={1} title="Datové sady podle zdroje" icon="layers">
-          {data && <BarList items={[...data.datasets.sources].sort((a, b) => b.verified - a.verified).filter((s) => s.verified > 0).slice(0, 14).map((s) => ({ key: s.id, label: s.name.replace("NKOD — ", ""), value: s.verified }))} />}
+          {data && (() => {
+            const top = [...data.datasets.sources].sort((a, b) => b.verified - a.verified).filter((s) => s.verified > 0);
+            return (
+              <ChartSwitch id="stats-zdroje" views={[
+                { key: "zebricek", label: "Žebříček", icon: "chart", render: () => <BarList items={top.slice(0, 14).map((s) => ({ key: s.id, label: s.name.replace("NKOD — ", ""), value: s.verified }))} /> },
+                // Deset největších plus zbytek jako jeden díl: koláč s pětaosmdesáti
+                // výsečemi nesděluje nic, ale podíl špičky na celku ano.
+                { key: "podil", label: "Podíl na katalogu", icon: "grid", render: () => <Donut ariaLabel="Podíl zdrojů na katalogu" caption="ověřených sad" parts={[
+                  ...top.slice(0, 9).map((s) => ({ label: s.name.replace("NKOD — ", ""), value: s.verified })),
+                  { label: `Dalších ${top.length - 9} zdrojů`, value: top.slice(9).reduce((a, s) => a + s.verified, 0), color: "var(--text-mute)" },
+                ]} /> },
+              ]} />
+            );
+          })()}
         </Card>
         <Card span={6} i={2} title="Datové sady podle oblasti" icon="grid">
-          {data && <BarList items={data.datasets.by_pillar.map((p) => ({ key: p.key, label: p.label, value: p.count }))} />}
+          {data && <ChartSwitch id="stats-oblasti" views={[
+            { key: "zebricek", label: "Žebříček", icon: "chart", render: () => <BarList items={data.datasets.by_pillar.map((p) => ({ key: p.key, label: p.label, value: p.count }))} /> },
+            { key: "kolac", label: "Koláč", icon: "grid", render: () => <Donut ariaLabel="Datové sady podle oblasti" caption="sad" parts={data.datasets.by_pillar.map((p) => ({ label: p.label, value: p.count }))} /> },
+          ]} />}
           <div className="section-gap" />
           <div className="small strong" style={{ marginBottom: 8 }}>Čerstvost podle deklarované periodicity</div>
           <ShareBar parts={[{ label: "Aktuální", value: f.aktualni ?? 0, color: "var(--ok)" }, { label: "Po termínu", value: f.zastarala ?? 0, color: "var(--warn)" }, { label: "Periodicita neuvedena", value: f.neznama ?? 0, color: "var(--text-mute)" }]} />
@@ -43,10 +59,16 @@ export function Stats() {
           {data && <Columns ariaLabel="Počet pozorování podle roku" items={data.observations_per_year.map((r) => ({ label: String(r.year), value: r.count }))} />}
         </Card>
         <Card span={4} i={4} title="Formáty distribucí" icon="download">
-          {data && <BarList items={data.formats.slice(0, 10).map((x) => ({ key: x.format, label: x.format, value: x.count }))} />}
+          {data && <ChartSwitch id="stats-formaty" views={[
+            { key: "zebricek", label: "Žebříček", icon: "chart", render: () => <BarList items={data.formats.slice(0, 10).map((x) => ({ key: x.format, label: x.format, value: x.count }))} /> },
+            { key: "kolac", label: "Koláč", icon: "grid", render: () => <Donut ariaLabel="Formáty distribucí" caption="distribucí" size={150} parts={data.formats.slice(0, 8).map((x) => ({ label: x.format, value: x.count }))} /> },
+          ]} />}
         </Card>
         <Card span={4} i={5} title="Zařízení z dat kraje" icon="pin">
-          {data && <BarList items={data.pois.map((p) => ({ key: p.kind, label: p.label, value: p.count }))} />}
+          {data && <ChartSwitch id="stats-zarizeni" views={[
+            { key: "zebricek", label: "Žebříček", icon: "chart", render: () => <BarList items={data.pois.map((p) => ({ key: p.kind, label: p.label, value: p.count }))} /> },
+            { key: "kolac", label: "Koláč", icon: "grid", render: () => <Donut ariaLabel="Zařízení z dat kraje" caption="zařízení" size={150} parts={data.pois.slice(0, 9).map((p) => ({ label: p.label, value: p.count }))} /> },
+          ]} />}
         </Card>
         <Card span={4} i={6} title="Ukazatele podle oblasti" icon="chart">
           {data && <BarList items={data.indicators_per_pillar.map((p) => ({ key: p.key, label: p.label, value: p.count }))} />}

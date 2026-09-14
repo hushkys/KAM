@@ -3,7 +3,7 @@
 // warnings, the chain of effects and every assumption editable.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { LineChart, Legend } from "../components/charts";
+import { ChartSwitch, Heatmap, LineChart, Legend } from "../components/charts";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
 import { ScenarioHook } from "../components/ScenarioHook";
@@ -226,11 +226,43 @@ export function Scenarios() {
                 </div>
               )}
               <Card i={1} title="Obyvatelé: bez zásahu vs. se zásahem" icon="users">
-                <LineChart ariaLabel="Obyvatelé bez zásahu a se zásahem" height={240} series={[
-                  { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: res.baseline.map((r) => ({ year: r.year, value: r.population })) },
-                  { key: "s", label: "Se zásahem", color: "var(--accent)", width: 2.6, points: res.scenario.map((r) => ({ year: r.year, value: r.population })) },
+                <ChartSwitch id="scenare-obyvatele" views={[
+                  {
+                    key: "cesty", label: "Dvě cesty", icon: "trend-up", render: () => (
+                      <>
+                        <LineChart ariaLabel="Obyvatelé bez zásahu a se zásahem" height={240} series={[
+                          { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: res.baseline.map((r) => ({ year: r.year, value: r.population })) },
+                          { key: "s", label: "Se zásahem", color: "var(--accent)", width: 2.6, points: res.scenario.map((r) => ({ year: r.year, value: r.population })) },
+                        ]} />
+                        <Legend items={[{ label: "Bez zásahu", color: "var(--text-mute)", dashed: true }, { label: "Se zásahem", color: "var(--accent)" }]} />
+                      </>
+                    ),
+                  },
+                  {
+                    // Samotný rozdíl, rok po roce. Dvě skoro totožné křivky se
+                    // čtou špatně — odečtená jedna od druhé je přesně to, co
+                    // zásah způsobil, a nic jiného.
+                    key: "rozdil", label: "Jen rozdíl", icon: "split", render: () => (
+                      <LineChart ariaLabel="Rozdíl mezi scénářem a stavem bez zásahu" height={240} yZero
+                        format={(v) => signed(v, 0)} series={[{
+                          key: "d", label: "Rozdíl", color: "var(--accent)", width: 2.6,
+                          points: res.scenario.map((r, i) => ({ year: r.year, value: r.population - (res.baseline[i]?.population ?? r.population) })),
+                        }]} />
+                    ),
+                  },
+                  {
+                    key: "mrizka", label: "Mřížka ukazatelů", icon: "grid", render: () => {
+                      const ms = res.metrics.filter((m) => m.values.some((v) => v.scenario !== null));
+                      const years = res.metrics[0]?.values.map((v) => String(v.year)) ?? [];
+                      return (
+                        <Heatmap ariaLabel="Ukazatele podle roku" format={(v) => num(v, 0)}
+                          rows={ms.map((m) => ({ key: m.key, label: m.label }))}
+                          cols={years.map((y) => ({ key: y, label: y }))}
+                          value={(row, col) => ms.find((m) => m.key === row)?.values.find((v) => String(v.year) === col)?.scenario ?? null} />
+                      );
+                    },
+                  },
                 ]} />
-                <Legend items={[{ label: "Bez zásahu", color: "var(--text-mute)", dashed: true }, { label: "Se zásahem", color: "var(--accent)" }]} />
               </Card>
               {zsBase.some((p) => p.value !== null) && (
                 <Card i={2} title="Vytížení základních škol" icon="school" actions={<span className="xsmall mute">kapacita = třídy × 30 žáků</span>}>

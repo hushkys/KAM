@@ -413,3 +413,90 @@ a.list-row:hover .list-title { color: var(--accent); }
 .disclaimer svg { flex: none; margin-top: 1px; }
 
 .modal:focus { outline: none; }
+
+/* ---------------------------------------------------------- chart switch
+   Jeden graf, několik způsobů čtení. Šipky krokují, název uprostřed otevře
+   celý seznam — proklikat se poslepu šesti tvary k tomu, který chci, je horší
+   než si ho vybrat. */
+.cs { display: grid; gap: 10px; min-width: 0; }
+.cs-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.cs-pick { position: relative; display: flex; align-items: center; gap: 2px; min-width: 0; }
+.cs-name {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0;
+  height: 32px; padding: 0 10px; border-radius: var(--r-pill);
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  font: inherit; font-size: .8125rem; font-weight: 650; cursor: pointer; white-space: nowrap;
+  transition: border-color var(--t-xs), background-color var(--t-xs);
+}
+.cs-name:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-3); }
+.cs-name:disabled { cursor: default; opacity: .75; }
+.cs-name svg { color: var(--text-mute); flex: none; }
+.cs-name span { overflow: hidden; text-overflow: ellipsis; }
+.cs-menu {
+  position: absolute; z-index: 40; top: calc(100% + 6px); left: 34px; min-width: 190px;
+  padding: 5px; border-radius: var(--r-md); display: grid; gap: 1px;
+  animation: ctx-in 130ms var(--ease-emph) both; transform-origin: top left;
+}
+.cs-menu button {
+  display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px;
+  border: 0; border-radius: var(--r-sm); background: none; color: var(--text);
+  font: inherit; font-size: .8438rem; text-align: left; cursor: pointer;
+}
+.cs-menu button:hover, .cs-menu button:focus-visible { background: color-mix(in oklab, var(--text) 8%, transparent); outline: none; }
+.cs-menu button.is-on { color: var(--accent); font-weight: 700; }
+.cs-menu svg { color: var(--text-mute); flex: none; }
+.cs-menu button.is-on svg { color: var(--accent); }
+.cs-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* Vodorovné rolování místo smršťování: heatmapa dvaceti let je na 320 px
+   nečitelná a zmenšit ji do šířky je přesně to, čím jsou grafy na telefonu
+   k ničemu. */
+.cs-body { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; animation: chart-fade 260ms var(--ease-out) both; }
+.cs-note { font-size: .75rem; color: var(--text-mute); margin: 0; }
+
+/* ---------------------------------------------------------- donut */
+.donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; min-width: 0; }
+.donut { flex: none; overflow: visible; }
+.donut-seg { animation: donut-in 620ms var(--ease-out) both; animation-delay: calc(60ms + var(--i, 0) * 70ms); transform-origin: center; }
+@keyframes donut-in { from { opacity: 0; } }
+.donut-total { fill: var(--text); font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.donut-cap { fill: var(--text-mute); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.donut-legend { display: grid; gap: 5px; min-width: 0; flex: 1 1 210px; font-size: .8125rem; }
+.donut-legend span { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; }
+.donut-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.donut-legend .dl-label { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.donut-legend strong { font-variant-numeric: tabular-nums; }
+.donut-legend em { font-style: normal; color: var(--text-mute); font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
+
+/* ---------------------------------------------------------- radar */
+.radar { display: block; margin: 0 auto; overflow: visible; }
+.radar-web { fill: none; stroke: var(--grid-line); stroke-width: 1; }
+.radar-spoke { stroke: var(--grid-line); stroke-width: 1; }
+.radar-axis { fill: var(--text-mute); font-size: 10.5px; font-weight: 650; }
+.radar-area { fill-opacity: .16; stroke-width: 2; stroke-linejoin: round;
+  animation: radar-in 620ms var(--ease-out) both; animation-delay: calc(80ms + var(--i, 0) * 140ms); transform-box: fill-box; transform-origin: center; }
+@keyframes radar-in { from { opacity: 0; transform: scale(.6); } }
+
+/* ---------------------------------------------------------- heatmap */
+.heat-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.heat { display: grid; grid-template-columns: auto repeat(var(--cols), minmax(42px, 1fr)); gap: 2px; min-width: max-content; }
+.heat-corner { }
+.heat-col, .heat-row { font-size: .6875rem; color: var(--text-mute); font-weight: 650; display: flex; align-items: center; }
+.heat-col { justify-content: center; padding-bottom: 2px; }
+.heat-row { padding-right: 9px; white-space: nowrap; }
+.heat-cell {
+  display: grid; place-items: center; min-height: 30px; border-radius: 5px;
+  background: var(--surface-2); font-size: .6875rem; font-variant-numeric: tabular-nums;
+  animation: chart-fade 380ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 22ms);
+}
+.heat-cell b { font-weight: 700; color: var(--text); mix-blend-mode: normal; }
+.heat-cell.is-empty { background: var(--surface-2); opacity: .4; }
+
+/* ---------------------------------------------------------- waterfall */
+.wf-bar { animation: spark-grow 480ms var(--ease-spring) both; animation-delay: calc(80ms + var(--i, 0) * 70ms); transform-box: fill-box; transform-origin: bottom center; }
+.wf-step.is-up .wf-bar { fill: var(--ok); }
+.wf-step.is-down .wf-bar { fill: var(--bad); }
+.wf-step.is-total .wf-bar { fill: var(--accent); }
+.wf-link { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.wf-value { fill: var(--text); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  animation: chart-fade 300ms var(--ease-out) both; animation-delay: calc(360ms + var(--i, 0) * 70ms); }
+.wf-label { fill: var(--text-mute); font-size: 10.5px; font-weight: 650; }

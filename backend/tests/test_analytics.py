@@ -116,3 +116,16 @@ def test_gaps_coverage_matrix_and_alerts():
     assert any(p["stale"] >= 1 for p in fr["pillars"])
     assert isinstance(gaps.alerts(), list)
     assert gaps.structural()
+
+
+def test_forecast_components_add_up_to_the_projection():
+    """Narození, zemřelí a migrace jsou to, z čeho se změna skládá — takže
+    jejich součet musí dát projekci. Bez toho by graf „z čeho se změna skládá"
+    ukazoval čísla, která k výsledku nevedou."""
+    r = forecast.project("obec:500003")
+    rows = r["scenarios"]["pravdepodobny"]
+    assert rows and all(k in rows[0] for k in ("births", "deaths", "migration"))
+    total = r["base_population"] + sum(x["births"] - x["deaths"] + x["migration"] for x in rows)
+    # Po letech se zaokrouhluje, takže pár lidí rozdílu je v pořádku; řádový
+    # nesoulad by znamenal, že se skládá něco jiného, než se kreslí.
+    assert abs(total - rows[-1]["population"]) <= len(rows)

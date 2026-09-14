@@ -80,8 +80,14 @@ def _share_trend(tid: str, code: str, until: int | None) -> tuple[float, float, 
 
 
 def _paths(p0: float, years: list[int], b: float, d: float, m: float, m_long: float, s14: list[float], s65: list[float],
-           shocks: np.ndarray | None = None) -> np.ndarray:
-    """Vectorised component model. `shocks` is (runs, years, 3) or None."""
+           shocks: np.ndarray | None = None, parts: list[dict] | None = None) -> np.ndarray:
+    """Vectorised component model. `shocks` is (runs, years, 3) or None.
+
+    `parts` collects each year's three components as people rather than rates,
+    for the deterministic run only. The model knows why a population moves —
+    births, deaths, migration — and without this the API published only the
+    result, so the UI could show the curve but never what made it.
+    """
     s1564 = [1 - k - o for k, o in zip(s14, s65, strict=True)]
     base1564, base65 = s1564[0], s65[0]
     runs = 1 if shocks is None else shocks.shape[0]
@@ -95,8 +101,12 @@ def _paths(p0: float, years: list[int], b: float, d: float, m: float, m_long: fl
         rate = bt - dt + mt
         if shocks is not None:
             rate = rate + shocks[:, i - 1, 0] - shocks[:, i - 1, 1] + shocks[:, i - 1, 2]
+        before = float(pop[0])
         pop = np.maximum(pop * (1 + rate), 0.0)
         out[:, i - 1] = pop
+        if parts is not None:
+            parts.append({"year": years[i], "births": round(before * bt),
+                          "deaths": round(before * dt), "migration": round(before * mt)})
     return out
 
 
@@ -164,15 +174,19 @@ def project(tid: str, until: int | None = None, last_year: int = LAST_YEAR) -> d
 
     out_scen: dict[str, list[dict]] = {}
     for name, rr in scen.items():
-        det = _paths(p0, years, rr["b"], rr["d"], rr["m"], m_long, s14, s65)[0]
+        parts: list[dict] = []
+        det = _paths(p0, years, rr["b"], rr["d"], rr["m"], m_long, s14, s65, parts=parts)[0]
+        by_year = {p["year"]: p for p in parts}
         rows = []
         for i, year in enumerate(years[1:]):
             p = float(det[i])
+            c = by_year.get(year, {})
             rows.append({
                 "year": year, "population": round(p),
                 "lower": round(min(p, float(lo_band[i]))), "upper": round(max(p, float(hi_band[i]))),
                 "age_65": round(p * s65[i + 1]), "age_0_14": round(p * s14[i + 1]),
                 "share_65": round(100 * s65[i + 1], 1), "share_0_14": round(100 * s14[i + 1], 1),
+                "births": c.get("births", 0), "deaths": c.get("deaths", 0), "migration": c.get("migration", 0),
             })
         out_scen[name] = rows
 

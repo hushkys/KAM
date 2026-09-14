@@ -2,8 +2,9 @@
 // app, no library to theme, and a size that follows the container.
 // Lines draw in on first paint; hover (or touch) shows a crosshair tooltip.
 
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { num } from "../lib/format";
+import { Icon } from "./Icon";
 
 export interface Point { year: number; value: number | null }
 export interface Series {
@@ -368,6 +369,261 @@ export function ShareBar({ parts }: { parts: { label: string; value: number; col
       <div className="legend">
         {parts.map((p) => <span key={p.label}><i style={{ background: p.color, height: 8, width: 8, borderRadius: 2 }} />{p.label} <strong className="num">{num((100 * p.value) / total, 1)} %</strong></span>)}
       </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * Composition, comparison, distribution, change.
+ *
+ * A line answers one question — where is this going over time. Everything
+ * below answers a different one, which is the point of letting the reader
+ * switch: what is this made of (donut), how does it compare across several
+ * measures at once (radar), where is it concentrated (heatmap), and what added
+ * up to the difference (waterfall).
+ * ======================================================================== */
+
+export interface Part { label: string; value: number; color?: string }
+
+/** Series colours, separated by hue rather than by lightness so the slices
+ *  stay apart for a reader with a colour-vision difference and in print. */
+export const SERIES_COLORS = [
+  "var(--accent)", "var(--info)", "var(--warn)", "#9b8cf0", "var(--ok)",
+  "var(--bad)", "#4bb8a9", "#d98ab5", "#b0a26a", "var(--text-mute)",
+];
+
+/** Composition as a ring. A ring rather than a full pie: the hole is where the
+ *  total goes — the number people look for first — and comparing arc lengths
+ *  is easier than comparing wedge areas. */
+export function Donut({ parts, size = 176, caption, ariaLabel }: {
+  parts: Part[]; size?: number; caption?: string; ariaLabel: string;
+}) {
+  const items = parts.filter((p) => p.value > 0).sort((a, b) => b.value - a.value);
+  const total = items.reduce((a, p) => a + p.value, 0);
+  if (!total) return <div className="chart muted small">Bez dat</div>;
+  const r = 52, circ = 2 * Math.PI * r;
+  let at = 0;
+  const arcs = items.map((p, i) => {
+    const frac = p.value / total;
+    const seg = { p, i, dash: frac * circ, offset: -at * circ, frac };
+    at += frac;
+    return seg;
+  });
+  return (
+    <div className="donut-wrap">
+      <svg className="donut" viewBox="0 0 140 140" style={{ width: size }} role="img" aria-label={ariaLabel}>
+        <g transform="translate(70,70) rotate(-90)">
+          {arcs.map(({ p, i, dash, offset }) => (
+            <circle key={p.label} r={r} fill="none" strokeWidth="19" className="donut-seg"
+              stroke={p.color ?? SERIES_COLORS[i % SERIES_COLORS.length]}
+              strokeDasharray={`${dash.toFixed(2)} ${(circ - dash).toFixed(2)}`} strokeDashoffset={offset.toFixed(2)}
+              style={{ ["--i" as string]: i }} />
+          ))}
+        </g>
+        <text className="donut-total" x="70" y="69" textAnchor="middle">{num(total)}</text>
+        <text className="donut-cap" x="70" y="85" textAnchor="middle">{caption ?? "celkem"}</text>
+      </svg>
+      <div className="donut-legend">
+        {arcs.map(({ p, i, frac }) => (
+          <span key={p.label}>
+            <i style={{ background: p.color ?? SERIES_COLORS[i % SERIES_COLORS.length] }} />
+            <span className="dl-label">{p.label}</span>
+            <strong className="num">{num(p.value)}</strong>
+            <em>{num(frac * 100, 1)} %</em>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Several measures at once, each scaled to its own maximum so axes in
+ *  different units can share one shape. The second polygon is the reference —
+ *  the gap between them is the message, not either outline on its own. */
+export function RadarChart({ axes, series, ariaLabel, size = 280 }: {
+  axes: { key: string; label: string; max?: number }[];
+  series: { key: string; label: string; color: string; values: Record<string, number | null> }[];
+  ariaLabel: string; size?: number;
+}) {
+  if (axes.length < 3) return <div className="chart muted small">Radar potřebuje aspoň tři osy</div>;
+  const R = 74, cx = 125, cy = 104;
+  const maxOf = (a: { key: string; max?: number }) =>
+    a.max ?? Math.max(...series.map((s) => Math.abs(s.values[a.key] ?? 0)), 1);
+  const at = (i: number, frac: number) => {
+    const ang = (Math.PI * 2 * i) / axes.length - Math.PI / 2;
+    return [cx + Math.cos(ang) * R * frac, cy + Math.sin(ang) * R * frac];
+  };
+  return (
+    <svg className="radar" viewBox="0 0 250 208" style={{ width: size }} role="img" aria-label={ariaLabel}>
+      {[0.25, 0.5, 0.75, 1].map((f) => (
+        <polygon key={f} className="radar-web" points={axes.map((_, i) => at(i, f).map((n) => n.toFixed(1)).join(",")).join(" ")} />
+      ))}
+      {axes.map((_, i) => {
+        const [x, y] = at(i, 1);
+        return <line key={i} className="radar-spoke" x1={cx} y1={cy} x2={x} y2={y} />;
+      })}
+      {series.map((s, si) => (
+        <polygon key={s.key} className="radar-area" fill={s.color} stroke={s.color} style={{ ["--i" as string]: si }}
+          points={axes.map((a, i) => at(i, Math.min(1, Math.abs(s.values[a.key] ?? 0) / maxOf(a))).map((n) => n.toFixed(1)).join(",")).join(" ")} />
+      ))}
+      {axes.map((a, i) => {
+        const [x, y] = at(i, 1.2);
+        return (
+          <text key={a.key} className="radar-axis" x={x} y={y + 3}
+            textAnchor={x > cx + 4 ? "start" : x < cx - 4 ? "end" : "middle"}>{a.label}</text>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Where the value sits across two dimensions. One colour ramp from the series
+ *  colour, never a rainbow — a hue ramp invents categories the numbers do not
+ *  have. Scrolls sideways rather than shrinking its cells to nothing. */
+export function Heatmap({ rows, cols, value, format, ariaLabel, color = "var(--accent)" }: {
+  rows: { key: string; label: string }[]; cols: { key: string; label: string }[];
+  value: (row: string, col: string) => number | null;
+  format?: (v: number) => string; ariaLabel: string; color?: string;
+}) {
+  const all = rows.flatMap((r) => cols.map((c) => value(r.key, c.key))).filter((v): v is number => v !== null);
+  if (!all.length) return <div className="chart muted small">Bez dat</div>;
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const f = format ?? ((v: number) => num(v));
+  return (
+    <div className="heat-scroll">
+      <div className="heat" role="img" aria-label={ariaLabel} style={{ ["--cols" as string]: cols.length }}>
+        <span className="heat-corner" />
+        {cols.map((c) => <span key={c.key} className="heat-col">{c.label}</span>)}
+        {rows.map((r) => (
+          <Fragment key={r.key}>
+            <span className="heat-row">{r.label}</span>
+            {cols.map((c, ci) => {
+              const v = value(r.key, c.key);
+              const t = v === null ? 0 : hi === lo ? 1 : (v - lo) / (hi - lo);
+              return (
+                <span key={c.key} className={`heat-cell${v === null ? " is-empty" : ""}`}
+                  title={`${r.label} · ${c.label}: ${v === null ? "—" : f(v)}`}
+                  style={{ ["--i" as string]: ci, background: v === null ? undefined : `color-mix(in oklab, ${color} ${Math.round(10 + 78 * t)}%, transparent)` }}>
+                  <b>{v === null ? "" : f(v)}</b>
+                </span>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** What added up to the difference. Each step starts where the last finished,
+ *  so the bars are the contributions and the flat ones are totals — the only
+ *  chart that shows a net change and its parts in the same picture. */
+export function Waterfall({ steps, height = 250, format, ariaLabel }: {
+  steps: { label: string; value: number; total?: boolean }[]; height?: number; format?: (v: number) => string; ariaLabel: string;
+}) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const f = format ?? ((v: number) => num(v));
+  const pad = { l: 6, r: 6, t: 22, b: 36 };
+  let run = 0;
+  const bars = steps.map((s) => {
+    const from = s.total ? 0 : run;
+    const to = s.total ? s.value : run + s.value;
+    run = to;
+    return { ...s, from, to };
+  });
+  const vals = bars.flatMap((b) => [b.from, b.to]);
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const Y = (v: number) => pad.t + (1 - (v - lo) / (hi - lo || 1)) * (height - pad.t - pad.b);
+  const slot = (width - pad.l - pad.r) / Math.max(1, bars.length);
+  const bw = Math.max(12, Math.min(56, slot - 14));
+  const X = (i: number) => pad.l + (i + 0.5) * slot;
+  return (
+    <div className="chart" ref={ref}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
+        <line className="grid-line" x1={pad.l} x2={width - pad.r} y1={Y(0)} y2={Y(0)} />
+        {bars.map((b, i) => {
+          const top = Math.min(Y(b.from), Y(b.to)), h = Math.max(2, Math.abs(Y(b.to) - Y(b.from)));
+          const cls = b.total ? "is-total" : b.value >= 0 ? "is-up" : "is-down";
+          return (
+            <g key={b.label} className={`wf-step ${cls}`} style={{ ["--i" as string]: i }}>
+              {i > 0 && !b.total && <line className="wf-link" x1={X(i - 1)} x2={X(i)} y1={Y(b.from)} y2={Y(b.from)} />}
+              <rect className="wf-bar" x={X(i) - bw / 2} y={top} width={bw} height={h} rx="3" />
+              <text className="wf-value" x={X(i)} y={top - 6} textAnchor="middle">{b.total ? f(b.to) : `${b.value > 0 ? "+" : "−"}${f(Math.abs(b.value))}`}</text>
+              <text className="wf-label" x={X(i)} y={height - 12} textAnchor="middle">{b.label}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/** One chart, several ways to read it.
+ *
+ *  The arrows step through the views; the label between them opens the whole
+ *  list, because stepping blind through six shapes to find the one you want is
+ *  worse than picking it. The choice is remembered per `id`, so a reader who
+ *  prefers the table gets the table next time.
+ *
+ *  The body scrolls sideways rather than squeezing: a heatmap of twenty years
+ *  is unreadable at 320 px, and shrinking it to fit is what makes charts on a
+ *  phone useless.
+ */
+export function ChartSwitch({ id, views, actions, note }: {
+  id: string;
+  views: { key: string; label: string; icon?: string; render: () => ReactNode }[];
+  actions?: ReactNode; note?: ReactNode;
+}) {
+  const store = `kam.chart.${id}`;
+  const [key, setKey] = useState(() => {
+    try {
+      const saved = localStorage.getItem(store);
+      if (saved && views.some((v) => v.key === saved)) return saved;
+    } catch { /* private mode */ }
+    return views[0]?.key ?? "";
+  });
+  const [open, setOpen] = useState(false);
+  const i = Math.max(0, views.findIndex((v) => v.key === key));
+  const view = views[i] ?? views[0];
+  const go = (d: number) => {
+    const next = views[(i + d + views.length) % views.length];
+    if (!next) return;
+    setKey(next.key);
+    setOpen(false);
+    try { localStorage.setItem(store, next.key); } catch { /* private mode */ }
+  };
+  if (!view) return null;
+  return (
+    <div className="cs">
+      <div className="cs-bar">
+        <div className="cs-pick">
+          <button className="icon-btn sm" onClick={() => go(-1)} aria-label="Předchozí typ grafu" disabled={views.length < 2}>
+            <Icon name="chevron-left" size={17} />
+          </button>
+          <button className="cs-name" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="listbox"
+            disabled={views.length < 2} title="Vybrat typ grafu">
+            {view.icon && <Icon name={view.icon} size={15} />}
+            <span>{view.label}</span>
+            {views.length > 1 && <Icon name="chevron-down" size={14} />}
+          </button>
+          <button className="icon-btn sm" onClick={() => go(1)} aria-label="Další typ grafu" disabled={views.length < 2}>
+            <Icon name="chevron-right" size={17} />
+          </button>
+          {open && (
+            <div className="cs-menu glass" role="listbox">
+              {views.map((v) => (
+                <button key={v.key} role="option" aria-selected={v.key === view.key} className={v.key === view.key ? "is-on" : ""}
+                  onClick={() => { setKey(v.key); setOpen(false); try { localStorage.setItem(store, v.key); } catch { /* private mode */ } }}>
+                  {v.icon && <Icon name={v.icon} size={15} />}<span>{v.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {actions && <div className="cs-actions">{actions}</div>}
+      </div>
+      <div className="cs-body" key={view.key}>{view.render()}</div>
+      {note && <p className="cs-note">{note}</p>}
     </div>
   );
 }
