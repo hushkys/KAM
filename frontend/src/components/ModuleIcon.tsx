@@ -131,6 +131,14 @@ const SPECS: Record<string, Spec> = {
   },
 };
 
+/** Barvy modulu pro cokoli mimo ikonu — hooky si jimi barví pozadí, aby
+ *  stránka a její ikona v docku držely stejný odstín. Jeden zdroj pravdy:
+ *  kdyby si hook psal hexy sám, rozejdou se při první úpravě palety. */
+export function modulBarvy(name: string): { a: string; b: string; c: string } {
+  const spec = SPECS[name] ?? SPECS.prehled;
+  return { a: spec.a[0], b: spec.a[1], c: spec.b[0] };
+}
+
 export function ModuleIcon({ name, size = 26 }: { name: string; size?: number }) {
   const uid = useId().replace(/:/g, "");
   const spec = SPECS[name] ?? SPECS.prehled;

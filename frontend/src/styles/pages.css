@@ -454,7 +454,10 @@
    normal flow elements, never fixed — `backdrop-filter` on a fixed element is
    what produced the black frames in the navbar, and the same trick here would
    do the same thing. */
+/* Odstín hooku nastavuje stránka (`--h1..3`, viz `modulBarvy`), aby se
+   shodl s barvou své ikony v docku. Výchozí je zelená značky. */
 .sc-hook {
+  --h1: var(--accent); --h2: var(--info); --h3: var(--lime);
   position: relative; isolation: isolate; overflow: hidden;
   display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 28px; align-items: center;
   padding: clamp(20px, 3.4vw, 40px); margin-bottom: var(--gap);
@@ -465,19 +468,20 @@
 
 .sc-blobs { position: absolute; inset: -20%; z-index: -1; filter: blur(40px); opacity: .62; pointer-events: none; }
 .sc-blob { position: absolute; display: block; border-radius: 50%; }
-.sc-blob.b1 { width: 42%; padding-bottom: 42%; left: 4%; top: 6%; background: color-mix(in oklab, var(--accent) 60%, transparent); animation: sc-drift 26s var(--ease-out) infinite alternate; }
-.sc-blob.b2 { width: 34%; padding-bottom: 34%; right: 10%; top: 34%; background: color-mix(in oklab, var(--info) 46%, transparent); animation: sc-drift 32s var(--ease-out) -8s infinite alternate-reverse; }
-.sc-blob.b3 { width: 28%; padding-bottom: 28%; right: 28%; bottom: 2%; background: color-mix(in oklab, var(--lime) 40%, transparent); animation: sc-drift 38s var(--ease-out) -16s infinite alternate; }
+.sc-blob.b1 { width: 42%; padding-bottom: 42%; left: 4%; top: 6%; background: color-mix(in oklab, var(--h1) 60%, transparent); animation: sc-drift 26s var(--ease-out) infinite alternate; }
+.sc-blob.b2 { width: 34%; padding-bottom: 34%; right: 10%; top: 34%; background: color-mix(in oklab, var(--h2) 46%, transparent); animation: sc-drift 32s var(--ease-out) -8s infinite alternate-reverse; }
+.sc-blob.b3 { width: 28%; padding-bottom: 28%; right: 28%; bottom: 2%; background: color-mix(in oklab, var(--h3) 40%, transparent); animation: sc-drift 38s var(--ease-out) -16s infinite alternate; }
 @keyframes sc-drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(7%, -9%, 0) scale(1.14); } }
 
 .sc-hook-copy { position: relative; min-width: 0; }
+.sc-hook .eyebrow::before { background: var(--h1); }
 .sc-hook-copy h1 { font-size: clamp(1.6rem, 3.3vw, 2.5rem); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 12px; }
 .sc-hook-copy .lead { max-width: 46ch; }
 .sc-hook-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; font-size: .8125rem; color: var(--text-dim); }
 .sc-hook-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .sc-hook-legend .sw { width: 16px; height: 3px; border-radius: 2px; display: block; }
 .sc-hook-legend .sw.base { background: repeating-linear-gradient(90deg, var(--text-mute) 0 4px, transparent 4px 7px); }
-.sc-hook-legend .sw.scen { background: var(--accent); }
+.sc-hook-legend .sw.scen { background: var(--h1); }
 
 .sc-stage { position: relative; min-width: 0; aspect-ratio: 640 / 300; }
 .sc-pane {
@@ -506,11 +510,11 @@
 .sc-art { position: absolute; inset: 0; width: 100%; height: 100%; }
 .sc-art .sc-grid { stroke: var(--grid-line); stroke-width: 1; }
 .sc-art .sc-base { fill: none; stroke: var(--text-mute); stroke-width: 2; stroke-dasharray: 5 5; stroke-linecap: round; opacity: .85; }
-.sc-art .sc-scen { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+.sc-art .sc-scen { fill: none; stroke: var(--h1); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: sc-draw 1600ms var(--ease-out) 260ms forwards; }
 @keyframes sc-draw { to { stroke-dashoffset: 0; } }
-.sc-art .sc-pulse { fill: var(--accent); filter: drop-shadow(0 0 7px color-mix(in oklab, var(--accent) 70%, transparent)); }
-.sc-art .sc-end circle { fill: var(--accent); stroke: var(--surface); stroke-width: 2.5; }
+.sc-art .sc-pulse { fill: var(--h1); filter: drop-shadow(0 0 7px color-mix(in oklab, var(--h1) 70%, transparent)); }
+.sc-art .sc-end circle { fill: var(--h1); stroke: var(--surface); stroke-width: 2.5; }
 .sc-art .sc-end text, .sc-art .sc-yr { fill: var(--text-mute); font-size: 12px; font-weight: 700; }
 /* Right-hand side, and never wide enough to reach the first-year label in the
    opposite corner. */
@@ -686,7 +690,7 @@
 .ob-kotva { display: grid; gap: 1px; padding: 9px 13px; border-radius: var(--r-md); text-decoration: none;
   border: 1px solid var(--border); background: var(--glass); color: var(--text); min-height: 44px;
   transition: border-color var(--t-xs), background var(--t-xs); }
-.ob-kotva:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+.ob-kotva:hover { border-color: color-mix(in oklab, var(--h1) 40%, transparent); background: color-mix(in oklab, var(--h1) 12%, transparent); }
 .ob-kotva strong { font-size: .875rem; line-height: 1.2; }
 .ob-kotva-popis { font-size: .625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); }
 .ob-kotva .num { font-size: .75rem; color: var(--text-dim); }
@@ -695,12 +699,36 @@
 .ob-art .ob-popis { fill: var(--text-mute); font-size: 10px; font-weight: 650; }
 .ob-art .ob-popis.stred { fill: var(--text-dim); }
 .ob-art .ob-median { stroke: var(--text-mute); stroke-width: 1; stroke-dasharray: 3 4; opacity: .6; }
-.ob-art .ob-kruh { fill: none; stroke: var(--lime); stroke-width: 1.4; opacity: .75; }
+.ob-art .ob-kruh { fill: none; stroke: var(--h3); stroke-width: 1.4; opacity: .9; }
 .ob-art .ob-body circle { animation: ob-bod 520ms var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 7ms); }
 @keyframes ob-bod { from { opacity: 0; transform: scale(.2); } }
 .ob-art .ob-body circle { transform-box: fill-box; transform-origin: center; }
 
 :root[data-motion="reduce"] .ob-art .ob-body circle { animation: none; }
+
+/* ------------------------------------------------------ hook stránky výhledu
+   Potřetí stejné sklo a stejné rozvržení jako u scénářů (`.sc-hook`), zase
+   jiná kresba. Vlákna se kreslí zleva doprava, protože právě to je ta věta,
+   kterou stránka říká: vycházejí z jednoho bodu a rozestupují se. Zpoždění
+   běží po dvacítkách (`--i`), ne po vláknech — šedesát vlastních rozjezdů by
+   se slilo do třepotání. */
+.vy-hook .sc-hook-copy h1 { text-wrap: balance; }
+.vy-art .vy-hist { fill: none; stroke: var(--text-mute); stroke-width: 2; stroke-dasharray: 5 5;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+/* Předěl skutečnost | model. Tenký a přerušovaný: je to popisek, ne data. */
+.vy-art .vy-delic { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 2 5; }
+.vy-art .vy-band { stroke: none; animation: vy-pas 900ms var(--ease-out) 200ms both; }
+@keyframes vy-pas { from { opacity: 0; } }
+.vy-art .vy-vlakna path {
+  fill: none; stroke: var(--h1); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; opacity: .32;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  animation: vy-nit 1500ms var(--ease-out) both; animation-delay: calc(200ms + var(--i, 0) * 24ms);
+}
+@keyframes vy-nit { to { stroke-dashoffset: 0; } }
+
+:root[data-motion="reduce"] .vy-art .vy-vlakna path,
+:root[data-motion="reduce"] .vy-art .vy-band { animation: none; }
+:root[data-motion="reduce"] .vy-art .vy-vlakna path { stroke-dashoffset: 0; }
 
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }

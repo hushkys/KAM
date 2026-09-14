@@ -5,8 +5,9 @@
 import { useState, type CSSProperties } from "react";
 import { ChartSwitch, Donut, Heatmap, LineChart, Legend, ShareBar, Waterfall } from "../components/charts";
 import { Icon } from "../components/Icon";
-import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Card, ErrorBox, InfoHint, KindTag, PageHeader, Segmented, Stat } from "../components/ui";
+import { TerritoryPicker, useTerritories } from "../components/TerritoryPicker";
+import { VyhledHook } from "../components/VyhledHook";
+import { Card, ErrorBox, InfoHint, KindTag, Segmented, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num, pct, signed } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
@@ -19,6 +20,7 @@ export function Outlook() {
   const tid = query.get("t") ?? "kraj:86";
   const { data, error, reload } = useApi<Forecast>(`/forecast/${tid}`);
   const [metric, setMetric] = useState<Metric>("population");
+  const nazev = useTerritories().data?.find((t) => t.id === tid)?.name;
   const label = { population: "Obyvatelé", age_65: "Senioři 65+", age_0_14: "Děti 0–14" }[metric];
   const ok = data?.available ? data : null;
 
@@ -37,8 +39,15 @@ export function Outlook() {
 
   return (
     <>
-      <PageHeader eyebrow="Výhled 2026–2040" title="Kam území směřuje" lead="Tři scénáře počtu obyvatel a věkové struktury. Výhled ukazuje, kam vede pokračování současných trendů — není to předpověď."
-        actions={<Link className="btn btn-primary" to={`/scenare?t=${tid}`}><Icon name="split" size={16} /> Co když zasáhneme?</Link>} />
+      <VyhledHook territory={nazev} baseYear={ok?.base_year}
+        historie={ok?.history.map((r) => ({ year: r.year, population: r.population })) ?? []}
+        cesty={ok?.paths?.map((p) => p.map((r) => ({ year: r.year, population: r.population }))) ?? []}
+        pravdepodobny={ok?.scenarios.pravdepodobny.map((r) => ({ year: r.year, population: r.population })) ?? []}
+        pasmo={ok?.scenarios.pravdepodobny.map((r) => ({ year: r.year, lo: r.lower, hi: r.upper })) ?? []}>
+        <div className="row" style={{ marginTop: 20 }}>
+          <Link className="btn btn-primary" to={`/scenare?t=${tid}`}><Icon name="split" size={16} /> Co když zasáhneme?</Link>
+        </div>
+      </VyhledHook>
       <div className="stack-y">
         <div className="toolbar-card reveal">
           <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setQuery({ t: id })} label="Území" /></div>

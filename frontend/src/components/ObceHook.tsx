@@ -15,6 +15,7 @@
 // odpověď na otázku, jak vypadá kraj.
 
 import { useId, useMemo } from "react";
+import { hookTema } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -89,7 +90,7 @@ export function ObceHook({ obce, loading, onOpen, children }: {
   );
 
   return (
-    <section className="sc-hook ob-hook" aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook ob-hook" style={hookTema("obce")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
@@ -118,8 +119,8 @@ export function ObceHook({ obce, loading, onOpen, children }: {
             role="img" aria-label={art ? `Všech ${art.body.length} obcí kraje podle počtu obyvatel; největší ${art.max.name}, nejmenší ${art.min.name}` : "Zatím bez dat"}>
             <defs>
               <radialGradient id={`${uid}g`}>
-                <stop offset="0%" stopColor="var(--lime)" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.55" />
+                <stop offset="0%" stopColor="var(--h3)" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="var(--h1)" stopOpacity="0.6" />
               </radialGradient>
             </defs>
 
@@ -136,7 +137,7 @@ export function ObceHook({ obce, loading, onOpen, children }: {
                 <g className="ob-body">
                   {art.body.map((b, i) => (
                     <circle key={b.id} cx={b.x} cy={b.y} r={b.r}
-                      fill={b.r > 6 ? `url(#${uid}g)` : "var(--accent)"}
+                      fill={b.r > 6 ? `url(#${uid}g)` : "var(--h1)"}
                       opacity={0.42 + Math.min(b.r / R_MAX, 1) * 0.55}
                       style={{ ["--i" as string]: i % 60 }} />
                   ))}

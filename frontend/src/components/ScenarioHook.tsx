@@ -14,6 +14,7 @@
 // `data-motion="reduce"`.
 
 import { useId, useMemo } from "react";
+import { hookTema } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -49,7 +50,7 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
   }, [baseline, scenario]);
 
   return (
-    <section className="sc-hook" aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook" style={hookTema("scenare")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
@@ -76,8 +77,8 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
             role="img" aria-label={art ? `Vývoj bez zásahu a se zásahem${territory ? ` pro ${territory}` : ""}` : "Zatím bez výsledku"}>
             <defs>
               <linearGradient id={`${uid}w`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.42" />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.05" />
+                <stop offset="0%" stopColor="var(--h1)" stopOpacity="0.42" />
+                <stop offset="100%" stopColor="var(--h1)" stopOpacity="0.05" />
               </linearGradient>
               {/* The liquid in "liquid glass": a slow turbulent warp on the edge
                   of the wedge only, so the data lines themselves stay exact. */}
