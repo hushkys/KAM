@@ -127,6 +127,18 @@ function useTravellingHighlight(path: string) {
 export function Dock() {
   const { path } = useLocation();
   const [more, setMore] = useState(false);
+  // Klepnutí na ikonu spustí její vlastní animaci. Třída se po doběhnutí zase
+  // sundá, aby šla spustit znovu — a `onPointerDown`, ne `onClick`: animace
+  // má začít pod prstem, ne až se stránka přepne.
+  const [tap, setTap] = useState<string | null>(null);
+  const tapCas = useRef<number | undefined>(undefined);
+  const klepni = (modul: string) => {
+    window.clearTimeout(tapCas.current);
+    setTap(null);
+    requestAnimationFrame(() => setTap(modul));
+    tapCas.current = window.setTimeout(() => setTap(null), 720);
+  };
+  useEffect(() => () => window.clearTimeout(tapCas.current), []);
   const ind = useTravellingHighlight(path);
   useEffect(() => setMore(false), [path]);
   const current = (p: string) => path === p || path.startsWith(`${p}/`);
@@ -154,7 +166,8 @@ export function Dock() {
         {NAV.map((n, i) => (
           <Fragment key={n.path}>
             {i > 0 && NAV[i - 1].group !== n.group && <span className="dock-sep" aria-hidden="true" />}
-            <Link to={n.path} className={`dock-item ${n.extra ? "is-extra" : ""}`} aria-current={current(n.path) ? "page" : undefined} title={n.desc}>
+            <Link to={n.path} className={`dock-item ${n.extra ? "is-extra" : ""}${tap === n.module ? " is-tap" : ""}`}
+              aria-current={current(n.path) ? "page" : undefined} title={n.desc} onPointerDown={() => klepni(n.module)}>
               <ModuleIcon name={n.module} />
               <span className="dock-label">{n.label}</span>
             </Link>

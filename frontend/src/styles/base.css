@@ -19,6 +19,8 @@
   --r-lg: 20px;
   --r-xl: 28px;
   --r-pill: 999px;
+  /* Polomer zvyrazneni v docku po pruchodu goo filtrem — viz .dock-item:hover. */
+  --dock-hl-r: 22px;
 
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --ease-emph: cubic-bezier(.32, .72, 0, 1);
@@ -286,7 +288,11 @@ kbd {
   transition: background-color var(--t-sm) var(--ease-out), color var(--t-sm) var(--ease-out);
 }
 .dock-item svg.module { width: 26px; height: 26px; transition: transform var(--t-md) var(--ease-spring), filter var(--t-sm); filter: saturate(.7); opacity: .9; }
-.dock-item:hover { background: color-mix(in oklab, var(--text) 7%, transparent); color: var(--text); }
+/* Stejny tvar jako putujici zvyrazneni. To projde pres `#dock-goo`, kde mu
+   rozostreni (sigma = 7) zakulati rohy nad ramec vlastnich 14 px — proto tady
+   vetsi polomer, ne ten z `.dock-pill`. Kdyz se zmeni `stdDeviation`, musi se
+   zmenit i tohle cislo. */
+.dock-item:hover { background: color-mix(in oklab, var(--text) 7%, transparent); color: var(--text); border-radius: var(--dock-hl-r); }
 .dock-item:hover svg.module { transform: translateY(-2px) scale(1.06); filter: none; opacity: 1; }
 .dock-item:active svg.module { transform: scale(.92); }
 /* No background of its own: the highlight is one shape that travels (see
@@ -373,3 +379,126 @@ a, button, [role="button"], input, select, textarea, label, summary { touch-acti
   body { background: #fff; color: #000; }
   .page { padding: 0 !important; }
 }
+
+/* ---------------------------------------------------- klepnutí na ikonu
+   Každý modul má svůj pohyb. Není to ozdoba: v docku dvanáct položek a
+   všechny se otevírají stejně, takže zpětná vazba na klepnutí je jediné
+   místo, kde se dá říct „ano, tuhle jsi zmáčkl" ještě dřív, než se stránka
+   vymění. Pohyb vždycky odpovídá tomu, co ikona ukazuje — mapa se přeloží,
+   peněženka otevře, mince spadne do dlaní.
+
+   Animace běží na `.is-tap`, kterou Dock nasadí na 720 ms. Žádná z nich
+   nedrží výsledek (`animation-fill-mode: none`): hover ikonu nadzvedává o dva
+   pixely a podržený poslední snímek by ji na zbytek té doby zase posadil.
+   Všechny sady proto začínají i končí v klidové poloze. */
+.dock-item.is-tap svg.module { animation-duration: 620ms; animation-timing-function: var(--ease-spring); animation-fill-mode: none;   /* viz poznamka nize o hoveru */ }
+.dock-item.is-tap svg.module * { transform-box: fill-box; transform-origin: center; }
+
+/* Přehled: dlaždice se postupně nadhodí, jako když se srovná stůl. */
+.dock-item.is-tap svg[data-module="prehled"] .mi-1 { animation: tap-dlazdice 520ms var(--ease-spring); }
+.dock-item.is-tap svg[data-module="prehled"] .mi-2 { animation: tap-dlazdice 520ms var(--ease-spring) 60ms; }
+.dock-item.is-tap svg[data-module="prehled"] .mi-3 { animation: tap-dlazdice 520ms var(--ease-spring) 120ms; }
+.dock-item.is-tap svg[data-module="prehled"] .mi-4 { animation: tap-dlazdice 520ms var(--ease-spring) 180ms; }
+@keyframes tap-dlazdice { 0% { transform: scale(1); } 35% { transform: scale(.72); } 100% { transform: scale(1); } }
+
+/* Mapa se přeloží a zase rozloží. */
+.dock-item.is-tap svg[data-module="mapa"] { animation-name: tap-slozit; }
+@keyframes tap-slozit {
+  0% { transform: perspective(90px) rotateY(0); }
+  45% { transform: perspective(90px) rotateY(58deg) scaleX(.82); }
+  100% { transform: perspective(90px) rotateY(0) scaleX(1); }
+}
+
+/* Obce: domy poskočí a dosednou. */
+.dock-item.is-tap svg[data-module="obce"] { animation-name: tap-skok; }
+@keyframes tap-skok {
+  0% { transform: translateY(0) scale(1, 1); }
+  22% { transform: translateY(1.5px) scale(1.14, .84); }
+  52% { transform: translateY(-7px) scale(.9, 1.12); }
+  78% { transform: translateY(0) scale(1.1, .9); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* Výhled vystřelí po své vlastní křivce nahoru a vrátí se. */
+.dock-item.is-tap svg[data-module="vyhled"] { animation-name: tap-vzhuru; }
+@keyframes tap-vzhuru {
+  0% { transform: translate(0, 0) rotate(0); }
+  40% { transform: translate(4px, -7px) rotate(9deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* Scénáře: větev se rozkmitá kolem svého kořene vlevo dole. */
+.dock-item.is-tap svg[data-module="scenare"] { animation-name: tap-vetev; transform-origin: 20% 80%; }
+@keyframes tap-vetev {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(-13deg); }
+  55% { transform: rotate(8deg); }
+  80% { transform: rotate(-3deg); }
+  100% { transform: rotate(0); }
+}
+
+/* Hospodaření: peněženka se otevře a karta vyjede ven. */
+.dock-item.is-tap svg[data-module="hospodareni"] { animation-name: tap-penezenka; }
+.dock-item.is-tap svg[data-module="hospodareni"] .mi-1 { animation: tap-karta 560ms var(--ease-spring); }
+@keyframes tap-penezenka {
+  0% { transform: perspective(90px) rotateX(0); }
+  40% { transform: perspective(90px) rotateX(-26deg) translateY(-1px); }
+  100% { transform: perspective(90px) rotateX(0) translateY(0); }
+}
+@keyframes tap-karta { 0% { transform: translateX(0); } 45% { transform: translateX(3.2px); } 100% { transform: translateX(0); } }
+
+/* Dotace: mince spadne do dlaní a ty pod ní klesnou. */
+.dock-item.is-tap svg[data-module="dotace"] .mi-1 { animation: tap-mince 620ms cubic-bezier(.4,0,.5,1); }
+.dock-item.is-tap svg[data-module="dotace"] { animation-name: tap-dlane; }
+@keyframes tap-mince {
+  0% { transform: translateY(-5px) scale(1); }
+  46% { transform: translateY(5.5px) scale(1.04, .9); }
+  70% { transform: translateY(3px) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes tap-dlane {
+  0%, 40% { transform: translateY(0) scale(1, 1); }
+  55% { transform: translateY(1.5px) scale(1.06, .92); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* Podněty: bublina nadskočí, jako když dorazí zpráva. */
+.dock-item.is-tap svg[data-module="podnety"] { animation-name: tap-bublina; }
+@keyframes tap-bublina {
+  0% { transform: scale(1) rotate(0); }
+  30% { transform: scale(1.16) rotate(-6deg); }
+  60% { transform: scale(.95) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* Data: válec se protočí kolem svislé osy. */
+.dock-item.is-tap svg[data-module="data"] { animation-name: tap-valec; animation-duration: 680ms; }
+@keyframes tap-valec {
+  0% { transform: perspective(110px) rotateY(0); }
+  100% { transform: perspective(110px) rotateY(360deg); }
+}
+
+/* Statistiky: sloupce vyrostou od paty, každý o kousek později. */
+.dock-item.is-tap svg[data-module="statistiky"] .mi-1,
+.dock-item.is-tap svg[data-module="statistiky"] .mi-2,
+.dock-item.is-tap svg[data-module="statistiky"] .mi-3 { transform-origin: center bottom; }
+.dock-item.is-tap svg[data-module="statistiky"] .mi-1 { animation: tap-sloupec 500ms var(--ease-spring); }
+.dock-item.is-tap svg[data-module="statistiky"] .mi-2 { animation: tap-sloupec 500ms var(--ease-spring) 70ms; }
+.dock-item.is-tap svg[data-module="statistiky"] .mi-3 { animation: tap-sloupec 500ms var(--ease-spring) 140ms; }
+@keyframes tap-sloupec { 0% { transform: scaleY(1); } 35% { transform: scaleY(.45); } 100% { transform: scaleY(1); } }
+
+/* Asistent: jiskry se rozzáří jedna po druhé. */
+.dock-item.is-tap svg[data-module="asistent"] .mi-1 { animation: tap-jiskra 560ms var(--ease-spring); }
+.dock-item.is-tap svg[data-module="asistent"] .mi-2 { animation: tap-jiskra 560ms var(--ease-spring) 130ms; }
+@keyframes tap-jiskra {
+  0% { transform: scale(1) rotate(0); }
+  45% { transform: scale(1.35) rotate(35deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* Nastavení: kolo se otočí o zub, střed zůstane stát. */
+.dock-item.is-tap svg[data-module="nastaveni"] .mi-1 { animation: tap-kolo 620ms cubic-bezier(.3,0,.2,1); }
+@keyframes tap-kolo { 0% { transform: rotate(0); } 100% { transform: rotate(120deg); } }
+
+:root[data-motion="reduce"] .dock-item.is-tap svg.module,
+:root[data-motion="reduce"] .dock-item.is-tap svg.module * { animation: none !important; }
