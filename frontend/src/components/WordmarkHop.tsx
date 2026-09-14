@@ -45,6 +45,9 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
   const leskL = useRef<SVGCircleElement>(null);
   const leskP = useRef<SVGCircleElement>(null);
   const pusa = useRef<SVGPathElement>(null);
+  const smichL = useRef<SVGPathElement>(null);
+  const smichP = useRef<SVGPathElement>(null);
+  const naraz = useRef<SVGCircleElement>(null);
   const stin = useRef<SVGEllipseElement>(null);
   const skupina = useRef<SVGGElement>(null);
   const pismena = useRef<(SVGPathElement | null)[]>([]);
@@ -87,6 +90,10 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     let mrk = 0;         // 0 otevřené, 1 zavřené
     let pohled = 0, pohledY = 0;
     let usmev = 0.5;     // 0 soustředěný, 1 široký
+    let oci = 1;         // 1 klid, <1 přimhouřené, >1 vykulené
+    let cas = 0;         // pro dýchání
+    let narazT = 9;      // čas od posledního dopadu (9 = dávno)
+    let narazX = 0, narazY = 0, narazSila = 0;
 
     let mrkDo = 0.9 + Math.random() * 1.4;
     let pohledDo = 2.2;
@@ -96,6 +103,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     const dopad = (sila: number, i?: number) => {
       sq.kopni(clamp(1 - sila, 0.42, 0.95), -2.6 * sila);
       wob.kopni(sila * 0.9, -1.4 * sila);
+      narazT = 0; narazX = x; narazY = (povrch ?? plochaStinu); narazSila = sila;
       if (i !== undefined) ltr[i].kopni(clamp(1 - sila * 0.42, 0.78, 0.99), -1.9 * sila);
     };
 
@@ -120,7 +128,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
         case "stoji": {
           // Rozmýšlí se: dívá se na další písmeno, mrkne, usměje se.
           nohy = Math.max(0, nohy - dt * 4); ruce = 0;
-          pohled = u.kam; pohledY = -0.25;
+          pohled = u.kam; pohledY = -0.25; oci = 1.05;
           if (u.mrk !== undefined && tUsek > u.t * 0.45 && tUsek < u.t * 0.45 + 0.13) mrk = 1;
           usmev = 0.85;
           if (p >= 1) dalsi();
@@ -130,7 +138,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
           // Krátký podřep. Bez něj skok nemá odkud vyjít.
           nohy = clamp(p * 2, 0, 1);
           sq.cil = 1; sq.hodnota = lerp(1, 0.72, easeInOut(p)); sq.v = 0;
-          usmev = 0.25; pohledY = -0.5;
+          usmev = 0.25; pohledY = -0.5; oci = 0.72;
           if (p >= 1) { sq.kopni(1.26, 5.5); dalsi(); }
           break;
         }
@@ -146,12 +154,12 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
           vy = (py - y) / Math.max(dt, 1e-4);
           x = px; y = py;
           nohy = Math.max(0, nohy - dt * 5);
-          usmev = 0.15; pohled = 1; pohledY = p < 0.5 ? -0.6 : 0.5;
+          usmev = 0.15; pohled = 1; pohledY = p < 0.5 ? -0.6 : 0.5; oci = 1.3;
           if (p >= 1) {
             const i = PISMENA.findIndex((l) => Math.abs(l.x - u.nax) < 1);
             povrch = u.nay; vy = 0;
             dopad(0.5, i >= 0 ? i : undefined);
-            usmev = 0.9;
+            usmev = 0.9; oci = 1;
             dalsi();
           }
           break;
@@ -174,7 +182,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
           povrch = null;
           x = lerp(HRANA_X, LEZENI_X, easeIn(p));
           y = POVRCH - R + p * 5;
-          nohy = 1; pohledY = 0.7; pohled = -0.5; usmev = 0.3;
+          nohy = 1; pohledY = 0.7; pohled = -0.5; usmev = 0.3; oci = 0.85;
           rot = lerp(0, 6, easeOut(p));
           if (p >= 1) dalsi();
           break;
@@ -304,8 +312,13 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
       vx = vx + (vxTed - vx) * Math.min(1, dt * 18);   // vyhlazení
       nakl.cil = clamp(vx * 0.009, -3.4, 3.4) + naklExtra;
 
+      cas += dt;
+      narazT += dt;
       const naZemi = povrch !== null;
-      const stlac = clamp(1 - s, -0.5, 0.62);        // + stlačené, − protažené
+      // Dýchání: nepatrné, ale bez něj vypadá maskot v klidu jako obrázek.
+      // Jen když nic nedělá — jinak by se to pralo s dokmitem po dopadu.
+      const dech = doma && klid === "nic" ? Math.sin(cas * 1.9) * 0.014 : 0;
+      const stlac = clamp(1 - s - dech, -0.5, 0.62);   // + stlačené, − protažené
       // Zploštění jen při skutečném dosednutí a jen tolik, kolik je stlačení.
       const flat = naZemi ? clamp(stlac * 2.2, 0, 0.92) : 0;
       // Objem zůstává: co ubyde na výšce, přibude na šířce. Ne přesně —
@@ -315,8 +328,9 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
       const tah = clamp(-vy * 0.0016, -0.28, 0.28);
       // Na zemi se hmota sesype DOLŮ: spodek se vyboulí, vršek zploští. Tohle
       // je ten rozdíl proti `scale()`, které umí jen souměrnou elipsu.
-      const rTop = R * s * (naZemi ? 1 - flat * 0.17 : 1 + tah) ;
-      const rBot = R * s * (naZemi ? 1 + flat * 0.21 : 1 - tah * 0.55) * (1 + sed * 0.12);
+      const sv = s - dech;
+      const rTop = R * sv * (naZemi ? 1 - flat * 0.17 : 1 + tah);
+      const rBot = R * sv * (naZemi ? 1 + flat * 0.21 : 1 - tah * 0.55) * (1 + sed * 0.12);
       // Boky: přední strana se v pohybu vyboulí, zadní se opozdí.
       const smer = clamp(vx * 0.0032, -0.16, 0.16);
       const rL = R * sirka * (1 - smer) * (1 + sed * 0.2);
@@ -337,6 +351,17 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
         st.setAttribute("rx", (rL * 0.92 * (1 - vyska / 150)).toFixed(2));
         st.setAttribute("ry", (2.6 * (1 - vyska / 220)).toFixed(2));
         st.style.opacity = String((0.3 * (1 - vyska / 90) ** 1.6).toFixed(3));
+      }
+
+      // Prstenec dopadu: rozjede se do stran a zmizí. Trvá čtvrt vteřiny —
+      // déle už to není náraz, ale kruh na vodě.
+      const nz = naraz.current;
+      if (nz) {
+        const t = clamp(narazT / 0.28, 0, 1);
+        nz.setAttribute("cx", narazX.toFixed(2));
+        nz.setAttribute("cy", (narazY + 1).toFixed(2));
+        nz.setAttribute("r", (6 + 26 * narazSila * easeOut(t)).toFixed(2));
+        nz.style.opacity = String((t < 1 ? 0.42 * narazSila * (1 - t) ** 1.4 : 0).toFixed(3));
       }
 
       const p: Poloha = { x, y, rot, rTop, rBot, rL, rR, shear: sk * 2.2, flat };
@@ -388,10 +413,17 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
       const oy = pohledY * 1.1 + (1 - s) * 1.6;
       oblicej.current!.setAttribute("transform", `translate(${ox.toFixed(2)} ${oy.toFixed(2)})`);
       const otevr = 1 - mrk * 0.94;
-      okoL.current!.setAttribute("ry", (3.3 * otevr).toFixed(2));
-      okoP.current!.setAttribute("ry", (3.3 * otevr).toFixed(2));
-      leskL.current!.style.opacity = String(otevr > 0.6 ? 1 : 0);
-      leskP.current!.style.opacity = String(otevr > 0.6 ? 1 : 0);
+      // Radostné obloučky místo očí: to je ta jedna věc, po které je maskot
+      // roztomilý místo jen kulatý. Jen když se opravdu culí a nemrká.
+      const radost = doma && usmev > 0.92 && mrk < 0.05 && klid !== "salto";
+      for (const [o, l] of [[okoL.current!, leskL.current!], [okoP.current!, leskP.current!]] as const) {
+        o.style.opacity = radost ? "0" : "1";
+        l.style.opacity = radost || otevr <= 0.6 ? "0" : "1";
+        o.setAttribute("rx", (2.8 * clamp(oci, 0.6, 1.4)).toFixed(2));
+        o.setAttribute("ry", (3.3 * otevr * clamp(oci, 0.6, 1.4)).toFixed(2));
+      }
+      smichL.current!.style.opacity = radost ? "1" : "0";
+      smichP.current!.style.opacity = radost ? "1" : "0";
       const u = 1.6 + usmev * 2.6;
       pusa.current!.setAttribute("d", `M${-4.2},${3.4} q${4.2},${u} ${8.4},0`);
 
@@ -444,6 +476,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
       <path ref={(e) => { pismena.current[2] = e; }} className="ltr" d={M} fill="currentColor" fillRule="evenodd" />
 
       <ellipse ref={stin} className="ms-stin" cx="0" cy="0" rx="0" ry="0" />
+      <circle ref={naraz} className="ms-naraz" cx="0" cy="0" r="0" />
       <g ref={skupina} className="ms">
         <path ref={rukaP} className="ms-koncetina" />
         <path ref={nohaL} className="ms-koncetina" />
@@ -455,6 +488,8 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
           <ellipse ref={okoP} cx="5.8" cy="-2.6" rx="2.8" ry="3.3" fill="#0a120c" />
           <circle ref={leskL} cx="-4.9" cy="-3.7" r="1.1" fill="var(--lime)" />
           <circle ref={leskP} cx="6.7" cy="-3.7" r="1.1" fill="var(--lime)" />
+          <path ref={smichL} className="ms-smich" d="M-8.4,-1.6 q2.6,-3.4 5.2,0" />
+          <path ref={smichP} className="ms-smich" d="M3.2,-1.6 q2.6,-3.4 5.2,0" />
           <path ref={pusa} className="ms-pusa" />
         </g>
       </g>

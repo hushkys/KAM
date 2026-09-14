@@ -583,3 +583,6 @@ a.list-row:hover .list-title { color: var(--accent); }
 .wordmark.hop .ms-oblicej { pointer-events: none; }
 /* Stín padá na písmeno, ne na pozadí — proto tmavý, ne světlý. */
 .wordmark.hop .ms-stin { fill: #06100a; }
+/* Prstenec dopadu kreslí ráz do písmene, ne kruh na vodě — proto tenký. */
+.wordmark.hop .ms-naraz { fill: none; stroke: var(--lime); stroke-width: 1.6; }
+.wordmark.hop .ms-smich { fill: none; stroke: #0a120c; stroke-width: 2; stroke-linecap: round; }
