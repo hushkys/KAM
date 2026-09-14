@@ -214,7 +214,10 @@ ul, ol { margin: 0; padding: 0; }
   padding: calc(var(--nav-h) + 28px + env(safe-area-inset-top)) var(--pad) calc(var(--dock-h) + 52px + env(safe-area-inset-bottom));
   min-width: 0;
 }
-.page.is-bare { padding-top: 0; padding-bottom: 0; max-width: none; }
+/* Hook si vodorovné odsazení dělá sám uvnitř (`.hook-top`, `.hook-hero`),
+   takže padding stránky by byl dvojitý — a protože se pozadí hooku ořezává
+   jeho vlastním boxem, prosvítalo by po stranách tmavé pozadí stránky. */
+.page.is-bare { padding: 0; max-width: none; }
 @media (min-width: 900px) {
   :root[data-dock="side"] .page:not(.is-bare) { padding-left: calc(var(--side-w) + 26px + var(--pad)); padding-bottom: 56px; }
 }
