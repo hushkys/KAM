@@ -21,7 +21,10 @@
   .grid .span-4.stack, .grid .span-5.stack { grid-column: span 12 !important; }
 }
 @media (max-width: 720px) { .grid > [class*="span-"] { grid-column: span 12 !important; } }
-.stack-y { display: grid; gap: var(--gap); min-width: 0; }
+/* `align-content: start`: sloupec ve dvousloupcovém rozvržení je vysoký jako
+   ten vyšší z obou, a bez tohohle by se ten rozdíl rozpustil do karet — každá
+   by narostla o svůj díl a měla pod obsahem prázdné místo. */
+.stack-y { display: grid; gap: var(--gap); min-width: 0; align-content: start; }
 .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-width: 0; }
 .muted { color: var(--text-dim); }

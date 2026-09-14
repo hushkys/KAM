@@ -646,6 +646,37 @@
 .um-zaver { margin-top: 12px; font-size: .875rem; color: var(--text-dim); }
 .um-pod { font-size: .8125rem; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
 
+/* ------------------------------------------------- scénáře: stavba scénáře
+   Hotové sady jsou dlaždice s otázkou, ne tlačítka s názvem: „Nová čtvrť"
+   nikomu neřekne, co uvidí, kdežto „Postavíme 300 bytů. Utáhnou to školy?"
+   ano. Vejdou se dvě do řádku, pod 520 px jedna. */
+.sada-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 10px; }
+.sada { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--r-md); text-align: left; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim);
+  transition: border-color var(--t-xs), background var(--t-xs), color var(--t-xs); min-height: 44px; }
+.sada:hover { border-color: var(--accent-line); background: var(--surface-3); color: var(--text); }
+.sada.is-on { border-color: var(--accent-line); background: linear-gradient(140deg, var(--accent-soft), transparent 75%), var(--surface-2); color: var(--text); }
+.sada-head { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.sada-head strong { font-size: .875rem; }
+.sada-otazka { font-size: .75rem; line-height: 1.35; color: var(--text-mute); }
+
+/* Zásahy po oblastech. Osm položek v jedné mřížce je seznam, ve kterém se
+   hledá; rozdělené podle oblasti je nabídka, ve které se volí. */
+.iv-skupina { display: grid; gap: 8px; }
+.iv-skupina-nadpis { display: flex; align-items: center; gap: 7px; font-size: .6875rem; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); }
+.iv-add { grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-items: stretch; }
+.iv-add-label { min-width: 0; overflow-wrap: anywhere; }
+.iv-help { font-size: .75rem; line-height: 1.4; color: var(--text-mute); margin: -4px 0 0; }
+
+/* Horizont: přepínač roku nad třemi čísly, ne pevná hlavička. */
+.sim-horizont { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sim-horizont .field-label { margin: 0; }
+/* Vybraný rok se zvýrazní i ve srovnávací tabulce, aby bylo vidět, odkud
+   ta tři čísla nahoře jsou. */
+.table th.is-on, .table td.is-on { background: color-mix(in oklab, var(--accent) 8%, transparent); }
+.table th.is-on { color: var(--text); }
+
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
   .icon-btn.sm { width: 40px; height: 40px; }

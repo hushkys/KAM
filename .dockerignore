@@ -20,3 +20,6 @@ __pycache__/
 .git/
 .claude/
 scripts/make_icons.py
+
+# Snímky obrazovky jsou pro README, ne pro běžící aplikaci.
+docs/

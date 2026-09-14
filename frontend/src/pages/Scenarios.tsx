@@ -1,6 +1,13 @@
-// Co kdyby? — the simulator. Build a set of interventions for a territory and
-// see the baseline and the intervention path side by side, with capacity
-// warnings, the chain of effects and every assumption editable.
+// Co kdyby? — simulátor. Vlevo se scénář staví, vpravo se čte.
+//
+// Stavba má tři kroky a čísla u nich, protože bez nich lidé klikali rovnou do
+// zásahů a divili se, že počítá cizí obec. Nad zásahy jsou hotové sady: každá
+// odpovídá na jednu otázku, se kterou obec přichází, a ušetří skládání pěti
+// posuvníků od nuly jen proto, aby bylo vůbec co číst.
+//
+// Výsledek se čte odshora: jedna věta, tři čísla k vybranému roku, varování,
+// pak teprve grafy. Horizont je přepínač, ne pevný rok — „co to udělá do roku
+// 2030" a „do roku 2040" jsou dvě různé otázky a obě jsou legitimní.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChartSwitch, Heatmap, LineChart, Legend } from "../components/charts";
@@ -8,14 +15,21 @@ import { Icon, PILLAR_ICON } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
 import { ScenarioHook } from "../components/ScenarioHook";
 import { Umisteni } from "../components/Umisteni";
-import { Card, Empty, ErrorBox, KindTag, Modal } from "../components/ui";
+import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, Segmented } from "../components/ui";
 import { api, ApiError, invalidate, useApi } from "../lib/api";
 import { date, kc, num, signed } from "../lib/format";
 import { navigate, setQuery, useLocation } from "../lib/router";
 import { toast } from "../lib/toast";
 
 interface Param { label: string; min?: number; max?: number; step?: number; default: number | string; options?: Record<string, string> }
-interface Catalog { interventions: Record<string, { label: string; pillar: string; params: Record<string, Param> }>; assumptions: Record<string, { label: string; value: number; unit: string; why: string }> }
+interface Spec { label: string; pillar: string; pillar_label: string; params: Record<string, Param> }
+interface Sada { key: string; label: string; pillar: string; otazka: string; ivs: Iv[] }
+interface Catalog {
+  interventions: Record<string, Spec>;
+  assumptions: Record<string, { label: string; value: number; unit: string; why: string }>;
+  help: Record<string, string>;
+  sady: Sada[];
+}
 interface Iv { type: string; params: Record<string, number | string> }
 interface Row { year: number; population: number; zs_util: number | null; ms_util: number | null; zs_demand: number; zs_capacity: number; ms_demand: number; ms_capacity: number }
 interface Warning { key: string; level: string; year: number; title: string; text: string; suggest: string }
@@ -38,6 +52,9 @@ function defaults(cat: Catalog, type: string): Iv {
   return { type, params: Object.fromEntries(Object.entries(spec.params).map(([k, p]) => [k, p.default])) };
 }
 
+/** Roky, ke kterým model počítá srovnání. Musí sedět se `simulate.HORIZON`. */
+const HORIZONTY = [2030, 2035, 2040] as const;
+
 export function Scenarios() {
   const { query } = useLocation();
   const cat = useApi<Catalog>("/simulate/catalog");
@@ -50,6 +67,7 @@ export function Scenarios() {
   const [busy, setBusy] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [name, setName] = useState("");
+  const [rok, setRok] = useState<number>(2040);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -75,9 +93,25 @@ export function Scenarios() {
   const remove = (i: number) => setIvs((all) => all.filter((_, j) => j !== i));
   const add = (type: string) => cat.data && setIvs((all) => [...all, defaults(cat.data!, type)]);
 
+  /** Zásahy seskupené podle oblasti. Osm položek v jedné mřížce je seznam,
+   *  ve kterém se hledá; rozdělené podle oblasti je nabídka, ve které se volí. */
+  const skupiny = useMemo(() => {
+    const out: { pillar: string; label: string; items: [string, Spec][] }[] = [];
+    for (const [k, v] of Object.entries(cat.data?.interventions ?? {})) {
+      const g = out.find((x) => x.pillar === v.pillar);
+      if (g) g.items.push([k, v]);
+      else out.push({ pillar: v.pillar, label: v.pillar_label, items: [[k, v]] });
+    }
+    return out;
+  }, [cat.data]);
+
+  const vRoce = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values.find((v) => v.year === rok) ?? m.values[m.values.length - 1]])), [res, rok]);
   const m2040 = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values[m.values.length - 1]])), [res]);
   const popDelta = m2040.population?.delta ?? null;
   const lastYear = res?.scenario[res.scenario.length - 1]?.year;
+  /** Sada je „nasazená", když scénář obsahuje přesně její zásahy. */
+  const aktivniSada = useMemo(() => (cat.data?.sady ?? []).find((s) =>
+    s.ivs.length === ivs.length && s.ivs.every((a, i) => a.type === ivs[i]?.type))?.key, [cat.data, ivs]);
 
   /** One sentence saying what the scenario does, before any chart. Every part
    *  of it comes from the result: the horizon year, the population difference
@@ -103,8 +137,10 @@ export function Scenarios() {
     } catch (e) { toast("error", (e as Error).message); }
   };
 
-  const zsBase = res?.baseline.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [];
-  const zsScen = res?.scenario.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [];
+  const kapacity = [
+    { key: "zs", label: "Základní školy", cap: "kapacita = třídy × 30 žáků", b: res?.baseline.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [] },
+    { key: "ms", label: "Mateřské školy", cap: "kapacita = třídy × 24 dětí", b: res?.baseline.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [] },
+  ].filter((k) => k.b.some((p) => p.value !== null));
 
   return (
     <>
@@ -116,17 +152,38 @@ export function Scenarios() {
           <button className="btn btn-primary" onClick={() => { setName(`${res?.territory.name ?? ""}: ${ivs.map((i) => cat.data?.interventions[i.type]?.label).join(" + ")}`.slice(0, 110)); setSaveOpen(true); }} disabled={!ivs.length}><Icon name="save" size={16} /> Uložit</button>
         </div>
       </ScenarioHook>
+
       <div className="grid">
         <div className="span-5 stack-y">
-          <Card i={0} title={<span className="step-head"><span className="step-n">1</span> Území</span>} icon="pin"><TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Kde simulujeme" /></Card>
-          <Card i={1} title={<span className="step-head"><span className="step-n">2</span> Zásahy</span>} icon="split" actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Vymazat</button> : undefined}>
+          <Card i={0} title={<span className="step-head"><span className="step-n">1</span> Území</span>} icon="pin">
+            <TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Kde simulujeme" />
+          </Card>
+
+          <Card i={1} title={<span className="step-head"><span className="step-n">2</span> Začněte hotovým scénářem</span>} icon="sparkle"
+            actions={<InfoHint label="Co to je">Hotové sady nejsou doporučení. Jsou to typická zadání, se kterými obec přichází — kliknutím se nastaví zásahy, které pak jde libovolně přepsat.</InfoHint>}>
+            <div className="sada-grid">
+              {(cat.data?.sady ?? []).map((s) => (
+                <button key={s.key} className={`sada${aktivniSada === s.key ? " is-on" : ""}`} onClick={() => setIvs(s.ivs.map((i) => ({ type: i.type, params: { ...i.params } })))}>
+                  <span className="sada-head"><Icon name={PILLAR_ICON[s.pillar]} size={16} /><strong>{s.label}</strong></span>
+                  <span className="sada-otazka">{s.otazka}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card i={2} title={<span className="step-head"><span className="step-n">3</span> Zásahy</span>} icon="split"
+            actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Vymazat</button> : undefined}>
             <div className="stack-y">
               {ivs.map((iv, i) => {
                 const spec = cat.data?.interventions[iv.type];
                 if (!spec) return null;
                 return (
                   <div className="iv-card" key={`${iv.type}${i}`}>
-                    <div className="iv-head"><strong><Icon name={PILLAR_ICON[spec.pillar]} size={16} /> {spec.label}</strong><button className="icon-btn sm" onClick={() => remove(i)} aria-label={`Odebrat ${spec.label}`}><Icon name="trash" size={15} /></button></div>
+                    <div className="iv-head">
+                      <strong><Icon name={PILLAR_ICON[spec.pillar]} size={16} /> {spec.label}</strong>
+                      <button className="icon-btn sm" onClick={() => remove(i)} aria-label={`Odebrat ${spec.label}`}><Icon name="trash" size={15} /></button>
+                    </div>
+                    {cat.data?.help[iv.type] && <p className="iv-help">{cat.data.help[iv.type]}</p>}
                     {Object.entries(spec.params).map(([k, p]) => p.options ? (
                       <label className="param" key={k}><span className="param-top"><span>{p.label}</span></span>
                         <select className="select" value={String(iv.params[k])} onChange={(e) => update(i, k, e.target.value)}>{Object.entries(p.options).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
@@ -142,15 +199,24 @@ export function Scenarios() {
                 );
               })}
               {!ivs.length && <p className="muted small">Zatím bez zásahu — vpravo je vidět samotný výhled. Přidejte zásah:</p>}
-              <div className="iv-add-grid">
-                {Object.entries(cat.data?.interventions ?? {}).map(([k, v]) => (
-                  <button key={k} className="iv-add" onClick={() => add(k)}><Icon name={PILLAR_ICON[v.pillar]} size={18} />{v.label}</button>
-                ))}
-              </div>
+              {skupiny.map((g) => (
+                <div className="iv-skupina" key={g.pillar}>
+                  <span className="iv-skupina-nadpis"><Icon name={PILLAR_ICON[g.pillar]} size={14} /> {g.label}</span>
+                  <div className="iv-add-grid">
+                    {g.items.map(([k, v]) => (
+                      <button key={k} className="iv-add" onClick={() => add(k)} title={cat.data?.help[k]}>
+                        <span className="iv-add-label">{v.label}</span>
+                        <Icon name="plus" size={15} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
+
           {res?.available && (
-            <Card i={2} title={<span className="step-head"><span className="step-n">3</span> Předpoklady</span>} icon="sliders" actions={Object.keys(assume).length ? <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Výchozí</button> : undefined}>
+            <Card i={3} title={<span className="step-head"><span className="step-n">4</span> Předpoklady</span>} icon="sliders" actions={Object.keys(assume).length ? <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Výchozí</button> : undefined}>
               <details>
                 <summary className="small strong" style={{ cursor: "pointer" }}>Zobrazit a upravit ({res.assumptions.length})</summary>
                 <div className="stack-y" style={{ marginTop: 12 }}>
@@ -175,8 +241,9 @@ export function Scenarios() {
               </details>
             </Card>
           )}
+
           {(saved.data?.length ?? 0) > 0 && (
-            <Card i={3} title="Uložené scénáře" icon="save">
+            <Card i={4} title="Uložené scénáře" icon="save">
               <div className="list">
                 {saved.data!.map((s) => (
                   <div className="list-row" key={s.id}>
@@ -194,7 +261,6 @@ export function Scenarios() {
         <div className="span-7 stack-y sim-sticky">
           <ErrorBox error={err} />
           {res && !res.available && <Card><Empty icon="alert" title="Nelze simulovat">{res.reason}</Empty></Card>}
-          <Umisteni />
           {res?.available && (
             <>
               <div className="sim-result-head">
@@ -204,18 +270,25 @@ export function Scenarios() {
                 </div>
                 <span className="cache-badge" aria-live="polite">{busy ? "Počítám…" : <>{res.cache.hit ? <b>z mezipaměti</b> : "spočítáno"} · {num(res.cache.ms, 1)} ms</>}</span>
               </div>
+
+              <div className="sim-horizont">
+                <span className="field-label">Stav k roku</span>
+                <Segmented size="sm" label="Horizont" value={String(rok)} onChange={(v) => setRok(Number(v))}
+                  options={HORIZONTY.map((y) => ({ value: String(y), label: String(y) }))} />
+              </div>
               <div className="stats-row">
-                {[["population", "Obyvatelé 2040"], ["zs_util", "Vytížení ZŠ 2040"], ["tax", "Daňové příjmy 2040"]].map(([k, l], i) => {
-                  const v = m2040[k];
+                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy obce"]].map(([k, l], i) => {
+                  const v = vRoce[k];
                   return (
                     <div className="stat reveal" key={k} style={{ "--i": i } as CSSProperties}>
-                      <div className="stat-label">{l}</div>
+                      <div className="stat-label">{l} {rok}</div>
                       <div className="stat-value num">{k === "zs_util" ? (v?.scenario !== null && v?.scenario !== undefined ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null)}</div>
                       <div className={`stat-sub ${v?.delta ? (v.delta > 0 ? "delta-pos" : "delta-neg") : ""}`}>{ivs.length ? `${signed(v?.delta ?? 0, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} proti stavu bez zásahu` : "bez zásahu"}</div>
                     </div>
                   );
                 })}
               </div>
+
               {res.warnings.scenario.length > 0 && (
                 <div className="stack-y">
                   {res.warnings.scenario.map((w) => (
@@ -227,6 +300,7 @@ export function Scenarios() {
                   ))}
                 </div>
               )}
+
               <Card i={1} title="Obyvatelé: bez zásahu vs. se zásahem" icon="users">
                 <ChartSwitch id="scenare-obyvatele" views={[
                   {
@@ -266,14 +340,24 @@ export function Scenarios() {
                   },
                 ]} />
               </Card>
-              {zsBase.some((p) => p.value !== null) && (
-                <Card i={2} title="Vytížení základních škol" icon="school" actions={<span className="xsmall mute">kapacita = třídy × 30 žáků</span>}>
-                  <LineChart ariaLabel="Vytížení ZŠ" height={200} unit="%" format={(v) => `${num(v, 0)} %`} refLine={{ value: 100, label: "Kapacita 100 %" }} series={[
-                    { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: zsBase },
-                    { key: "s", label: "Se zásahem", color: "var(--warn)", points: zsScen },
-                  ]} />
+
+              {kapacity.length > 0 && (
+                <Card i={2} title="Vytížení kapacit" icon="school">
+                  <ChartSwitch id="scenare-kapacity" views={kapacity.map((k) => ({
+                    key: k.key, label: k.label, icon: "school", render: () => (
+                      <>
+                        <LineChart ariaLabel={`Vytížení ${k.label}`} height={210} unit="%" format={(v) => `${num(v, 0)} %`}
+                          refLine={{ value: 100, label: "Kapacita 100 %" }} series={[
+                            { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: k.b },
+                            { key: "s", label: "Se zásahem", color: "var(--warn)", points: k.s },
+                          ]} />
+                        <p className="xsmall mute" style={{ marginTop: 8 }}>{k.cap}. Nad 100 % poptávka přesahuje kapacitu.</p>
+                      </>
+                    ),
+                  }))} />
                 </Card>
               )}
+
               {res.chain.length > 0 && (
                 <Card i={3} title="Řetězec dopadů" icon="split">
                   <div className="chain">
@@ -286,16 +370,17 @@ export function Scenarios() {
                   </div>
                 </Card>
               )}
+
               <Card i={4} title="Srovnání" icon="chart" flush>
                 <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
                   <table className="table">
-                    <thead><tr><th>Ukazatel</th>{[2030, 2035, 2040].map((y) => <th key={y} className="r">{y}</th>)}</tr></thead>
+                    <thead><tr><th>Ukazatel</th>{HORIZONTY.map((y) => <th key={y} className={`r${y === rok ? " is-on" : ""}`}>{y}</th>)}</tr></thead>
                     <tbody>
                       {res.metrics.filter((m) => m.values.some((v) => v.base !== null)).map((m) => (
                         <tr key={m.key}>
                           <td><span className="strong">{m.label}</span><div className="xsmall mute">{m.unit}</div></td>
                           {m.values.map((v) => (
-                            <td className="r" key={v.year}>
+                            <td className={`r${v.year === rok ? " is-on" : ""}`} key={v.year}>
                               <div>{m.key === "tax" ? kc(v.scenario) : num(v.scenario)}</div>
                               {ivs.length > 0 && v.delta !== null && v.delta !== 0 && <div className={`xsmall ${v.delta > 0 ? "delta-pos" : "delta-neg"}`}>{signed(v.delta)}</div>}
                             </td>
@@ -306,6 +391,7 @@ export function Scenarios() {
                   </table>
                 </div>
               </Card>
+
               {ivs.length > 0 && (
                 <Card i={5} title="Náklady a přínosy" icon="coins" actions={<KindTag kind="PŘEDPOKLAD" />}>
                   <div className="stats-row">
@@ -315,12 +401,17 @@ export function Scenarios() {
                   </div>
                 </Card>
               )}
+
+              {/* Kde zásah postavit patří až za výsledek: nejdřív se rozhodne
+                  co a kolik, teprve pak kam. */}
+              <Umisteni />
               <p className="disclaimer"><Icon name="info" size={13} /><span>{res.method}</span></p>
             </>
           )}
           {!res && !err && <span className="skeleton" style={{ height: 420, width: "100%" }} />}
         </div>
       </div>
+
       <Modal open={saveOpen} onClose={() => setSaveOpen(false)} title="Uložit scénář"
         footer={<><button className="btn btn-quiet" onClick={() => setSaveOpen(false)}>Zrušit</button><button className="btn btn-primary" disabled={!name.trim()} onClick={save}>Uložit</button></>}>
         <label className="field"><span className="field-label">Název</span><input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>

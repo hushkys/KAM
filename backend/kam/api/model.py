@@ -11,6 +11,7 @@ from sqlalchemy import delete, select
 from ..analytics import forecast, simulate, store, umisteni
 from ..db import session_scope
 from ..models import Scenario
+from ..indicators import PILLARS
 from ..security import write_limiter
 from ..territory import HOME_KRAJ
 
@@ -65,7 +66,11 @@ def umisteni_porovnani(req: MistoRequest) -> dict:
 
 @router.get("/simulate/catalog")
 def sim_catalog() -> dict:
-    return {"interventions": simulate.INTERVENTIONS, "assumptions": simulate.ASSUMPTIONS}
+    # Název oblasti posílá server, ať se devět popisků nepíše podruhé
+    # v prohlížeči — pilíře jsou jeden číselník a ten žije v indicators.py.
+    ivs = {k: {**v, "pillar_label": PILLARS.get(v["pillar"], "Ostatní")} for k, v in simulate.INTERVENTIONS.items()}
+    return {"interventions": ivs, "assumptions": simulate.ASSUMPTIONS,
+            "help": simulate.INTERVENTION_HELP, "sady": simulate.SADY}
 
 
 @router.post("/simulate")

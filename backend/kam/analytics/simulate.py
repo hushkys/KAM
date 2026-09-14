@@ -33,7 +33,7 @@ INTERVENTIONS: dict[str, dict] = {
     "byty": {"label": "Nová bytová výstavba", "pillar": "bydleni", "params": {
         "pocet": {"label": "Počet bytů", "min": 1, "max": 5000, "step": 10, "default": 300},
         "rok": {"label": "Rok dokončení", "min": 2026, "max": 2038, "step": 1, "default": 2028},
-        "typ": {"label": "Typ zástavby", "options": {"bytove_domy": "Bytové domy", "rodinne_domy": "Rodinné domy"}, "default": "bytove_domy"}}},
+        "typ": {"label": "Typ zástavby", "options": {"bytove_domy": "Bytové domy", "rodinne_domy": "Rodinné domy", "najemni": "Obecní nájemní byty"}, "default": "bytove_domy"}}},
     "zs_mista": {"label": "Rozšíření kapacity ZŠ", "pillar": "skolstvi", "params": {
         "pocet": {"label": "Nová místa (žáků)", "min": 10, "max": 1500, "step": 10, "default": 120},
         "rok": {"label": "Rok zprovoznění", "min": 2026, "max": 2038, "step": 1, "default": 2029}}},
@@ -54,12 +54,30 @@ INTERVENTIONS: dict[str, dict] = {
     "ordinace": {"label": "Nová ordinace praktického lékaře", "pillar": "zdravotnictvi", "params": {
         "pocet": {"label": "Počet ordinací", "min": 1, "max": 20, "step": 1, "default": 1},
         "rok": {"label": "Rok otevření", "min": 2026, "max": 2038, "step": 1, "default": 2027}}},
+    "stomatolog": {"label": "Nová zubní ordinace", "pillar": "zdravotnictvi", "params": {
+        "pocet": {"label": "Počet ordinací", "min": 1, "max": 20, "step": 1, "default": 1},
+        "rok": {"label": "Rok otevření", "min": 2026, "max": 2038, "step": 1, "default": 2027}}},
+}
+
+# Krátký popis ke každému zásahu. Nadpis řekne co, tohle řekne, co zásah
+# v modelu opravdu dělá — a tím i co od výsledku čekat a co ne.
+INTERVENTION_HELP: dict[str, str] = {
+    "byty": "Přivede nové obyvatele podle obsazenosti a velikosti bytů. Mezi nimi bývá víc dětí než v současné struktuře.",
+    "zs_mista": "Zvýší kapacitu základních škol. Poptávku nemění — tu určuje počet dětí.",
+    "ms_mista": "Zvýší kapacitu mateřských škol. Poptávku nemění.",
+    "spoj": "Přidá zastávky a provozní náklad na kilometr. Počet obyvatel sám o sobě nemění.",
+    "pracovni_mista": "Část míst obsadí místní uchazeči, část přistěhovalí. Oba podíly jsou předpoklad, který jde přepsat.",
+    "domov_seniori": "Přidá pobytová místa pro seniory a investici na lůžko.",
+    "ordinace": "Zvýší počet ordinací praktického lékaře na 10 000 obyvatel.",
+    "stomatolog": "Zvýší počet zubních ordinací na 10 000 obyvatel.",
 }
 
 ASSUMPTIONS: dict[str, dict] = {
     "obsazenost_bytu": {"label": "Obsazenost nových bytů", "value": 0.95, "unit": "podíl", "why": "Část bytů zůstává neobydlená nebo slouží k rekreaci."},
     "osob_byt_bd": {"label": "Osob na byt v bytovém domě (násobek průměru území)", "value": 0.9, "unit": "×", "why": "Byty v bytových domech jsou menší než průměr (SLDB 2021)."},
     "osob_byt_rd": {"label": "Osob na byt v rodinném domě (násobek průměru území)", "value": 1.15, "unit": "×", "why": "Rodinné domy obývají častěji rodiny s dětmi."},
+    "osob_byt_najem": {"label": "Osob na obecní nájemní byt (násobek průměru území)", "value": 0.85, "unit": "×", "why": "Obecní nájemní byty bývají menší a častěji v nich bydlí jednotlivci a senioři."},
+    "deti_najem": {"label": "Podíl dětí mezi nájemníky obecních bytů (násobek současného)", "value": 1.0, "unit": "×", "why": "Obecní nájemní bydlení neláká rodiny o nic víc než zbytek obce."},
     "deti_nasobek": {"label": "Podíl dětí mezi novousedlíky (násobek současného)", "value": 1.35, "unit": "×", "why": "Do nové výstavby se stěhují převážně mladé rodiny."},
     "seniori_nasobek": {"label": "Podíl seniorů mezi novousedlíky (násobek současného)", "value": 0.5, "unit": "×", "why": "Senioři se stěhují výrazně méně."},
     "max_zs_trida": {"label": "Maximální počet žáků ve třídě ZŠ", "value": 30, "unit": "žáků", "why": "Vyhláška č. 48/2005 Sb., § 4."},
@@ -147,11 +165,13 @@ def compute(payload: dict) -> dict:
     zs_ratio = zs_pupils / kids0 if kids0 else 0
     ms_ratio = ms_kids / kids0 if kids0 else 0
     gp0 = _latest(tid, "070700")
+    zub0 = _latest(tid, "070720")
     ds0 = _latest(tid, "150160")
     unemployed0 = _latest(tid, "501000")
     tax_pc = store.latest(tid, "d_dan_obyv")
     tax_pc = tax_pc[1] if tax_pc else 0.0
     ref_gp = store.latest(ref, "d_pl_10k")
+    ref_zub = store.latest(ref, "d_zubni_10k")
     ref_ds = store.latest(ref, "d_ds_100_65")
     stops0 = _latest(tid, "khk_zast_bus")
 
@@ -164,7 +184,7 @@ def compute(payload: dict) -> dict:
             old = float(r["age_65"] if r["age_65"] is not None else pop * share65)
             zs_cap = zs_classes * a["max_zs_trida"]
             ms_cap = ms_classes * a["max_ms_trida"]
-            gp, ds, unemployed, stops = gp0, ds0, unemployed0, stops0
+            gp, ds, unemployed, stops, zub = gp0, ds0, unemployed0, stops0, zub0
             opex = capex = 0.0
             if with_iv:
                 for iv in payload["interventions"]:
@@ -172,11 +192,17 @@ def compute(payload: dict) -> dict:
                     start = p.get("rok", 2027)
                     ramp = 0.0 if y < start else 0.5 if y == start else 1.0
                     if iv["type"] == "byty":
-                        mult = a["osob_byt_bd"] if p["typ"] == "bytove_domy" else a["osob_byt_rd"]
+                        typ = p["typ"]
+                        mult = {"bytove_domy": a["osob_byt_bd"], "rodinne_domy": a["osob_byt_rd"]}.get(typ, a["osob_byt_najem"])
+                        # Obecní nájemní byt není developerská výstavba: bydlí v něm
+                        # víc jednotlivců a seniorů, takže se s ním nepřistěhuje
+                        # tolik dětí. Proto vlastní násobky, ne ty pro novou čtvrť.
+                        detsky = a["deti_najem"] if typ == "najemni" else a["deti_nasobek"]
+                        starsi = 1.0 if typ == "najemni" else a["seniori_nasobek"]
                         newcomers = p["pocet"] * a["obsazenost_bytu"] * persons * mult * ramp
                         pop += newcomers
-                        kids += newcomers * min(share14 * a["deti_nasobek"], 0.35)
-                        old += newcomers * share65 * a["seniori_nasobek"]
+                        kids += newcomers * min(share14 * detsky, 0.35)
+                        old += newcomers * share65 * starsi
                     elif iv["type"] == "zs_mista" and y >= start:
                         zs_cap += p["pocet"]
                         if y == start:
@@ -200,6 +226,8 @@ def compute(payload: dict) -> dict:
                             capex += p["pocet"] * a["naklad_luzko"] * 1e6
                     elif iv["type"] == "ordinace" and y >= start:
                         gp += p["pocet"]
+                    elif iv["type"] == "stomatolog" and y >= start:
+                        zub += p["pocet"]
             zs_demand = kids * zs_ratio
             ms_demand = kids * ms_ratio
             rows.append({
@@ -207,6 +235,7 @@ def compute(payload: dict) -> dict:
                 "zs_demand": round(zs_demand), "zs_capacity": round(zs_cap), "zs_util": round(zs_demand / zs_cap, 3) if zs_cap else None,
                 "ms_demand": round(ms_demand), "ms_capacity": round(ms_cap), "ms_util": round(ms_demand / ms_cap, 3) if ms_cap else None,
                 "gp": gp, "gp_10k": round(gp / pop * 10000, 2) if pop else None,
+                "zub": zub, "zub_10k": round(zub / pop * 10000, 2) if pop else None,
                 "ds_places": ds, "ds_100_65": round(ds / old * 100, 2) if old else None,
                 "unemployed": round(unemployed), "stops": stops, "stops_1000": round(stops / pop * 1000, 2) if pop else None,
                 "tax": round(pop * tax_pc), "car_trips": round((pop - r["population"]) * a["aut_na_obyvatele"] * a["cest_na_auto"]) if with_iv else 0,
@@ -235,6 +264,11 @@ def compute(payload: dict) -> dict:
             if low and gp0:
                 out.append({"key": "gp", "level": "stredni", "year": low["year"], "title": "Dostupnost praktických lékařů",
                             "text": f"{_fmt(low['gp_10k'], 1)} ordinace na 10 000 obyvatel (kraj {_fmt(ref_gp[1], 1)}).", "suggest": "ordinace"})
+        if ref_zub and ref_zub[1]:
+            low = next((r for r in rows if r["zub_10k"] is not None and r["zub_10k"] < 0.7 * ref_zub[1]), None)
+            if low and zub0:
+                out.append({"key": "zub", "level": "stredni", "year": low["year"], "title": "Dostupnost zubního lékaře",
+                            "text": f"{_fmt(low['zub_10k'], 1)} ordinace na 10 000 obyvatel (kraj {_fmt(ref_zub[1], 1)}).", "suggest": "stomatolog"})
         if ref_ds and ref_ds[1]:
             low = next((r for r in rows if r["ds_100_65"] is not None and r["ds_100_65"] < 0.6 * ref_ds[1]), None)
             if low and ds0:
@@ -249,7 +283,7 @@ def compute(payload: dict) -> dict:
 
     metrics = []
     for key, label, unit, d in (("population", "Obyvatelé", "osob", 0), ("age_0_14", "Děti 0–14 let", "osob", 0), ("age_65", "Senioři 65+", "osob", 0),
-                                ("zs_util", "Vytížení ZŠ", "%", 1), ("ms_util", "Vytížení MŠ", "%", 1), ("gp_10k", "Ordinace PL na 10 tis.", "", 2),
+                                ("zs_util", "Vytížení ZŠ", "%", 1), ("ms_util", "Vytížení MŠ", "%", 1), ("gp_10k", "Ordinace PL na 10 tis.", "", 2), ("zub_10k", "Zubní ordinace na 10 tis.", "", 2),
                                 ("ds_100_65", "Místa DS na 100 seniorů", "", 2), ("unemployed", "Uchazeči o zaměstnání", "osob", 0),
                                 ("stops_1000", "Zastávky na 1 000 obyv.", "", 2), ("tax", "Daňové příjmy obce", "Kč/rok", 0), ("car_trips", "Cesty autem navíc", "za den", 0)):
         row = {"key": key, "label": label, "unit": unit, "values": []}
@@ -272,7 +306,7 @@ def compute(payload: dict) -> dict:
         "assumptions": [{"key": k, **v, "value": a[k]} for k, v in ASSUMPTIONS.items()],
         "inputs": {"persons_per_flat": round(persons, 2), "share_0_14": round(100 * share14, 1), "share_65": round(100 * share65, 1),
                    "zs_pupils": zs_pupils, "zs_classes": zs_classes, "ms_children": ms_kids, "ms_classes": ms_classes, "gp": gp0,
-                   "ds_places": ds0, "tax_per_capita": round(tax_pc), "stops": stops0},
+                   "ds_places": ds0, "tax_per_capita": round(tax_pc), "stops": stops0, "zub": zub0},
         "method": "Základní scénář = pravděpodobná varianta výhledu; zásahy přičítají přírůstky od roku realizace. Výsledek je modelový odhad, ne předpověď.",
         "kind": "SCÉNÁŘ",
     }
@@ -358,13 +392,41 @@ def popular(limit: int = 10) -> list[dict]:
                  "cached": r.key in _cache} for r in rows]
 
 
+# Hotové scénáře: typická zadání, se kterými obec přichází. Nejsou to
+# doporučení — jsou to východiska, od kterých se dá začít, aby uživatel
+# nemusel skládat pět posuvníků od nuly jen proto, aby vůbec něco viděl.
+# Každý má napsáno, na jakou otázku odpovídá.
+SADY: tuple[dict, ...] = (
+    {"key": "nova-ctvrt", "label": "Nová čtvrť", "pillar": "bydleni",
+     "otazka": "Postavíme 300 bytů. Utáhnou to školy?",
+     "ivs": [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}}]},
+    {"key": "ctvrt-se-skolou", "label": "Čtvrť i se školou", "pillar": "skolstvi",
+     "otazka": "Stejná výstavba, ale rovnou s rozšířením ZŠ a MŠ.",
+     "ivs": [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}},
+             {"type": "zs_mista", "params": {"pocet": 120, "rok": 2029}},
+             {"type": "ms_mista", "params": {"pocet": 48, "rok": 2029}}]},
+    {"key": "mladi-zpet", "label": "Přitáhnout mladé", "pillar": "socialni",
+     "otazka": "Práce a startovací bydlení naráz — zastaví to odliv?",
+     "ivs": [{"type": "pracovni_mista", "params": {"pocet": 400, "rok": 2028}},
+             {"type": "byty", "params": {"pocet": 120, "rok": 2029, "typ": "najemni"}}]},
+    {"key": "starnouci-obec", "label": "Stárnoucí obec", "pillar": "socialni",
+     "otazka": "Přibývá seniorů. Co je potřeba připravit?",
+     "ivs": [{"type": "domov_seniori", "params": {"pocet": 60, "rok": 2029}},
+             {"type": "ordinace", "params": {"pocet": 1, "rok": 2027}}]},
+    {"key": "dostupnost", "label": "Dostupnost služeb", "pillar": "zdravotnictvi",
+     "otazka": "Lékař, zubař a spoj do města. Co to udělá s dostupností?",
+     "ivs": [{"type": "ordinace", "params": {"pocet": 1, "rok": 2027}},
+             {"type": "stomatolog", "params": {"pocet": 1, "rok": 2028}},
+             {"type": "spoj", "params": {"spoje_den": 8, "zastavky": 2, "delka_km": 15, "rok": 2027}}]},
+    {"key": "spoj", "label": "Lepší spojení", "pillar": "doprava",
+     "otazka": "Osm spojů denně navíc. Kolik to stojí za rok?",
+     "ivs": [{"type": "spoj", "params": {"spoje_den": 8, "zastavky": 1, "delka_km": 15, "rok": 2027}}]},
+)
+
+
 def presets(tid: str) -> list[list[dict]]:
-    return [
-        [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}}],
-        [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}}, {"type": "zs_mista", "params": {"pocet": 120, "rok": 2029}}],
-        [{"type": "spoj", "params": {"spoje_den": 8, "zastavky": 1, "delka_km": 15, "rok": 2027}}],
-        [{"type": "domov_seniori", "params": {"pocet": 60, "rok": 2029}}],
-    ]
+    """Zásahy hotových sad — používá je předpočítání mezipaměti."""
+    return [list(s["ivs"]) for s in SADY]
 
 
 def precompute(limit: int = 12) -> int:
