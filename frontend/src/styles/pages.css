@@ -625,3 +625,39 @@
   /* Tapping a tile must not also select the label under the finger. */
   .ind, .dock-item, .more-row, .pillar-tile, .iv-add, .segmented button, .seg-sm button { -webkit-user-select: none; user-select: none; }
 }
+
+/* ------------------------------------------------------------- mobil
+   Na telefonu není málo místa do šířky — je ho málo do výšky. Přehled měl
+   před prvním grafem skoro tisíc pixelů: hlavička, a pod ní čtyři KPI karty
+   poskládané pod sebe na 659 px. Tady je řeč o jiném rozvržení, ne o zúžení
+   toho desktopového. */
+@media (max-width: 720px) {
+  /* KPI karty vedle sebe a přejíždí se prstem. Čtyři karty tak zaberou výšku
+     jedné, a to, že jich je víc, je vidět z useknuté čtvrté u kraje. */
+  .stats-row {
+    display: flex; gap: 10px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    /* Odsazení sahá pod okraj stránky, aby první karta začínala zarovnaná
+       s textem a poslední nekončila nalepená na hraně. */
+    margin-inline: calc(-1 * var(--pad)); padding-inline: var(--pad);
+    scroll-padding-inline: var(--pad);
+  }
+  .stats-row::-webkit-scrollbar { display: none; }
+  .stats-row > * { flex: 0 0 min(78%, 260px); scroll-snap-align: start; }
+
+  /* Popis stránky je na mobilu kontext, ne hlavní sdělení: dvě řádky stačí,
+     zbytek si člověk přečte z obsahu pod tím. */
+  .page-header { margin-bottom: 18px; gap: 12px; }
+  .page-header .lead {
+    font-size: .9375rem;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  }
+  /* Tlačítka hlavičky taky vedle sebe a přejezdem — zalomená do dvou řádků
+     odsouvala obsah o dalších padesát pixelů. */
+  .page-header-actions {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--pad)); padding-inline: var(--pad);
+  }
+  .page-header-actions::-webkit-scrollbar { display: none; }
+  .page-header-actions > * { flex: none; }
+}

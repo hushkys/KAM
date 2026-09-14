@@ -198,8 +198,11 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
 .list-row:last-child { border-bottom: 0; }
 a.list-row:hover .list-title { color: var(--accent); }
 .list-main { flex: 1; min-width: 0; }
-.list-title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color var(--t-xs); }
-.list-sub { font-size: .8125rem; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* display: block, protože `text-overflow: ellipsis` na inline elementu nedělá
+   nic. Obojí je <span>, takže bez toho se ořez neuplatnil a dlouhý název
+   zdroje na úzké obrazovce vystrčil celou stránku do šířky. */
+.list-title { display: block; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color var(--t-xs); }
+.list-sub { display: block; font-size: .8125rem; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-side { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 
 .bar-list { display: grid; gap: 10px; }
