@@ -26,6 +26,10 @@ data/secret.key
 # Tajemství
 .env
 secrets.env
+# Proměnné pro Cloud Run: connection string k databázi a klíče.
+# Při nasazení se kopírují sem do kořene, odkud je gcloud čte.
+env.yaml
+data/secret.key
 
 # Nástroje
 firebase-debug.log
