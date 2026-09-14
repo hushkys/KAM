@@ -677,6 +677,31 @@
 .table th.is-on, .table td.is-on { background: color-mix(in oklab, var(--accent) 8%, transparent); }
 .table th.is-on { color: var(--text); }
 
+/* ------------------------------------------------------- hook stránky obcí
+   Stejné sklo a stejné rozvržení jako u scénářů (`.sc-hook`), jiná kresba.
+   Hejno teček je husté, proto se nájezd dělá po skupinách po šedesáti —
+   448 vlastních zpoždění by prohlížeč počítal zbytečně dlouho. */
+.ob-hook .sc-hook-copy h1 { text-wrap: balance; }
+.ob-kotvy { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.ob-kotva { display: grid; gap: 1px; padding: 9px 13px; border-radius: var(--r-md); text-decoration: none;
+  border: 1px solid var(--border); background: var(--glass); color: var(--text); min-height: 44px;
+  transition: border-color var(--t-xs), background var(--t-xs); }
+.ob-kotva:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+.ob-kotva strong { font-size: .875rem; line-height: 1.2; }
+.ob-kotva-popis { font-size: .625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); }
+.ob-kotva .num { font-size: .75rem; color: var(--text-dim); }
+
+.ob-art .ob-osa { stroke: var(--border-strong); stroke-width: 1; }
+.ob-art .ob-popis { fill: var(--text-mute); font-size: 10px; font-weight: 650; }
+.ob-art .ob-popis.stred { fill: var(--text-dim); }
+.ob-art .ob-median { stroke: var(--text-mute); stroke-width: 1; stroke-dasharray: 3 4; opacity: .6; }
+.ob-art .ob-kruh { fill: none; stroke: var(--lime); stroke-width: 1.4; opacity: .75; }
+.ob-art .ob-body circle { animation: ob-bod 520ms var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 7ms); }
+@keyframes ob-bod { from { opacity: 0; transform: scale(.2); } }
+.ob-art .ob-body circle { transform-box: fill-box; transform-origin: center; }
+
+:root[data-motion="reduce"] .ob-art .ob-body circle { animation: none; }
+
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
   .icon-btn.sm { width: 40px; height: 40px; }

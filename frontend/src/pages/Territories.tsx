@@ -1,7 +1,8 @@
 import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
 import { Icon } from "../components/Icon";
+import { ObceHook } from "../components/ObceHook";
 import { useTerritories } from "../components/TerritoryPicker";
-import { Empty, PageHeader, Segmented } from "../components/ui";
+import { Empty, Segmented } from "../components/ui";
 import { fold, num, plural } from "../lib/format";
 import { navigate, setQuery, useLocation } from "../lib/router";
 
@@ -25,9 +26,13 @@ export function Territories() {
     navigate(`/obce/${id}`);
   };
 
+  // Hook kreslí vždycky obce, ne to, co je zrovna vybrané: je to úvod ke
+  // stránce, ne pohled na výsledek filtru.
+  const vsechnyObce = useMemo(() => (data ?? []).filter((t) => t.level === "obec"), [data]);
+
   return (
     <>
-      <PageHeader eyebrow="Živé profily" title="Obce a správní obvody" lead="Každé území má profil ve všech sledovaných oblastech, rizika, výhled a zdroje. Vyhledávat lze i bez diakritiky." />
+      <ObceHook obce={vsechnyObce} loading={loading} onOpen={(id) => navigate(`/obce/${id}`)} />
       <div className="terr-toolbar">
         <div className="input-icon">
           <Icon name="search" size={17} />

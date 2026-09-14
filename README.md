@@ -54,6 +54,14 @@ nastavit, najetím zjistíte obec, hodnotu i nadmořskou výšku.
 
 <img src="docs/screenshots/mapa-3d.png" alt="3D mapa kraje s výškovým modelem" width="900">
 
+### Obce
+
+Všech 448 obcí kraje najednou: jedna tečka je jedna obec, plocha odpovídá
+počtu obyvatel a osa je logaritmická — jinak by se devadesát procent obcí
+slilo do jednoho chumlu a zbyl by jeden puntík vpravo.
+
+<img src="docs/screenshots/obce.png" alt="Obce: všech 448 obcí podle počtu obyvatel" width="900">
+
 ### Profil území
 
 Devět oblastí, u každého ukazatele poslední hodnota, srovnání s krajem, zdroj
