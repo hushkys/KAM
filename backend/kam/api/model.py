@@ -8,10 +8,11 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
 
-from ..analytics import forecast, simulate, store
+from ..analytics import forecast, simulate, store, umisteni
 from ..db import session_scope
 from ..models import Scenario
 from ..security import write_limiter
+from ..territory import HOME_KRAJ
 
 router = APIRouter(prefix="/api")
 
@@ -38,6 +39,28 @@ def get_forecast(tid: str) -> dict:
     res = forecast.project(tid)
     res["backtest"] = forecast.backtest(tid)
     return res
+
+
+class MistoRequest(BaseModel):
+    """Které obce uživatel vybral a kolik míst se porovnává."""
+
+    zasah: str
+    obce: list[str] = Field(default_factory=list, max_length=30)
+    pocet: int | None = Field(default=None, ge=1, le=30)
+    kraj: int = HOME_KRAJ
+
+
+@router.get("/umisteni/pravidla")
+def umisteni_pravidla() -> dict:
+    """Zásahy, u kterých umíme posoudit umístění, a ukazatel, podle kterého."""
+    return {"zasahy": {k: {"ukazatel": v["code"], "co": v["co"],
+                           "label": simulate.INTERVENTIONS.get(k, {}).get("label", k)}
+                       for k, v in umisteni.PRAVIDLA.items()}}
+
+
+@router.post("/umisteni")
+def umisteni_porovnani(req: MistoRequest) -> dict:
+    return umisteni.porovnej(req.kraj, req.zasah, req.obce, req.pocet)
 
 
 @router.get("/simulate/catalog")

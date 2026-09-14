@@ -1,4 +1,4 @@
-"""`python -m kam.ingest [geo|relief|catalog|eurostat|mos|khk|link|rag|all]`
+"""`python -m kam.ingest [geo|relief|catalog|eurostat|mos|khk|dotace|link|rag|all]`
 
 Each step is idempotent and can be re-run on its own; `all` runs them in
 dependency order. The resulting SQLite file is the offline snapshot the demo
@@ -18,7 +18,7 @@ def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     steps = argv or ["all"]
     if steps == ["all"]:
-        steps = ["geo", "relief", "catalog", "eurostat", "mos", "khk", "link", "check", "rag"]
+        steps = ["geo", "relief", "catalog", "eurostat", "mos", "khk", "dotace", "link", "check", "rag"]
     init_db()
     for step in steps:
         t = time.time()
@@ -40,6 +40,9 @@ def main(argv: list[str]) -> int:
         elif step == "khk":
             from .khk import ingest
             print("khk", ingest())
+        elif step == "dotace":
+            from .dotace import ingest as dotace_ingest
+            print("dotace", dotace_ingest())
         elif step == "link":
             from .link import link
             print("link", link())

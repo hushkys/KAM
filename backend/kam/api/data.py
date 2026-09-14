@@ -12,6 +12,7 @@ from sqlalchemy import case, func, or_, select
 
 from .. import crowd
 from ..ai import rag
+from ..analytics import dotace as dotace_mod
 from ..analytics import finance, forecast, gaps, risks, simulate, store
 from ..analytics.profile import COMPARABLE, PROFILE_CODES, card, profile, reference
 from ..analytics.trends import classify
@@ -263,6 +264,15 @@ def finance_territory(tid: str) -> dict:
     if not data["roky"]:
         raise HTTPException(404, "Pro toto území nemáme rozpočtová data.")
     return {"territory": {"id": t.id, "name": t.name, "level": t.level}, **data}
+
+
+@router.get("/dotace/{tid}")
+def dotace_territory(tid: str) -> dict:
+    """Čerpání dotací, krajské dotace do ORP a rozcestník vyhlašovatelů."""
+    data = dotace_mod.prehled(tid)
+    if not data:
+        raise HTTPException(404, "Území neznámé.")
+    return data
 
 
 @router.get("/geo/{name}")

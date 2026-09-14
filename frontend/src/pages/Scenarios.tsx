@@ -7,6 +7,7 @@ import { ChartSwitch, Heatmap, LineChart, Legend } from "../components/charts";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
 import { ScenarioHook } from "../components/ScenarioHook";
+import { Umisteni } from "../components/Umisteni";
 import { Card, Empty, ErrorBox, KindTag, Modal } from "../components/ui";
 import { api, ApiError, invalidate, useApi } from "../lib/api";
 import { date, kc, num, signed } from "../lib/format";
@@ -193,6 +194,7 @@ export function Scenarios() {
         <div className="span-7 stack-y sim-sticky">
           <ErrorBox error={err} />
           {res && !res.available && <Card><Empty icon="alert" title="Nelze simulovat">{res.reason}</Empty></Card>}
+          <Umisteni />
           {res?.available && (
             <>
               <div className="sim-result-head">

@@ -87,6 +87,7 @@ const PATTERNS: [string, RegExp][] = [
   ["vyhled", /^\/vyhled$/],
   ["scenare", /^\/scenare$/],
   ["hospodareni", /^\/hospodareni$/],
+  ["dotace", /^\/dotace$/],
   ["podnety", /^\/podnety$/],
   ["data", /^\/data$/],
   ["statistiky", /^\/statistiky$/],

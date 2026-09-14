@@ -604,6 +604,48 @@
    driven by a thumb and a 700px desktop window is still a mouse. 44px is the
    smallest target a finger hits reliably; under it the miss rate is what makes
    an app feel like it is fighting you. */
+/* ------------------------------------------------------------- dotace
+   Rozcestník vyhlašovatelů. Karta je odkaz, proto celá reaguje na najetí a
+   má vlastní hit area — na telefonu se do ní trefí palec, ne jen do nadpisu. */
+.zdroje-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.zdroj-karta { display: grid; gap: 6px; padding: 16px; border-radius: var(--r-lg); border: 1px solid var(--border);
+  background: var(--surface-2); color: inherit; text-decoration: none; min-height: 44px; transition: border-color var(--t-xs), background var(--t-xs); }
+.zdroj-karta:hover { border-color: var(--accent-line); background: var(--surface-3); }
+.zk-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; color: var(--text); }
+.zk-head strong { font-size: .9375rem; line-height: 1.3; }
+.zk-kdo { font-size: .75rem; color: var(--accent); font-weight: 650; }
+.zk-pozn { font-size: .8125rem; color: var(--text-mute); }
+.zk-tagy { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: var(--r-pill);
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-mute); font-size: .6875rem; font-weight: 650; }
+.chip-accent { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.dalsi-zdroje { margin-top: 16px; }
+.dalsi-zdroje > summary { cursor: pointer; font-size: .875rem; font-weight: 650; color: var(--text-dim); min-height: 32px; display: flex; align-items: center; }
+.dalsi-zdroje > summary:hover { color: var(--text); }
+
+/* -------------------------------------------------------- kde to postavit
+   Dvě varianty vedle sebe: co vybral uživatel a co by vybralo pravidlo.
+   Pod 700 px pod sebe — dva sloupce se seznamem obcí se na telefon nevejdou. */
+.um-ovladani { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
+.um-ovladani .field { min-width: 200px; }
+.um-picker { flex: 1 1 220px; min-width: 200px; }
+.um-chipy { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.um-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 700px) { .um-grid { grid-template-columns: minmax(0, 1fr); } }
+.um-varianta { padding: 14px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface-2); min-width: 0; }
+.um-varianta.tone-ok { border-color: var(--accent-line); background: linear-gradient(160deg, var(--accent-soft), transparent 70%), var(--surface-2); }
+.um-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.um-title { font-size: .8125rem; font-weight: 700; color: var(--text-dim); }
+.um-score { font-size: 1.125rem; font-weight: 800; }
+.um-list { list-style: none; display: grid; gap: 8px; }
+.um-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.um-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.um-obec { font-weight: 650; font-size: .875rem; min-width: 0; overflow-wrap: anywhere; }
+.um-detail { grid-column: 1; font-size: .6875rem; }
+.um-prinos { grid-row: 1 / span 2; align-self: center; font-weight: 700; }
+.um-zaver { margin-top: 12px; font-size: .875rem; color: var(--text-dim); }
+.um-pod { font-size: .8125rem; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
+
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
   .icon-btn.sm { width: 40px; height: 40px; }

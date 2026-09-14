@@ -164,3 +164,33 @@ def test_finance_verdict_states_its_own_rule(synthetic_db):
     assert s["stav"] in ("dobre", "neutral", "pozor", "riziko")
     assert "%" in s["pravidlo"]
     assert d["zdroj"].startswith("ČSÚ MOS")
+
+
+def test_umisteni_compares_within_a_size_band(synthetic_db):
+    """Ukazatel na tisíc obyvatel by jinak označil za nejpotřebnější největší obec."""
+    from kam.analytics import store, umisteni
+
+    store.reset()
+    assert umisteni.pasmo(300)[0] == 0
+    assert umisteni.pasmo(1500)[0] == 1
+    assert umisteni.pasmo(5000)[0] == 2
+    assert umisteni.pasmo(50000)[0] == 3
+
+    r = umisteni.porovnej(86, "zs_mista", ["obec:500001"])
+    if not r.get("available"):
+        pytest.skip(r.get("reason", ""))
+    # Nejlepší sada je stejně velká jako ta vybraná a nemůže být horší.
+    assert len(r["nejlepsi"]["obce"]) == len(r["vase"]["obce"])
+    assert r["nejlepsi"]["prinos"] >= r["vase"]["prinos"]
+    assert r["rozdil"] >= 0
+    # Mezera nikdy není záporná a nepřeroste strop.
+    for o in r["zebricek"]:
+        assert 0 <= o["mezera"] <= umisteni.STROP_MEZERY * 100 + 0.01
+    assert "medián obcí své velikosti" in r["pravidlo"]
+
+
+def test_umisteni_refuses_what_it_cannot_judge():
+    from kam.analytics import umisteni
+
+    r = umisteni.porovnej(86, "neznamy_zasah", [])
+    assert r["available"] is False and "ukazatel" in r["reason"]
