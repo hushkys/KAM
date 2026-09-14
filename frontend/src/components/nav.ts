@@ -8,6 +8,7 @@ export const NAV: NavItem[] = [
   { path: "/obce", label: "Obce", module: "obce", icon: "home", desc: "Živé profily 448 obcí a 15 ORP", group: "main" },
   { path: "/vyhled", label: "Výhled", module: "vyhled", icon: "trend-up", desc: "Obyvatelé 2026–2040 ve třech scénářích", group: "main", extra: true },
   { path: "/scenare", label: "Scénáře", module: "scenare", icon: "split", desc: "Co kdyby: simulace zásahů a jejich dopadů", group: "main" },
+  { path: "/hospodareni", label: "Hospodaření", module: "hospodareni", icon: "coins", desc: "Rozpočet obce: co zbyde z provozu a co jde do majetku", group: "tools", extra: true },
   { path: "/podnety", label: "Podněty", module: "podnety", icon: "message", desc: "Hlášení občanů a formální podněty kraji", group: "tools", extra: true },
   { path: "/data", label: "Data", module: "data", icon: "database", desc: "Využité otevřené datové sady a datové potřeby", group: "tools", extra: true },
   { path: "/statistiky", label: "Statistiky", module: "statistiky", icon: "chart", desc: "Čísla o datech, modelu a provozu", group: "tools", extra: true },
@@ -17,5 +18,5 @@ export const NAV: NavItem[] = [
 
 export const TITLES: Record<string, string> = {
   hook: "", prehled: "Přehled", mapa: "Mapa", obce: "Obce", profil: "Profil území", vyhled: "Výhled", scenare: "Scénáře", podnety: "Podněty",
-  data: "Data", statistiky: "Statistiky", asistent: "Asistent", nastaveni: "Nastavení", "o-nas": "O nás", pravni: "Právní informace", "404": "Nenalezeno",
+  hospodareni: "Hospodaření", data: "Data", statistiky: "Statistiky", asistent: "Asistent", nastaveni: "Nastavení", "o-nas": "O nás", pravni: "Právní informace", "404": "Nenalezeno",
 };

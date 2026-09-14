@@ -86,6 +86,7 @@ const PATTERNS: [string, RegExp][] = [
   ["profil", /^\/obce\/(?<id>(?:obec|orp|okres|kraj):\d+|cz)$/],
   ["vyhled", /^\/vyhled$/],
   ["scenare", /^\/scenare$/],
+  ["hospodareni", /^\/hospodareni$/],
   ["podnety", /^\/podnety$/],
   ["data", /^\/data$/],
   ["statistiky", /^\/statistiky$/],

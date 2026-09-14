@@ -336,13 +336,11 @@ a.list-row:hover .list-title { color: var(--accent); }
    annotate a series pop in once the line has got there. Durations are close
    enough that nothing is still moving when the eye reaches the next tile.
    `data-motion="reduce"` clamps all of it to 1 ms globally (base.css). */
-@keyframes spark-draw { to { stroke-dashoffset: 0; } }
 @keyframes spark-wipe { from { transform: scaleX(0); } }
 @keyframes spark-grow { from { transform: scaleY(0); } }
 @keyframes spark-pop { from { opacity: 0; transform: scale(0); } }
 @keyframes chart-fade { from { opacity: 0; } }
 
-.spark .spark-draw { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: spark-draw 820ms var(--ease-out) 60ms forwards; }
 .spark .spark-wipe { transform-box: fill-box; transform-origin: left center; animation: spark-wipe 820ms var(--ease-out) 60ms both; }
 .spark .spark-bar {
   transform-box: fill-box; transform-origin: bottom center;
@@ -568,26 +566,27 @@ a.list-row:hover .list-title { color: var(--accent); }
 @media (max-width: 560px) { .ms-bubble { font-size: .875rem; max-width: 22ch; } }
 
 /* ---------------------------------------------------------- skok po písmenech
-   Časová osa (celkem 2,4 s):
+   Časová osa skoku (2,4 s):
      0,00–0,60  přiběhne zleva a dopadne na K
      0,60–1,10  skok na A
      1,10–1,60  skok na M
      1,60–2,20  poslední skok dolů na místo tečky
-     2,20–2,40  usadí se a zmenší na velikost tečky
+     2,20–2,40  usadí se
 
    Vodorovný pohyb je rovnoměrný, svislý zrychluje dolů a zpomaluje nahoru —
    proto dvě vnořené skupiny se dvěma křivkami. Jedna společná by z toho
-   udělala klouzavý oblouk místo skoku. */
-.wordmark.hop { overflow: visible; }
-.wordmark.hop .hop-mascot, .wordmark.hop .hop-x, .wordmark.hop .hop-y { will-change: transform; }
+   udělala klouzavý oblouk místo skoku. Nad nimi je ještě otáčení (salto) a
+   nad tím deformace, aby se stlačení nemíchalo s rotací.
 
-/* Bez animace: maskot je schovaný a tečka je normální tečka. */
-.wordmark.hop .hop-x { opacity: 0; }
-.wordmark.hop.is-hraje .hop-x { opacity: 1; animation: hop-x 2.4s linear both; }
-.wordmark.hop.is-hraje .hop-y { animation: hop-y 2.4s both; }
-.wordmark.hop.is-hraje .hop-mascot { animation: hop-squish 2.4s both; }
-/* Tečka se objeví až ve chvíli, kdy na její místo dosedne maskot. */
-.wordmark.hop.is-hraje .hop-tecka { opacity: 0; animation: hop-tecka 2.4s step-end both; }
+   Po doskoku převezme pozici `.hop-park` a hop-x/hop-y se vynulují, takže
+   kousek (nohy, chůze, salto) se počítá relativně k domovu. */
+.wordmark.hop { overflow: visible; }
+.wordmark.hop .hop-x, .wordmark.hop .hop-y, .wordmark.hop .hop-spin, .wordmark.hop .hop-squish { will-change: transform; }
+.wordmark.hop .hop-park.is-doma { transform: translate(331px, 86px); }
+
+.wordmark.hop.is-skace .hop-x { animation: hop-x 2.4s linear both; }
+.wordmark.hop.is-skace .hop-y { animation: hop-y 2.4s both; }
+.wordmark.hop.is-skace .hop-squish { animation: hop-squish 2.4s both; }
 
 @keyframes hop-x {
   0%   { transform: translateX(-52px); }
@@ -596,8 +595,7 @@ a.list-row:hover .list-title { color: var(--accent); }
   67%  { transform: translateX(257px); }  /* M */
   92%, 100% { transform: translateX(331px); } /* místo tečky */
 }
-/* Výška: -17 je „sedí na horní hraně písmen", 86 je úroveň tečky.
-   cubic-bezier nahoru zpomaluje, dolů zrychluje — to je ta tíha. */
+/* -17 je „stojí na horní hraně písmen", 83 je úroveň tečky. */
 @keyframes hop-y {
   0%   { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
   12%  { transform: translateY(-96px); animation-timing-function: cubic-bezier(.33,.66,.66,1); }
@@ -606,44 +604,137 @@ a.list-row:hover .list-title { color: var(--accent); }
   46%  { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
   56%  { transform: translateY(-88px); animation-timing-function: cubic-bezier(.33,.66,.66,1); }
   67%  { transform: translateY(-17px); animation-timing-function: cubic-bezier(.33,0,.66,.33); }
-  78%  { transform: translateY(-74px); animation-timing-function: cubic-bezier(.4,.7,.6,1); }
+  78%  { transform: translateY(-70px); animation-timing-function: cubic-bezier(.4,.7,.6,1); }
   92%, 100% { transform: translateY(86px); }
 }
-/* Maskot se při dopadu sám stlačí a v letu protáhne — bez toho vypadá jako
-   posouvaný kotouč. Na konci se zmenší na poloměr tečky (14/17). */
+/* Dopad stlačí, odraz protáhne. Bez toho je z maskota posouvaný kotouč.
+   Stlačení je krátké a hluboké, návrat přestřelí a doklepe — pružina, ne
+   plynulý přechod. */
 @keyframes hop-squish {
-  0%, 10%   { transform: scale(1, 1); }
-  24%       { transform: scale(1.18, .82); }
-  27%       { transform: scale(.92, 1.08); }
-  33%       { transform: scale(1, 1); }
-  45%       { transform: scale(1.18, .82); }
-  48%       { transform: scale(.92, 1.08); }
-  54%       { transform: scale(1, 1); }
-  66%       { transform: scale(1.18, .82); }
-  69%       { transform: scale(.92, 1.08); }
-  75%       { transform: scale(1, 1); }
-  91%       { transform: scale(1.22, .8); }
-  95%       { transform: scale(.88, 1.06) ; }
-  100%      { transform: scale(.824, .824); }
+  0%      { transform: scale(.88, 1.14); }   /* v letu protažený */
+  22%     { transform: scale(.9, 1.12); }
+  25%     { transform: scale(1.34, .7); }    /* dopad na K */
+  29%     { transform: scale(.86, 1.16); }
+  32%     { transform: scale(1.06, .95); }
+  35%     { transform: scale(.92, 1.09); }
+  44%     { transform: scale(.92, 1.09); }
+  46%     { transform: scale(1.32, .72); }   /* dopad na A */
+  50%     { transform: scale(.86, 1.16); }
+  53%     { transform: scale(1.05, .96); }
+  56%     { transform: scale(.92, 1.09); }
+  65%     { transform: scale(.92, 1.09); }
+  67%     { transform: scale(1.32, .72); }   /* dopad na M */
+  71%     { transform: scale(.86, 1.16); }
+  74%     { transform: scale(1.05, .96); }
+  78%     { transform: scale(.9, 1.12); }
+  90%     { transform: scale(.86, 1.16); }
+  92%     { transform: scale(1.4, .66); }    /* dosednutí na místo tečky */
+  95%     { transform: scale(.9, 1.1); }
+  97%     { transform: scale(1.05, .96); }
+  100%    { transform: scale(1, 1); }
 }
-@keyframes hop-tecka { 0%, 91% { opacity: 0; } 92%, 100% { opacity: 1; } }
 
-/* Písmena: stlačí se pod dopadem a pružinou se vrátí. Počátek transformace je
-   u paty písmene, aby se mačkalo k zemi a neuhýbalo do stran. */
+/* Písmena: dopad je krátký a hluboký, návrat pružinou. Počátek transformace
+   je u patky, aby se písmeno mačkalo k zemi a neuhýbalo do stran. Každé má
+   jen posunutý start — dopady jsou na 0,52 / 1,02 / 1,52 s. */
 .wordmark.hop .ltr { transform-box: fill-box; transform-origin: bottom center; }
-.wordmark.hop.is-hraje .ltr-k { animation: ltr-mackni 2.4s both; animation-delay: 0s; }
-.wordmark.hop.is-hraje .ltr-a { animation: ltr-mackni 2.4s both; animation-delay: .5s; }
-.wordmark.hop.is-hraje .ltr-m { animation: ltr-mackni 2.4s both; animation-delay: 1s; }
-/* Klíčové snímky jsou stejné pro všechna písmena, liší se jen zpožděním:
-   dopad přijde na 25 % vlastní osy, pak pružina. */
-@keyframes ltr-mackni {
-  0%, 23%  { transform: scale(1, 1); }
-  26%      { transform: scale(1.07, .9); }
-  30%      { transform: scale(.98, 1.03); }
-  34%      { transform: scale(1.01, .99); }
-  38%, 100% { transform: scale(1, 1); }
+.wordmark.hop.is-skace .ltr-k { animation: ltr-naraz .78s cubic-bezier(.3,1.2,.4,1) .52s both; }
+.wordmark.hop.is-skace .ltr-a { animation: ltr-naraz .78s cubic-bezier(.3,1.2,.4,1) 1.02s both; }
+.wordmark.hop.is-skace .ltr-m { animation: ltr-naraz .78s cubic-bezier(.3,1.2,.4,1) 1.52s both; }
+@keyframes ltr-naraz {
+  0%   { transform: scale(1, 1) translateY(0); }
+  9%   { transform: scale(1.14, .8) translateY(2px); }   /* náraz */
+  22%  { transform: scale(.95, 1.08) translateY(-1px); } /* odskok */
+  38%  { transform: scale(1.04, .97) translateY(.5px); }
+  55%  { transform: scale(.99, 1.02) translateY(0); }
+  72%  { transform: scale(1.01, .995); }
+  100% { transform: scale(1, 1); }
 }
 
-:root[data-motion="reduce"] .wordmark.hop .hop-x,
-:root[data-motion="reduce"] .wordmark.hop .ltr { animation: none !important; }
-:root[data-motion="reduce"] .wordmark.hop .hop-tecka { opacity: 1; animation: none !important; }
+/* ------------------------------------------------------------------ maskot
+   Oči, pohled, nohy, ruce. Doma maskot mrká a rozhlíží se; jednou za čas mu
+   vyjedou nohy, popojde, udělá salto s koleny u brady a vrátí se. */
+.wordmark.hop .ms-oko { transform-box: fill-box; transform-origin: center; transition: transform 90ms ease-out; }
+.wordmark.hop.is-mrka .ms-oko { transform: scaleY(.1); }
+.wordmark.hop.is-mrka .ms-lesk { opacity: 0; }
+.wordmark.hop .ms-lesk { transition: opacity 90ms ease-out; }
+/* Rozhlížení: oči i lesk se posunou za pohledem, hlava se lehce nakloní. */
+.wordmark.hop .ms-oci { transform: translateX(calc(var(--pohled, 0) * 1.5px)); transition: transform .45s cubic-bezier(.32,.72,0,1); }
+.wordmark.hop .ms-pusa { transform: translateX(calc(var(--pohled, 0) * .8px)); transition: transform .45s cubic-bezier(.32,.72,0,1); }
+
+.wordmark.hop .ms-noha, .wordmark.hop .ms-ruka {
+  fill: none; stroke: var(--lime); stroke-width: 3.2; stroke-linecap: round;
+  transform-box: fill-box; transform-origin: top center;
+}
+/* Schované v těle: nulová výška, ne display:none — jinak by nešly animovat. */
+.wordmark.hop .ms-noha { transform: scaleY(0); }
+.wordmark.hop .ms-ruka { opacity: 0; }
+
+/* Chůze a salto se počítají relativně k domovu, proto translateX(var(--posun)). */
+.wordmark.hop.is-doma .hop-x { transform: translateX(calc(var(--posun, 0) * 1px)); transition: transform .9s cubic-bezier(.4,0,.6,1); }
+
+.wordmark.hop.trik-vysun .ms-noha { animation: ms-noha-ven .34s cubic-bezier(.3,1.4,.5,1) both; }
+.wordmark.hop.trik-chuze .ms-noha { transform: scaleY(1); }
+.wordmark.hop.trik-chuze .ms-noha-l { animation: ms-krok .42s ease-in-out infinite; }
+.wordmark.hop.trik-chuze .ms-noha-p { animation: ms-krok .42s ease-in-out .21s infinite; }
+.wordmark.hop.trik-chuze .hop-squish { animation: ms-houpani .42s ease-in-out infinite; }
+.wordmark.hop.trik-navrat .ms-noha { transform: scaleY(1); }
+.wordmark.hop.trik-navrat .ms-noha-l { animation: ms-krok .42s ease-in-out infinite; }
+.wordmark.hop.trik-navrat .ms-noha-p { animation: ms-krok .42s ease-in-out .21s infinite; }
+.wordmark.hop.trik-navrat .hop-squish { animation: ms-houpani .42s ease-in-out infinite; }
+.wordmark.hop.trik-zasun .ms-noha { animation: ms-noha-dovnitr .34s cubic-bezier(.4,0,.7,.2) both; }
+
+@keyframes ms-noha-ven { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ms-noha-dovnitr { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes ms-krok {
+  0%, 100% { transform: scaleY(1) rotate(16deg); }
+  50%      { transform: scaleY(1) rotate(-16deg); }
+}
+@keyframes ms-houpani {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-1.2px) rotate(2deg); }
+}
+
+/* Salto: odraz, otočka dozadu, dopad. Kolena se přitáhnou (nohy se zkrátí
+   a stočí dovnitř) a ruce je obejmou — proto se v půlce objeví. */
+.wordmark.hop.trik-salto .hop-y { animation: ms-vyskok 1.05s cubic-bezier(.3,0,.5,1) both; }
+.wordmark.hop.trik-salto .hop-spin { animation: ms-salto 1.05s cubic-bezier(.4,0,.35,1) both; }
+.wordmark.hop.trik-salto .hop-squish { animation: ms-salto-tvar 1.05s both; }
+.wordmark.hop.trik-salto .ms-noha { animation: ms-koleno 1.05s ease-in-out both; }
+.wordmark.hop.trik-salto .ms-ruka { animation: ms-obejmi 1.05s ease-in-out both; }
+.wordmark.hop.trik-salto .ms-pusa { d: path("M-4.6 3.4c1.4 3.4 7.8 3.4 9.2 0"); }
+
+@keyframes ms-vyskok {
+  0%   { transform: translateY(0); }
+  14%  { transform: translateY(5px); }      /* podřep */
+  50%  { transform: translateY(-58px); }
+  86%  { transform: translateY(0); }
+  93%  { transform: translateY(3px); }      /* doklep */
+  100% { transform: translateY(0); }
+}
+@keyframes ms-salto {
+  0%, 14% { transform: rotate(0deg); }
+  86%, 100% { transform: rotate(-360deg); }
+}
+@keyframes ms-salto-tvar {
+  0%   { transform: scale(1, 1); }
+  14%  { transform: scale(1.18, .84); }   /* podřep */
+  26%  { transform: scale(.86, 1.16); }   /* odraz */
+  50%  { transform: scale(1, 1); }
+  84%  { transform: scale(.92, 1.08); }
+  88%  { transform: scale(1.28, .74); }   /* dopad */
+  94%  { transform: scale(.94, 1.06); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes ms-koleno {
+  0%, 12%   { transform: scaleY(1) rotate(0deg); }
+  26%, 74%  { transform: scaleY(.42) rotate(0deg); }  /* kolena u brady */
+  88%, 100% { transform: scaleY(1) rotate(0deg); }
+}
+@keyframes ms-obejmi {
+  0%, 16%   { opacity: 0; }
+  26%, 72%  { opacity: 1; }
+  84%, 100% { opacity: 0; }
+}
+
+:root[data-motion="reduce"] .wordmark.hop * { animation: none !important; transition: none !important; }

@@ -69,10 +69,21 @@ def classify_en(title: str) -> str:
 
 
 def _toc(c: httpx.Client) -> list[tuple[str, str]]:
+    """Kódy sad z katalogu, každý jednou.
+
+    Eurostat řadí katalog do témat a tutéž sadu uvede pod každým z nich, takže
+    surový výpis má kódy několikrát. Bez sjednocení bychom ji tolikrát ověřili
+    (zbytečné dotazy) a tolikrát napočítali — do databáze by se stejně uložila
+    jednou, ale hlášené číslo by sedělo na nic.
+    """
     r = c.get(TOC, params={"lang": "en"})
     r.raise_for_status()
     rows = csv.reader(io.StringIO(r.text), delimiter="\t")
-    return [(row[1], row[0].strip()) for row in rows if len(row) > 2 and row[2] == "dataset" and row[1]]
+    out: dict[str, str] = {}
+    for row in rows:
+        if len(row) > 2 and row[2] == "dataset" and row[1]:
+            out.setdefault(row[1], row[0].strip())
+    return list(out.items())
 
 
 def _probe(session: httpx.Client, code: str, title: str) -> dict | None:

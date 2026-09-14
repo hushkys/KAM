@@ -237,9 +237,14 @@ export function Sparkline({ points, color = "var(--accent)", ariaLabel, variant 
           fill={color} opacity={spikes.has(p.year) ? 1 : 0.55 + (0.45 * i) / (pts.length - 1)} rx="0.8"
           style={{ ["--i" as string]: i, ["--n" as string]: pts.length }} />
       )) : (
-        // pathLength normalises every series to the same dash budget, so a
-        // 20-year line and a 5-year line finish drawing together.
-        <path className="l spark-draw" d={d} stroke={color} vectorEffect="non-scaling-stroke" pathLength={1000} />
+        // The line is revealed by the same wiping rectangle as the area, not
+        // by a dash offset. A sparkline is stretched horizontally
+        // (`preserveAspectRatio="none"`) and stroked in screen space
+        // (`non-scaling-stroke`); with those two together the browser measures
+        // the dash pattern in one space and the path in the other, so
+        // `stroke-dasharray` covered only about half the line and the
+        // animation ended with a gap between the line and its end dot.
+        <path className="l" d={d} stroke={color} vectorEffect="non-scaling-stroke" clipPath={`url(#${uid}c)`} />
       )}
       {pts.filter((p) => spikes.has(p.year)).map((p) => (
         <circle key={`o${p.year}`} cx={X(pts.indexOf(p))} cy={Y(p.value)} r="2.2" className="spark-spike spark-pop is-late" vectorEffect="non-scaling-stroke" />

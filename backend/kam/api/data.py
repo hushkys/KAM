@@ -12,7 +12,7 @@ from sqlalchemy import case, func, or_, select
 
 from .. import crowd
 from ..ai import rag
-from ..analytics import forecast, gaps, risks, simulate, store
+from ..analytics import finance, forecast, gaps, risks, simulate, store
 from ..analytics.profile import COMPARABLE, PROFILE_CODES, card, profile, reference
 from ..analytics.trends import classify
 from ..db import SessionLocal
@@ -251,6 +251,18 @@ def map_khk(indicator: str = "d_podil_65", level: str = "obec") -> dict:
     ref = store.latest(f"kraj:{HOME_KRAJ}", indicator)
     return {"indicator": store.meta(indicator), "year": year, "level": level, "reference": ref[1] if ref else None,
             "values": {k.split(":", 1)[1]: v for k, v in vals.items()}, "breaks": _breaks(list(vals.values()))}
+
+
+@router.get("/finance/{tid}")
+def finance_territory(tid: str) -> dict:
+    """Hospodaření území: rozpočet po letech a hodnocení s uvedeným pravidlem."""
+    t = store.territory(tid)
+    if t is None:
+        raise HTTPException(404, "Území neznámé.")
+    data = finance.souhrn(tid)
+    if not data["roky"]:
+        raise HTTPException(404, "Pro toto území nemáme rozpočtová data.")
+    return {"territory": {"id": t.id, "name": t.name, "level": t.level}, **data}
 
 
 @router.get("/geo/{name}")

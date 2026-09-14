@@ -18,6 +18,7 @@ import { NotFound } from "./pages/NotFound";
 import { Outlook } from "./pages/Outlook";
 import { Overview } from "./pages/Overview";
 import { Profile } from "./pages/Profile";
+import { Finance } from "./pages/Finance";
 import { Reports } from "./pages/Reports";
 import { Scenarios } from "./pages/Scenarios";
 import { Settings } from "./pages/Settings";
@@ -49,6 +50,7 @@ export function App() {
     case "profil": page = <Profile id={m.params.id} />; break;
     case "vyhled": page = <Outlook />; break;
     case "scenare": page = <Scenarios />; break;
+    case "hospodareni": page = <Finance />; break;
     case "podnety": page = <Reports />; break;
     case "data": page = <DataPage />; break;
     case "statistiky": page = <Stats />; break;

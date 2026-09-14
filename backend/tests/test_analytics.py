@@ -1,3 +1,5 @@
+import pytest
+
 from kam.analytics import forecast, gaps, profile, risks, simulate, store
 from kam.indicators import PILLARS
 
@@ -129,3 +131,36 @@ def test_forecast_components_add_up_to_the_projection():
     # Po letech se zaokrouhluje, takže pár lidí rozdílu je v pořádku; řádový
     # nesoulad by znamenal, že se skládá něco jiného, než se kreslí.
     assert abs(total - rows[-1]["population"]) <= len(rows)
+
+
+def test_finance_separates_running_the_place_from_investing(synthetic_db):
+    """Provozní přebytek je příjmy minus běžné výdaje, ne minus všechny."""
+    from kam.analytics import finance, store
+
+    store.reset()
+    roky = finance.rocni("obec:500001")
+    if not roky:
+        pytest.skip("syntetický kraj nemá rozpočtová data")
+    r = roky[-1]
+    assert r["bezne"] == r["vydaje"] - r["kapital"]
+    assert r["provozni"] == r["prijmy"] - r["bezne"]
+    # Krytí je poměr, ne rozdíl: 100 % znamená, že přebytek přesně stačil.
+    if r["kapital"] > 0:
+        assert abs(r["kryti"] - r["provozni"] / r["kapital"] * 100) < 0.1
+    else:
+        assert r["kryti"] is None
+    # Kumulované saldo je opravdu kumulované.
+    assert roky[-1]["kumul"] == sum(x["saldo"] for x in roky)
+
+
+def test_finance_verdict_states_its_own_rule(synthetic_db):
+    from kam.analytics import finance, store
+
+    store.reset()
+    d = finance.souhrn("obec:500001")
+    if not d["souhrn"]:
+        pytest.skip("syntetický kraj nemá rozpočtová data")
+    s = d["souhrn"]
+    assert s["stav"] in ("dobre", "neutral", "pozor", "riziko")
+    assert "%" in s["pravidlo"]
+    assert d["zdroj"].startswith("ČSÚ MOS")

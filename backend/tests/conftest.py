@@ -44,6 +44,9 @@ def _town(tid: str, pop: dict[int, float], share65: dict[int, float], mig_rate: 
             "040510": classes * pupils_per_class, "040520": classes, "040310": classes * 10, "040320": classes / 2,
             "070700": gp, "150160": p * 0.01, "500020": 3.5, "501000": p * 0.02, "504010": p * 0.005,
             "200002": p * 18, "200702": p * 20, "200602": p * 4, "200802": -p * 0.5, "121800": p * 0.002,
+            # Příjmy po konsolidaci drží identitu příjmy = výdaje + saldo,
+            # aby na nich šlo počítat provozní přebytek i krytí investic.
+            "200402": p * 19.5, "200302": p * 3,
             "600201": sewer, "140100": 1500, "141000": 400, "142000": 1.2,
         }
         if y == 2021:

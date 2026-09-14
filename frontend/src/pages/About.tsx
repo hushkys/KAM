@@ -10,7 +10,7 @@ export function About() {
         <div className="grid">
           <Card span={6} i={1} title="Co děláme" icon="users">
             <div className="prose">
-              <p><strong>Ondřej Hušek</strong> a <strong>Josef Efler</strong> vedou tým a jsou hlavními vývojáři KAM. Ondřej navrhl architekturu a postavil aplikaci od sklizně dat přes analytické a simulační jádro po AI vrstvu; Josef vede produktový směr, brainstorming a příběh projektu.</p>
+              <p>Tým má dvě oblasti a každá svého vedoucího. <strong>Ondřej Hušek</strong> vede vývoj a technologie — navrhl architekturu a postavil aplikaci od sklizně dat přes analytické a simulační jádro po AI vrstvu. <strong>Josef Efler</strong> vede brand, produkt a veřejnou komunikaci: značku, brandstorming, marketing a právní stránku projektu.</p>
               <p><strong>Matěj Jirásek</strong> odpovídá za uživatelský zážitek a vizuální jazyk — aby byla složitá data srozumitelná na první pohled.</p>
               <p><strong>Damián Roháček</strong> se stará o backend, datové služby a jejich spolehlivost.</p>
             </div>
@@ -18,7 +18,7 @@ export function About() {
           <Card span={6} i={2} title="Odkud jsme" icon="school">
             <div className="prose">
               <p>Ondřej, Matěj a Damián studují bakalářský program <strong>Informační a síťová bezpečnost</strong> na Fakultě informatiky a managementu Univerzity Hradec Králové.</p>
-              <p>Josef studuje na <strong>Univerzitě Tomáše Bati ve Zlíně</strong> se zaměřením na marketing.</p>
+              <p>Josef studuje <strong>Řízení rizik ve veřejné správě</strong> na Fakultě logistiky a krizového řízení Univerzity Tomáše Bati ve Zlíně.</p>
             </div>
           </Card>
           <Card span={12} i={3} title="Proč KAM" icon="target">

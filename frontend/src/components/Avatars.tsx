@@ -53,9 +53,39 @@ export function Avatar({ who, size = 96, title }: { who: keyof typeof LOOKS | st
   );
 }
 
-export const TEAM = [
-  { who: "ondrej", name: "Ondřej Hušek", role: "Full-stack software & AI inženýr", school: "UHK · FIM · Informační a síťová bezpečnost", lead: true },
-  { who: "josef", name: "Josef Efler", role: "Marketing a brainstorming", school: "Univerzita Tomáše Bati ve Zlíně", lead: true },
-  { who: "matej", name: "Matěj Jirásek", role: "UX/UI designer", school: "UHK · FIM · Informační a síťová bezpečnost", lead: false },
-  { who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", lead: false },
+/** Chrániče kolen. Týmový vtip, který si Damián vysloužil — a protože si na
+ *  něm zakládá, má je na kartě. Dvě plochy, žádný rastr, jako všechno ostatní. */
+export function Chranice({ size = 34 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="Chrániče na kolena">
+      <title>Chrániče na kolena</title>
+      {/* pásky */}
+      <path d="M9 15h30M9 33h30" stroke="var(--text-mute)" strokeWidth="3.4" strokeLinecap="round" />
+      {/* skořepina */}
+      <path d="M14 10h20a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V16a6 6 0 0 1 6-6z"
+        fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="2.4" />
+      <path d="M17 19c4-2 10-2 14 0M17 29c4 2 10 2 14 0" stroke="var(--accent)" strokeWidth="2" fill="none" strokeLinecap="round" opacity=".8" />
+    </svg>
+  );
+}
+
+export interface Clovek { who: string; name: string; role: string; school: string; chranice?: boolean }
+
+/** Tým není seznam lidí, ale dvě oblasti — a každá má někoho, kdo ji vede.
+ *  Karty se z toho staví samy, takže přibrat člověka znamená přidat řádek. */
+export const OBLASTI: { key: string; name: string; lead: Clovek; lide: Clovek[] }[] = [
+  {
+    key: "vyvoj",
+    name: "Vývoj a technologie",
+    lead: { who: "ondrej", name: "Ondřej Hušek", role: "Vývoj, architektura a AI", school: "UHK · FIM · Informační a síťová bezpečnost" },
+    lide: [{ who: "matej", name: "Matěj Jirásek", role: "UX/UI designer", school: "UHK · FIM · Informační a síťová bezpečnost" }],
+  },
+  {
+    key: "brand",
+    name: "Brand, produkt a veřejná komunikace",
+    lead: { who: "josef", name: "Josef Efler", role: "Branding, brandstorming, marketing a legal", school: "UTB · FLKŘ · Řízení rizik ve veřejné správě" },
+    lide: [{ who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", chranice: true }],
+  },
 ];
+
+export const TEAM: Clovek[] = OBLASTI.flatMap((o) => [o.lead, ...o.lide]);

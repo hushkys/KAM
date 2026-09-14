@@ -237,8 +237,14 @@
 .source-tile .st-name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .source-tile .st-count { font-weight: 800; font-variant-numeric: tabular-nums; }
 .tech-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-.team { display: grid; gap: var(--gap); }
-.team-leads { display: grid; gap: var(--gap); }
+/* Dva sloupce = dvě oblasti. Pod 860 px se skládají pod sebe celé, aby
+   vedoucí nezůstal odtržený od lidí, které vede. */
+.team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
+.team-oblast { display: grid; gap: 14px; min-width: 0; }
+.oblast-head { display: grid; gap: 2px; min-width: 0; }
+.oblast-eyebrow { font-size: .6875rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--text-mute); }
+.oblast-head h3 { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+@media (max-width: 860px) { .team { grid-template-columns: minmax(0, 1fr); } }
 .lead-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; padding: 22px 24px; border-radius: var(--r-xl); border: 1px solid var(--accent-line); background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--surface); min-width: 0; }
 .lead-card svg.avatar { width: 112px; height: 112px; }
 .lead-text { display: grid; gap: 4px; min-width: 0; }
@@ -247,8 +253,9 @@
 .lead-text .school { color: var(--text-mute); font-size: .875rem; }
 .lead-badge { justify-self: start; font-size: .6875rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
 @media (max-width: 520px) { .lead-card { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
-.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--gap); }
-.person { display: grid; gap: 4px; padding: 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); min-width: 0; }
+.person { position: relative; display: grid; gap: 4px; padding: 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); min-width: 0; }
+/* Odznak sedí v rohu karty, ne na portrétu — portréty drží jednotný tvar. */
+.person-odznak { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
 .person svg.avatar { width: 96px; height: 96px; margin-bottom: 10px; }
 .person strong { font-size: 1.0625rem; }
 .person .role { color: var(--accent); font-weight: 650; font-size: .875rem; }
