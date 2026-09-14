@@ -60,6 +60,29 @@ const SPECS: Record<string, Spec> = {
       <circle cx="18" cy="4.5" r="2.4" fill={fb} />
     </>),
   },
+  // Hospodaření = peníze, které obci projdou rukama. Peněženka, ne graf:
+  // sloupce už má Statistiky a stoupající křivku Výhled, takže by se v docku
+  // pletly. Zlatá je jediný teplý odstín, který tu ještě nebyl.
+  hospodareni: {
+    a: ["#f5c95e", "#bd840d"], b: ["#ffeaa6", "#f0c052"],
+    draw: (fa, fb) => (<>
+      <rect x="2.5" y="5.2" width="19" height="14.6" rx="3.4" fill={fa} />
+      <path d="M2.5 9.4h12.8a1.6 1.6 0 0 0 0-3.2H5.9" fill="none" stroke={W} strokeOpacity=".4" strokeWidth="1.2" />
+      <path d="M13.4 10.4h8.1v4.6h-8.1a2.3 2.3 0 0 1 0-4.6z" fill={fb} />
+      <circle cx="16.1" cy="12.7" r="1.5" fill={W} />
+    </>),
+  },
+  // Dotace = peníze, které přijdou odjinud. Mince padající do dlaní: samotná
+  // mince by byla jen „peníze", teprve ty dlaně říkají, že je někdo dává.
+  dotace: {
+    a: ["#ef8ac9", "#a3378a"], b: ["#ffc9e8", "#ef8ac9"],
+    draw: (fa, fb) => (<>
+      <circle cx="12" cy="5.9" r="4.3" fill={fb} />
+      <path d="M10.4 4.9a2.2 2.2 0 0 1 3.2 0" fill="none" stroke={W} strokeOpacity=".75" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M3.6 13.9h16.8a1.1 1.1 0 0 1 1.1 1.2c-.5 3.8-3.6 6.7-7.4 6.7h-4.2c-3.8 0-6.9-2.9-7.4-6.7a1.1 1.1 0 0 1 1.1-1.2z" fill={fa} />
+      <path d="M5.2 15.2h13.6" fill="none" stroke={W} strokeOpacity=".45" strokeWidth="1.2" strokeLinecap="round" />
+    </>),
+  },
   podnety: {
     a: ["#6cc4f2", "#2a78c2"], b: ["#b6e2fb", "#63b3ea"],
     draw: (fa) => (<>
