@@ -255,7 +255,7 @@ def map_khk(indicator: str = "d_podil_65", level: str = "obec") -> dict:
 
 @router.get("/geo/{name}")
 def geo(name: str) -> JSONResponse:
-    if name not in ("cz", "khk"):
+    if name not in ("cz", "khk", "khk_relief"):
         raise HTTPException(404)
     data = load_geo(name)
     if not data:

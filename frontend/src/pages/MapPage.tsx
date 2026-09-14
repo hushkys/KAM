@@ -1,7 +1,7 @@
 // Map: Czechia by kraj (open data per kraj, or an indicator), then the home
 // kraj by ORP or obec. Selection opens a side panel with the essentials.
 
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { Icon } from "../components/Icon";
 import { CzMap, KhkMap, MapLegend } from "../components/maps";
 import { Card, KindTag, PageHeader, Segmented, Severity } from "../components/ui";
@@ -9,6 +9,10 @@ import { useApi } from "../lib/api";
 import { num, withUnit } from "../lib/format";
 import { Link, navigate, setQuery, useLocation } from "../lib/router";
 import type { IndicatorMeta, Profile, Sources } from "../lib/types";
+
+// three.js and the elevation grid together outweigh the rest of the app, so
+// the terrain view is a chunk of its own and is fetched only when opened.
+const Relief3D = lazy(() => import("../components/Relief3D").then((m) => ({ default: m.Relief3D })));
 
 interface CzData { indicator: IndicatorMeta; year: number; national: number | null; national_datasets: number; breaks: number[]; kraje: { code: number; id: string; name: string; datasets: number; value: number | null; population: number | null }[] }
 interface KhkData { indicator: IndicatorMeta; year: number; level: string; reference: number | null; values: Record<string, number>; breaks: number[] }
@@ -24,6 +28,7 @@ export function MapPage() {
   const metric = query.get("m") ?? "datasets";
   const ind = query.get("ind") ?? "d_podil_65";
   const level = query.get("level") === "orp" ? "orp" : "obec";
+  const dim = query.get("3d") === "1" ? "3d" : "2d";
   const sel = query.get("sel");
   const inds = useApi<IndicatorMeta[]>("/map/indicators");
   const cz = useApi<CzData>(`/map/cz?indicator=${metric === "datasets" ? "d_podil_65" : metric}`);
@@ -47,7 +52,7 @@ export function MapPage() {
       <PageHeader eyebrow="Mapa" title={view === "cz" ? "Česko po krajích" : "Královéhradecký kraj"} lead={view === "cz" ? "Každý kraj a jeho otevřená data v Národním katalogu. Vyberte kraj." : "Obce a správní obvody ORP. Klepněte na území pro detail."}
         actions={<Segmented label="Pohled" value={view} onChange={(v) => setQuery({ view: v === "cz" ? null : v, sel: null })} options={[{ value: "cz", label: "Česko", icon: "globe" }, { value: "khk", label: "Královéhradecký kraj", icon: "map" }]} />} />
       <div className="grid">
-        <Card span={8} i={1} title={view === "cz" ? (metric === "datasets" ? "Otevřené datové sady krajů v NKOD" : cz.data?.indicator.name ?? "") : khk.data?.indicator.name ?? "Ukazatel"} icon="map"
+        <Card span={8} i={1} title={view === "cz" ? (metric === "datasets" ? "Otevřené datové sady podle území" : cz.data?.indicator.name ?? "") : khk.data?.indicator.name ?? "Ukazatel"} icon="map"
           actions={view === "cz" ? (
             <select className="select" style={{ height: 34, width: "auto" }} value={metric} onChange={(e) => setQuery({ m: e.target.value === "datasets" ? null : e.target.value })} aria-label="Co zobrazit">
               <option value="datasets">Počet otevřených datových sad</option>
@@ -56,6 +61,7 @@ export function MapPage() {
           ) : (
             <div className="row">
               <Segmented size="sm" label="Úroveň" value={level} onChange={(v) => setQuery({ level: v === "obec" ? null : v, sel: null })} options={[{ value: "obec", label: "Obce" }, { value: "orp", label: "ORP" }]} />
+              <Segmented size="sm" label="Zobrazení" value={dim} onChange={(v) => setQuery({ "3d": v === "3d" ? "1" : null })} options={[{ value: "2d", label: "Plošně", icon: "map" }, { value: "3d", label: "Terén", icon: "layers" }]} />
               <select className="select" style={{ height: 34, width: "auto", maxWidth: 240 }} value={ind} onChange={(e) => setQuery({ ind: e.target.value })} aria-label="Ukazatel">
                 {indOpts.map((i) => <option key={i.code} value={i.code}>{i.name}</option>)}
               </select>
@@ -65,12 +71,19 @@ export function MapPage() {
             <>
               <CzMap values={czValues} breaks={czBreaks} polarity={metric === "datasets" ? 1 : cz.data?.indicator.polarity ?? 1} selected={sel ? Number(sel) : null}
                 onSelect={(c) => setQuery({ sel: String(c) })} format={fmtCz} label="Mapa krajů Česka" />
-              <div className="row-between"><MapLegend breaks={czBreaks} polarity={metric === "datasets" ? 1 : cz.data?.indicator.polarity ?? 1} unit={metric === "datasets" ? "" : cz.data?.indicator.unit} /><span className="xsmall mute">Zdroj hranic: ČÚZK RÚIAN · {metric === "datasets" ? "NKOD" : `ČSÚ MOS ${cz.data?.year ?? ""}`}</span></div>
+              <div className="row-between"><MapLegend breaks={czBreaks} polarity={metric === "datasets" ? 1 : cz.data?.indicator.polarity ?? 1} unit={metric === "datasets" ? "" : cz.data?.indicator.unit} /><span className="xsmall mute">Zdroj hranic: ČÚZK RÚIAN · {metric === "datasets" ? "NKOD a další katalogy" : `ČSÚ MOS ${cz.data?.year ?? ""}`}</span></div>
             </>
           ) : khk.data ? (
             <>
-              <KhkMap level={level} values={khk.data.values} breaks={khk.data.breaks} polarity={khk.data.indicator.polarity} selected={sel} label={khk.data.indicator.name}
-                format={(v) => (v === null ? "bez dat" : withUnit(v, khk.data!.indicator.unit))} onSelect={(id) => setQuery({ sel: id })} />
+              {dim === "3d" ? (
+                <Suspense fallback={<div className="skeleton relief-skeleton" />}>
+                  <Relief3D level={level} values={khk.data.values} breaks={khk.data.breaks} polarity={khk.data.indicator.polarity} selected={sel}
+                    format={(v) => (v === null ? "bez dat" : withUnit(v, khk.data!.indicator.unit))} onSelect={(id) => setQuery({ sel: id })} />
+                </Suspense>
+              ) : (
+                <KhkMap level={level} values={khk.data.values} breaks={khk.data.breaks} polarity={khk.data.indicator.polarity} selected={sel} label={khk.data.indicator.name}
+                  format={(v) => (v === null ? "bez dat" : withUnit(v, khk.data!.indicator.unit))} onSelect={(id) => setQuery({ sel: id })} />
+              )}
               <div className="row-between"><MapLegend breaks={khk.data.breaks} polarity={khk.data.indicator.polarity} unit={khk.data.indicator.unit} /><span className="xsmall mute">{khk.data.year} · kraj {withUnit(khk.data.reference, khk.data.indicator.unit)}</span></div>
             </>
           ) : <span className="skeleton" style={{ width: "100%", aspectRatio: "1000/760" }} />}
@@ -82,7 +95,7 @@ export function MapPage() {
               {!selKraj && <p className="muted small">Klepněte na kraj v mapě. Královéhradecký kraj je označen zelenou tečkou a má v KAM detailní model.</p>}
               {selKraj && (
                 <div className="facts-list">
-                  <div className="fact-row"><span>Otevřené datové sady v NKOD</span><span className="num">{num(selKraj.datasets)}</span></div>
+                  <div className="fact-row"><span>Otevřené datové sady o kraji</span><span className="num">{num(selKraj.datasets)}</span></div>
                   <div className="fact-row"><span>Obyvatelé (ČSÚ)</span><span className="num">{num(selKraj.population)}</span></div>
                   {metric !== "datasets" && <div className="fact-row"><span>{cz.data?.indicator.name}</span><span className="num">{withUnit(selKraj.value, cz.data?.indicator.unit ?? "")}</span></div>}
                   {metric !== "datasets" && <div className="fact-row"><span>Česko</span><span className="num">{withUnit(cz.data?.national ?? null, cz.data?.indicator.unit ?? "")}</span></div>}
@@ -105,7 +118,7 @@ export function MapPage() {
                   </button>
                 ))}
               </div>
-              <p className="xsmall mute" style={{ marginTop: 10 }}>Celostátní sady (ČSÚ, MF, DIA, MPSV, AOPK): {num(cz.data?.national_datasets ?? 0)}. Kraje s nízkým počtem mohou publikovat pod jiným poskytovatelem.</p>
+              <p className="xsmall mute" style={{ marginTop: 10 }}>Sady bez jednoho kraje (celostátní a evropské): {num(cz.data?.national_datasets ?? 0)}. Kraj se určuje podle území, které sada popisuje, ne podle toho, kdo ji vydal.</p>
             </Card>
           )}
           {view === "khk" && (

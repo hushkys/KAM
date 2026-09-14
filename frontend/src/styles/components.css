@@ -403,6 +403,31 @@ a.list-row:hover .list-title { color: var(--accent); }
 .map-appear path.region { animation: region-in 700ms var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); }
 @keyframes region-in { from { opacity: 0; } }
 
+/* 3D terrain: the canvas keeps the flat map's aspect so switching between
+   Plošně and Terén does not make the card jump. */
+.relief-wrap { position: relative; width: 100%; }
+.relief-canvas { position: relative; width: 100%; aspect-ratio: 1000 / 760; border-radius: var(--r-md); overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--accent) 7%, transparent), transparent 70%), var(--surface-2);
+  cursor: grab; touch-action: none; }
+.relief-canvas:active { cursor: grabbing; }
+.relief-skeleton { width: 100%; aspect-ratio: 1000 / 760; border-radius: var(--r-md); }
+.relief-bar { position: absolute; right: 12px; bottom: 44px; z-index: 5; display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: var(--r-pill); }
+.relief-bar input[type="range"] { width: 120px; accent-color: var(--accent); }
+.relief-bar .relief-lock { height: 30px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text-dim); font-size: .75rem; font-weight: 600; cursor: pointer; }
+/* Locked: the page scrolls through the terrain instead of orbiting it. */
+.relief-canvas.is-locked { cursor: default; }
+.relief-unlock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
+  min-height: 44px; padding: 0 18px; border-radius: var(--r-pill); border: 1px solid var(--border-strong);
+  color: var(--text); font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.relief-note { margin-top: 10px; }
+@media (max-width: 640px) {
+  .relief-canvas { aspect-ratio: 1 / 1; }
+  .relief-bar { left: 12px; right: 12px; bottom: 52px; justify-content: space-between; }
+  .relief-bar input[type="range"] { flex: 1; height: 28px; }
+}
+
 /* ------------------------------------------------------------- misc */
 .kbd-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
 .chip-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-dim); font-size: .8125rem; font-weight: 600; cursor: pointer; transition: all var(--t-xs); white-space: nowrap; }

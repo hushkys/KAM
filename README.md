@@ -96,6 +96,11 @@ lze ho přepsat.
 **Podněty občanů** — anonymizace, seskupování podobných hlášení, formální
 podnět kraji po dosažení prahu.
 
+**Mapa ve dvou rozměrech i ve třech** — kraj po obcích a po ORP, plošně nebo
+jako terén. Ve 3D je stejná kartogramová barva natažená přes skutečný výškový
+model ČÚZK DMR 5G, převýšení si nastavíte posuvníkem, najetím zjistíte obec
+i nadmořskou výšku. Mapa je vlastní kresba — žádné dlaždice, žádný klíč.
+
 **Datové potřeby** — matice pokrytí ORP × oblast, čerstvost sad podle
 periodicity, strukturální mezery. Aplikace hlídá i data samotná.
 
@@ -140,12 +145,14 @@ odkazy a sady bez odkazu jsou v katalogu vidět zvlášť.
 | Zdroj | Jak se používá |
 |---|---|
 | NKOD (SPARQL) — všichni poskytovatelé | katalog, asistent, pokrytí, čerstvost, mapa |
+| Eurostat — regionální statistika NUTS3 CZ052 a NUTS2 CZ05 | katalog, asistent (jen sady, které o kraji opravdu mají hodnoty) |
 | Krajské a městské portály (DCAT-AP, ArcGIS Hub) | katalog (duplicity sloučeny) |
 | Lokální katalogy OFN (Hradec Králové, Praha) | katalog |
 | Národní geoportál INSPIRE (CENIA, CSW) | katalog |
 | ČSÚ — Městská a obecní statistika, 2005–2025 | hodnoty ukazatelů pro všechny obce |
 | Data KHK přes ArcGIS REST — přes 40 vrstev | zařízení, fakta a hodnoty v obcích |
 | ČÚZK RÚIAN | hranice kraje, ORP a obcí |
+| ČÚZK DMR 5G | výškový model kraje pro 3D mapu |
 
 **Pravidla sklizně**, na která se snadno šlápne:
 
@@ -157,6 +164,11 @@ odkazy a sady bez odkazu jsou v katalogu vidět zvlášť.
   shodou odkazu ke stažení. Index se staví znovu pro každý zdroj a vždy bez
   jeho vlastních řádků.
 - Denní řezy jedné řady se slučují do jedné sady, pokud jich je aspoň 30.
+  Úřad pro technické prohlídky sám registruje přes deset tisíc denních
+  souborů; počítat je jeden po druhém by katalog nafouklo, ne obohatilo.
+- Z Eurostatu se nebere katalog, ale ověřený průnik: u každé z bezmála devíti
+  tisíc sad se zvlášť zeptáme na hodnoty za `CZ052` a `CZ05` a zapíšeme jen tu,
+  která odpoví. Odkaz ke stažení míří na týž dotaz, takže vrací data o kraji.
 
 Ruční aktualizace:
 
@@ -164,8 +176,10 @@ Ruční aktualizace:
 cd backend && python -m kam.ingest all
 ```
 
-Kroky jdou spouštět i jednotlivě: `geo`, `catalog`, `mos`, `khk`, `link`,
-`check`, `rag`. Každý je idempotentní.
+Kroky jdou spouštět i jednotlivě: `geo`, `relief`, `catalog`, `eurostat`,
+`mos`, `khk`, `link`, `check`, `rag`. Každý je idempotentní. `relief` běží až
+po `geo`, protože si z hranic bere projekci; `eurostat` trvá kolem deseti
+minut, protože každou sadu ověřuje.
 
 ## Testy
 

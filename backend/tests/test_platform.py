@@ -161,3 +161,30 @@ def test_no_password_means_no_gate(monkeypatch):
 
     monkeypatch.setattr(main, "settings", replace(main.settings, auth_password=""))
     assert TestClient(main.create_app()).get("/api/overview").status_code == 200
+
+
+def test_eurostat_classification_uses_english_stems():
+    from kam.ingest.eurostat import classify_en
+
+    assert classify_en("Population on 1 January by age group, sex and NUTS 3 region") == "demografie"
+    assert classify_en("Gross domestic product (GDP) at current market prices by NUTS 3 region") == "finance"
+    assert classify_en("Nights spent at tourist accommodation establishments by NUTS 2 region") == "kultura"
+    assert classify_en("Železniční přejezdy") == "ostatni"
+
+
+def test_relief_bbox_matches_the_map_projection():
+    """The elevation grid has to sit in the same frame as the SVG paths."""
+    from kam.ingest.geo import KX, Projector
+    from kam.ingest.relief import _bbox_of
+
+    p = Projector((15.2, 50.1, 16.6, 50.7), 1000, 16)
+    khk = {"viewBox": f"0 0 {p.width:.0f} {p.height:.0f}",
+           "projection": {"lon0": p.lon0, "lat1": p.lat1, "k": p.k, "kx": KX, "pad": p.pad}}
+    west, south, east, north = _bbox_of(khk)
+    # The corners of the drawing, projected back, are the corners of the grid.
+    x0, y0 = p(west, north)
+    x1, y1 = p(east, south)
+    assert (round(x0), round(y0)) == (0, 0)
+    assert (round(x1), round(y1)) == (round(p.width), round(p.height))
+    # And the kraj itself is inside, with the padding around it.
+    assert west < 15.2 and east > 16.6 and south < 50.1 and north > 50.7
