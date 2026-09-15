@@ -38,6 +38,7 @@ ZABERY: list[tuple[str, str, int, int, bool]] = [
     ("vyhled", "/vyhled?t=kraj:86", 1440, 980, False),
     ("podnety", "/podnety", 1440, 900, False),
     ("data", "/data", 1440, 980, False),
+    ("statistiky", "/statistiky", 1440, 900, False),
 ]
 
 

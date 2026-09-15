@@ -387,7 +387,16 @@ a.list-row:hover .list-title { color: var(--accent); }
 
 /* ------------------------------------------------------------- maps */
 .map-wrap { position: relative; width: 100%; }
+.map-plocha { position: relative; }
 .map-svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
+/* Ovládání přiblížení. Vlevo dole, protože vpravo dole sedí na mapových
+   stránkách legenda a plovoucí odznak. */
+.map-zoom { position: absolute; left: 8px; bottom: 8px; z-index: 2; display: flex; align-items: center; gap: 4px;
+  padding: 4px; border-radius: var(--r-pill); background: color-mix(in oklab, var(--surface) 86%, transparent);
+  border: 1px solid var(--border); backdrop-filter: blur(8px); }
+:root[data-transparency="off"] .map-zoom { background: var(--surface); backdrop-filter: none; }
+.map-zoom button:disabled { opacity: .35; cursor: default; }
+.map-zoom-hod { font-size: .6875rem; font-weight: 750; color: var(--text-dim); padding-right: 6px; font-variant-numeric: tabular-nums; }
 .map-svg path.region { stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill var(--t-md) var(--ease-out), opacity var(--t-sm), filter var(--t-sm); outline: none; }
 .map-svg path.region:hover, .map-svg path.region:focus-visible { filter: brightness(1.18) saturate(1.1); }
 .map-svg path.region.is-selected { stroke: var(--text); stroke-width: 2; }

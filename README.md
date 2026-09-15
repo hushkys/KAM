@@ -16,7 +16,7 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 
 Tým **Popojedem.** · Hackathon Královéhradeckého kraje
 
-<img src="docs/screenshots/uvod.png" alt="Úvodní obrazovka KAM" width="900">
+<img src="docs/screenshots/uvod.png" alt="Úvodní obrazovka KAM" width="100%">
 
 </div>
 
@@ -45,14 +45,14 @@ v ten okamžik vyšla z databáze.
 Rizika seřazená podle závažnosti, puls kraje a výhled na jedné obrazovce.
 Každé riziko má důkaz a odkaz na území, kterého se týká.
 
-<img src="docs/screenshots/prehled.png" alt="Přehled: rizika, puls kraje a výhled" width="900">
+<img src="docs/screenshots/prehled.png" alt="Přehled: rizika, puls kraje a výhled" width="100%">
 
 ### Mapa v terénu
 
 Kartogram natažený přes skutečný výškový model z ČÚZK DMR 5G. Převýšení se dá
 nastavit, najetím zjistíte obec, hodnotu i nadmořskou výšku.
 
-<img src="docs/screenshots/mapa-3d.png" alt="3D mapa kraje s výškovým modelem" width="900">
+<img src="docs/screenshots/mapa-3d.png" alt="3D mapa kraje s výškovým modelem" width="100%">
 
 ### Obce
 
@@ -60,56 +60,64 @@ Všech 448 obcí kraje najednou: jedna tečka je jedna obec, plocha odpovídá
 počtu obyvatel a osa je logaritmická — jinak by se devadesát procent obcí
 slilo do jednoho chumlu a zbyl by jeden puntík vpravo.
 
-<img src="docs/screenshots/obce.png" alt="Obce: všech 448 obcí podle počtu obyvatel" width="900">
+<img src="docs/screenshots/obce.png" alt="Obce: všech 448 obcí podle počtu obyvatel" width="100%">
 
 ### Profil území
 
 Devět oblastí, u každého ukazatele poslední hodnota, srovnání s krajem, zdroj
 a vyhodnocení trendu. Tvar grafu si ukazatel vybírá sám podle toho, co měří.
 
-<img src="docs/screenshots/profil.png" alt="Profil území: ukazatele v devíti oblastech" width="900">
+<img src="docs/screenshots/profil.png" alt="Profil území: ukazatele v devíti oblastech" width="100%">
 
 ### Co kdyby? — simulátor
 
 Vlevo se scénář staví (hotové sady, osm druhů zásahů, přepsatelné
 předpoklady), vpravo běží stejný model dvakrát — bez zásahu a s ním.
 
-<img src="docs/screenshots/scenare.png" alt="Simulátor: stavba scénáře a jeho výsledek" width="900">
+<img src="docs/screenshots/scenare.png" alt="Simulátor: stavba scénáře a jeho výsledek" width="100%">
 
 ### Výhled 2026–2040
 
 Tři scénáře počtu obyvatel a věkové struktury, pásmo z 400 Monte Carlo běhů
 a zpětný test modelu.
 
-<img src="docs/screenshots/vyhled.png" alt="Výhled do roku 2040 ve třech scénářích" width="900">
+<img src="docs/screenshots/vyhled.png" alt="Výhled do roku 2040 ve třech scénářích" width="100%">
 
 ### Hospodaření obce
 
 Kolik zbyde z provozu, kolik jde do majetku a jestli si to obec platí sama.
 Hodnocení je pravidlo s vypsanými prahy, ne dojem.
 
-<img src="docs/screenshots/hospodareni.png" alt="Hospodaření obce: provozní přebytek a investice" width="900">
+<img src="docs/screenshots/hospodareni.png" alt="Hospodaření obce: provozní přebytek a investice" width="100%">
 
 ### Dotace
 
 Kolik do území doteklo, jak si stojí proti ostatním a kam se obrátit pro
 další.
 
-<img src="docs/screenshots/dotace.png" alt="Dotace: čerpání a rozcestník vyhlašovatelů" width="900">
+<img src="docs/screenshots/dotace.png" alt="Dotace: čerpání a rozcestník vyhlašovatelů" width="100%">
 
 ### Podněty občanů
 
 Jedno hlášení je stížnost. Pět podobných ze stejné obce je doklad — KAM je
 spojí, přiloží čísla z modelu a vznikne formální podnět pro kraj.
 
-<img src="docs/screenshots/podnety.png" alt="Podněty: z pěti hlášení vzniká formální podnět" width="900">
+<img src="docs/screenshots/podnety.png" alt="Podněty: z pěti hlášení vzniká formální podnět" width="100%">
 
 ### Otevřená data
 
 Celý katalog, ze kterého KAM čerpá: u každé sady ověřený odkaz a popsané
 využití. Plocha dlaždice odpovídá počtu sad v oblasti.
 
-<img src="docs/screenshots/data.png" alt="Katalog otevřených dat podle oblastí" width="900">
+<img src="docs/screenshots/data.png" alt="Katalog otevřených dat podle oblastí" width="100%">
+
+### Statistiky
+
+Kolik toho model drží, spočítané po tečkách. Jedna tečka je tisíc měřených
+hodnot a čím světlejší, tím novější — první roky jsou tenké, poslední se
+teprve plní.
+
+<img src="docs/screenshots/statistiky.png" alt="Statistiky: měřené hodnoty jako tečková mřížka" width="100%">
 
 ## Stav dat
 

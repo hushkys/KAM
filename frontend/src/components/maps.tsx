@@ -3,9 +3,10 @@
 // keyboard users, carry data-ctx for the right-click menu and show a
 // tooltip on hover or focus.
 
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
+import { Icon } from "./Icon";
 import { resolvedTheme, usePrefs } from "../lib/prefs";
 
 export interface GeoCz { viewBox: string; outline: string; kraje: { code: number; name: string; d: string; cx: number; cy: number }[] }
@@ -44,6 +45,132 @@ function useTip() {
     place({ clientX: b.left + b.width / 2, clientY: b.top + b.height / 2 }, title, lines);
   };
   return { tip, setTip, wrap, place, placeEl };
+}
+
+/* ------------------------------------------------------------ přiblížení
+ * Obec je na telefonu široká pár pixelů a prst má čtyřicet. Bez přiblížení
+ * se do půlky kraje nedá klepnout — a to není vlastnost kartogramu, to je
+ * chyba, kterou stačí opravit.
+ *
+ * Hýbe se `viewBox`, ne `transform`: tahy zůstávají ostré a obrysy si díky
+ * `vector-effect: non-scaling-stroke` drží svou tloušťku v pixelech, takže
+ * se při přiblížení nerozlijí.
+ *
+ * Gesta jsou rozdělená tak, aby se nepraly se stránkou. V základním pohledu
+ * jeden prst roluje stránku (`touch-action: pan-y`) a dva prsty přibližují.
+ * Jakmile je mapa přiblížená, jeden prst ji posouvá — v tu chvíli už člověk
+ * mapu ovládá vědomě a čekal by to. Stejná úvaha jako u 3D terénu.
+ */
+const ZOOM_MAX = 8;
+/** Pod osm pixelů je to klepnutí, ne tah — jinak by se posunem rušil výběr. */
+const PRAH_TAHU = 8;
+
+interface Pohled { x: number; y: number; w: number; h: number }
+
+function naCisla(viewBox: string): Pohled {
+  const [x, y, w, h] = viewBox.split(/[\s,]+/).map(Number);
+  return { x, y, w, h };
+}
+
+function useZoom(viewBox: string | undefined) {
+  const zaklad = useMemo(() => (viewBox ? naCisla(viewBox) : null), [viewBox]);
+  const [pohled, setPohled] = useState<Pohled | null>(null);
+  const plocha = useRef<HTMLDivElement>(null);
+  const prsty = useRef(new Map<number, { x: number; y: number }>());
+  const tahl = useRef(false);
+
+  const akt = pohled ?? zaklad;
+  const zoom = akt && zaklad ? zaklad.w / akt.w : 1;
+
+  const drz = useCallback((p: Pohled): Pohled => {
+    if (!zaklad) return p;
+    const w = Math.min(zaklad.w, Math.max(zaklad.w / ZOOM_MAX, p.w));
+    const h = w * (zaklad.h / zaklad.w);
+    return {
+      w, h,
+      x: Math.min(Math.max(p.x, zaklad.x), zaklad.x + zaklad.w - w),
+      y: Math.min(Math.max(p.y, zaklad.y), zaklad.y + zaklad.h - h),
+    };
+  }, [zaklad]);
+
+  /** Každá úprava vychází z předchozího stavu, ne z toho, co bylo při
+   *  vykreslení. Dvě klepnutí na „přiblížit" v jednom snímku by jinak obě
+   *  počítala ze stejného výchozího pohledu a druhé by nic neudělalo. */
+  const uprav = useCallback((f: (p: Pohled) => Pohled) => {
+    setPohled((prev) => (zaklad ? drz(f(prev ?? zaklad)) : prev));
+  }, [zaklad, drz]);
+
+  /** Přiblíží tak, aby bod pod prstem zůstal na místě. */
+  const priblizit = useCallback((faktor: number, klientX?: number, klientY?: number) => {
+    const r = plocha.current?.getBoundingClientRect();
+    if (!r) return;
+    const fx = klientX === undefined ? 0.5 : (klientX - r.left) / r.width;
+    const fy = klientY === undefined ? 0.5 : (klientY - r.top) / r.height;
+    uprav((p) => {
+      const w = p.w / faktor, h = p.h / faktor;
+      return { x: p.x + (p.w - w) * fx, y: p.y + (p.h - h) * fy, w, h };
+    });
+  }, [uprav]);
+
+  const zpet = useCallback(() => setPohled(null), []);
+
+  const dolu = (e: React.PointerEvent) => {
+    prsty.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (prsty.current.size === 1) tahl.current = false;
+  };
+
+  const pohyb = (e: React.PointerEvent) => {
+    const p = prsty.current;
+    if (!p.has(e.pointerId) || !zaklad) return;
+    const r = plocha.current?.getBoundingClientRect();
+    if (!r) return;
+    const stary = p.get(e.pointerId)!;
+    const dx = e.clientX - stary.x, dy = e.clientY - stary.y;
+    p.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (Math.hypot(dx, dy) > PRAH_TAHU / 4) tahl.current = true;
+
+    if (p.size >= 2) {
+      const [a, b] = [...p.values()];
+      const vzdal = Math.hypot(a.x - b.x, a.y - b.y);
+      const predchozi = vzdal - Math.hypot(dx, dy);
+      // Strop na faktor drží gesto v klidu, když jeden prst na okamžik vypadne.
+      const faktor = Math.max(0.5, Math.min(2, predchozi > 0 ? vzdal / predchozi : 1));
+      const fx = ((a.x + b.x) / 2 - r.left) / r.width, fy = ((a.y + b.y) / 2 - r.top) / r.height;
+      uprav((v) => {
+        const w = v.w / faktor, h = w * (v.h / v.w);
+        return { x: v.x + (v.w - w) * fx - (dx / r.width) * v.w, y: v.y + (v.h - h) * fy - (dy / r.height) * v.h, w, h };
+      });
+      return;
+    }
+    // Jeden prst posouvá jen přiblíženou mapu; jinak patří rolování stránky.
+    if (zoom > 1.01 && e.pointerType !== "mouse") {
+      uprav((v) => ({ ...v, x: v.x - (dx / r.width) * v.w, y: v.y - (dy / r.height) * v.h }));
+    }
+  };
+
+  const nahoru = (e: React.PointerEvent) => { prsty.current.delete(e.pointerId); };
+
+  const gesta = {
+    ref: plocha,
+    onPointerDown: dolu,
+    onPointerMove: pohyb,
+    onPointerUp: nahoru,
+    onPointerCancel: nahoru,
+    // Tah nesmí skončit výběrem obce, nad kterou prst dojel.
+    onClickCapture: (e: React.MouseEvent) => { if (tahl.current) { e.stopPropagation(); tahl.current = false; } },
+  };
+  return { akt, zoom, gesta, priblizit, zpet, pripraveno: !!zaklad };
+}
+
+function Zoom({ zoom, priblizit, zpet }: { zoom: number; priblizit: (f: number) => void; zpet: () => void }) {
+  return (
+    <div className="map-zoom" role="group" aria-label="Přiblížení mapy">
+      <button type="button" className="icon-btn sm" onClick={() => priblizit(1.6)} disabled={zoom >= ZOOM_MAX - 0.01} aria-label="Přiblížit" title="Přiblížit"><Icon name="plus" size={16} /></button>
+      <button type="button" className="icon-btn sm" onClick={() => priblizit(1 / 1.6)} disabled={zoom <= 1.01} aria-label="Oddálit" title="Oddálit"><Icon name="minus" size={16} /></button>
+      <button type="button" className="icon-btn sm" onClick={zpet} disabled={zoom <= 1.01} aria-label="Celý kraj" title="Celý kraj"><Icon name="refresh" size={15} /></button>
+      {zoom > 1.01 && <span className="map-zoom-hod" aria-live="polite">{zoom.toFixed(1)}×</span>}
+    </div>
+  );
 }
 
 export function CzMap({ values, breaks, polarity = 1, selected, onSelect, format, label, highlight = 86 }: {
@@ -85,11 +212,14 @@ export function KhkMap({ level, values, breaks, polarity = 1, selected, onSelect
   const colors = ramp(polarity, resolvedTheme(prefs));
   const { tip, setTip, wrap, place, placeEl } = useTip();
   const orpName = useMemo(() => Object.fromEntries((data?.orp ?? []).map((o) => [o.code, o.name])), [data]);
-  if (!data) return <div className="map-wrap"><div className="skeleton" style={{ width: "100%", aspectRatio: "1000 / 760" }} /></div>;
+  const { akt, zoom, gesta, priblizit, zpet } = useZoom(data?.viewBox);
+  if (!data || !akt) return <div className="map-wrap"><div className="skeleton" style={{ width: "100%", aspectRatio: "1000 / 760" }} /></div>;
   const shapes = level === "orp" ? data.orp : data.obce;
   return (
     <div className="map-wrap" ref={wrap}>
-      <svg className="map-svg map-appear" viewBox={data.viewBox} role="group" aria-label={label}>
+      <div className="map-plocha" {...gesta}>
+      <svg className="map-svg map-appear" viewBox={`${akt.x} ${akt.y} ${akt.w} ${akt.h}`} role="group" aria-label={label}
+        style={{ touchAction: zoom > 1.01 ? "none" : "pan-y" }}>
         {shapes.map((s, i) => {
           const v = values[String(s.code)];
           const fill = v === undefined ? "var(--surface-3)" : colors[binOf(v, breaks)];
@@ -108,8 +238,12 @@ export function KhkMap({ level, values, breaks, polarity = 1, selected, onSelect
         })}
         {level === "obec" && showOrpLines && data.orp.map((o) => <path key={`l${o.code}`} className="orp-line" d={o.d} />)}
         <path className="outline" d={data.outline} />
-        {level === "orp" && data.orp.map((o) => <text key={`t${o.code}`} className="map-label sub" x={o.cx} y={o.cy}>{o.name}</text>)}
+        {/* Popisky jsou v uživatelských jednotkách, takže by se přiblížením
+            nafoukly. Velikost se proto dělí přiblížením zpátky. */}
+        {level === "orp" && data.orp.map((o) => <text key={`t${o.code}`} className="map-label sub" x={o.cx} y={o.cy} style={{ fontSize: `${10 / zoom}px`, strokeWidth: 3 / zoom }}>{o.name}</text>)}
       </svg>
+      </div>
+      <Zoom zoom={zoom} priblizit={priblizit} zpet={zpet} />
       {tip && <div className="map-tip glass" style={{ left: tip.x, top: tip.y }}><strong>{tip.title}</strong>{tip.lines.map((l) => <span key={l} className="muted small" style={{ display: "block" }}>{l}</span>)}</div>}
     </div>
   );
