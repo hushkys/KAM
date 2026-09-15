@@ -58,6 +58,18 @@ def submit(cid: int) -> dict:
         raise HTTPException(502, f"Odeslání selhalo: {e}") from e
 
 
+@router.delete("/clusters/{cid}")
+def smaz(cid: int, request: Request) -> dict:
+    """Smaže skupinu i hlášení pod ní. Jediná operace v API, po které data
+    nejdou vrátit — proto rychlostní limit a záznam v provozním logu."""
+    if not write_limiter.allow(request.client.host if request.client else "?"):
+        raise HTTPException(429, "Příliš mnoho požadavků za minutu.")
+    try:
+        return crowd.smaz(cid)
+    except KeyError as e:
+        raise HTTPException(404) from e
+
+
 @router.get("/stats")
 def stats() -> dict:
     return crowd.stats()

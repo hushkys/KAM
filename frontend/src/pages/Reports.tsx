@@ -34,6 +34,12 @@ export function Reports() {
   const [doc, setDoc] = useState<Doc | null>(null);
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
+  // Mazání je nevratné, takže má dva kroky: první klepnutí jen změní
+  // popisek tlačítka. Modální „opravdu?" nad modálem by bylo horší.
+  const [potvrdit, setPotvrdit] = useState(false);
+  const [uklidOpen, setUklidOpen] = useState(false);
+  const [uklidStav, setUklidStav] = useState("odeslano");
+  const [uklidDni, setUklidDni] = useState(365);
   const form = useRef<HTMLElement>(null);
   const threshold = stats.data?.threshold ?? 5;
 
@@ -65,6 +71,30 @@ export function Reports() {
       refresh();
     } catch (e) { toast("error", (e as Error).message); }
   };
+  const smazat = async (id: number) => {
+    try {
+      const r = await api<{ hlaseni: number }>(`/reports/clusters/${id}`, { method: "DELETE" });
+      toast("ok", `Podnět smazán (${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}). Záznam zůstal v provozním logu.`);
+      setDoc(null);
+      setPotvrdit(false);
+      refresh();
+    } catch (e) { toast("error", (e as Error).message); }
+  };
+
+  // Náhled se počítá z už načteného seznamu, ne dalším dotazem na server:
+  // je to tatáž pravda a člověk vidí číslo dřív, než na cokoli klepne.
+  const kUklidu = (clusters.data ?? []).filter((c) => (!uklidStav || c.status === uklidStav)
+    && (Date.now() - new Date(c.updated_at).getTime()) / 86400000 >= uklidDni);
+
+  const uklidit = async () => {
+    try {
+      const r = await api<{ skupin: number; hlaseni: number }>("/provoz/podnety/uklid", { body: { stav: uklidStav, starsi_nez_dni: uklidDni } });
+      toast("ok", r.skupin ? `Uklizeno: ${r.skupin} ${plural(r.skupin, "skupina", "skupiny", "skupin")}, ${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}.` : "Nic k úklidu.");
+      setUklidOpen(false);
+      refresh();
+    } catch (e) { toast("error", (e as Error).message); }
+  };
+
   const same = (c: Cluster) => { setTid(c.territory.id); setCat(c.category); setDoc(null); form.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
 
   const kpis = [
@@ -146,6 +176,7 @@ export function Reports() {
           <div className="rp-toolbar reveal" style={{ "--i": 3 } as CSSProperties}>
             <div className="input-icon rp-search"><Icon name="search" size={16} /><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat v podnětech…" aria-label="Hledat v podnětech" enterKeyHint="search" /></div>
             <Segmented size="sm" label="Stav" value={status} onChange={setStatus} options={[{ value: "", label: "Vše" }, { value: "sber", label: "Sbírá se" }, { value: "pripraveno", label: "Připraveno" }, { value: "odeslano", label: "Předáno" }]} />
+            <button className="btn btn-sm" onClick={() => setUklidOpen(true)} disabled={!clusters.data?.length}><Icon name="trash" size={15} /> Úklid</button>
           </div>
 
           <div className="rp-list">
@@ -168,11 +199,15 @@ export function Reports() {
         </div>
       </div>
 
-      <Modal open={Boolean(doc)} onClose={() => setDoc(null)} title={doc ? (doc.status === "sber" ? "Skupina hlášení" : "Formální podnět") : ""} wide
+      <Modal open={Boolean(doc)} onClose={() => { setDoc(null); setPotvrdit(false); }} title={doc ? (doc.status === "sber" ? "Skupina hlášení" : "Formální podnět") : ""} wide
         footer={doc ? <>
           {doc.status === "sber" && <button className="btn" onClick={() => same(doc)}><Icon name="plus" size={16} /> Mám stejný problém</button>}
           {doc.status !== "sber" && <button className="btn" onClick={() => window.print()}><Icon name="print" size={16} /> Tisk / PDF</button>}
           {doc.status === "pripraveno" && <button className="btn btn-primary" onClick={() => deliver(doc.id)}><Icon name="send" size={16} /> Předat kraji</button>}
+          <button className={`btn ${potvrdit ? "btn-danger" : "btn-quiet"}`} style={{ marginRight: "auto" }}
+            onClick={() => (potvrdit ? smazat(doc.id) : setPotvrdit(true))}>
+            <Icon name="trash" size={16} /> {potvrdit ? "Opravdu smazat" : "Smazat"}
+          </button>
         </> : undefined}>
         {doc && (
           <article className="rp-letter">
@@ -197,6 +232,39 @@ export function Reports() {
             <p className="xsmall mute">{doc.note}</p>
           </article>
         )}
+      </Modal>
+
+      <Modal open={uklidOpen} onClose={() => setUklidOpen(false)} sheet title="Úklid podnětů"
+        footer={<>
+          <button className="btn" onClick={() => setUklidOpen(false)}>Zrušit</button>
+          <button className="btn btn-danger" disabled={!kUklidu.length} onClick={uklidit}>
+            <Icon name="trash" size={16} /> Smazat {kUklidu.length} {plural(kUklidu.length, "skupinu", "skupiny", "skupin")}
+          </button>
+        </>}>
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Smazané podněty nejdou vrátit. V provozním logu po nich zůstane záznam se značkou a počtem
+          hlášení, ne jejich text.
+        </p>
+        <div className="field">
+          <span className="field-label">Které stavy</span>
+          <select className="select" value={uklidStav} onChange={(e) => setUklidStav(e.target.value)}>
+            <option value="odeslano">Jen předané kraji</option>
+            <option value="sber">Jen ty, které se sbírají</option>
+            <option value="pripraveno">Jen připravené k předání</option>
+            <option value="">Všechny stavy</option>
+          </select>
+        </div>
+        <div className="field" style={{ marginTop: 12 }}>
+          <span className="field-label">Starší než (dní od poslední změny)</span>
+          <input className="input" type="number" min={1} max={3650} value={uklidDni}
+            onChange={(e) => setUklidDni(Math.max(1, Number(e.target.value) || 1))} />
+        </div>
+        <p className="small" style={{ marginTop: 14 }}>
+          {kUklidu.length
+            ? <>Odpovídá <strong>{kUklidu.length}</strong> {plural(kUklidu.length, "skupina", "skupiny", "skupin")} s celkem{" "}
+              <strong>{kUklidu.reduce((a2, c) => a2 + c.count, 0)}</strong> hlášeními.</>
+            : <span className="muted">Tomuhle filtru zatím nic neodpovídá.</span>}
+        </p>
       </Modal>
     </>
   );

@@ -25,7 +25,7 @@ from sqlalchemy import delete, select
 from .. import prefs
 from ..analytics import store
 from ..db import session_scope
-from ..models import AuditLog, ChatMessage, ChatSession, now
+from ..models import ChatMessage, ChatSession, now
 from . import commands, guard, providers, rag, router, tools
 from .prompts import system_prompt
 
@@ -62,12 +62,10 @@ def purge_old() -> int:
     return len(old)
 
 
-def _audit(action: str, detail: dict) -> None:
-    try:
-        with session_scope() as s:
-            s.add(AuditLog(action=action, detail=detail))
-    except Exception:
-        pass
+def _audit(action: str, detail: dict, uroven: str = "info") -> None:
+    """Jeden zapisovač pro celou aplikaci — viz `logs.zapis`."""
+    from .. import logs
+    logs.zapis(action, detail, uroven=uroven, zdroj="asistent")
 
 
 def _fallback(brief: str, hits: list[dict], sources: list[dict]) -> str:
@@ -89,7 +87,7 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
 
     ok, category, refusal = guard.check_input(message)
     if not ok:
-        _audit("ai_blocked", {"category": category})
+        _audit("ai_blocked", {"category": category}, "varovani")
         yield "meta", {"session_id": session_id, "route": {"intent": "GUARD", "tier": "none", "reason": f"blokováno: {category}"}, "model": None, "sources": []}
         yield "token", {"text": refusal}
         yield "done", {"ms": round((time.perf_counter() - t0) * 1000), "blocked": True}
@@ -222,7 +220,7 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
                 yield "note", {"text": f"{attempts[0].name} neodpověděl, odpověď dokončil {p.name}."}
             break
         except Exception as e:
-            _audit("ai_error", {"provider": p.name, "error": str(e)[:300]})
+            _audit("ai_error", {"provider": p.name, "error": str(e)[:300]}, "chyba")
             if answer:
                 break
             continue

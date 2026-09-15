@@ -6,7 +6,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { Icon } from "../components/Icon";
 import { Card, Empty, Modal, PageHeader, Pill, Segmented, Switch } from "../components/ui";
 import { api, invalidate, useApi } from "../lib/api";
-import { num } from "../lib/format";
+import { date, dateTime, num } from "../lib/format";
 import { DEFAULTS, reset, set as setPrefs, usePrefs } from "../lib/prefs";
 import { jeNainstalovana, lzeVyzvat, nabidniInstalaci, potrebaIosNavod, sledujInstalaci } from "../lib/pwa";
 import { Link } from "../lib/router";
@@ -17,6 +17,7 @@ const TABS = [
   { key: "pristupnost", label: "Přístupnost", icon: "eye" },
   { key: "modely", label: "Modely AI", icon: "sparkle" },
   { key: "soukromi", label: "Data a soukromí", icon: "shield" },
+  { key: "provoz", label: "Provoz a log", icon: "history" },
   { key: "aplikace", label: "O aplikaci", icon: "info" },
 ];
 
@@ -83,7 +84,7 @@ function Accessibility() {
 }
 
 interface Provider { id: number; name: string; kind: "openai" | "gemini"; base_url: string; model: string; tier: "local" | "cloud"; enabled: boolean; is_default: boolean; temperature: number; max_tokens: number; has_key: boolean; key_hint: string }
-interface Settings { ai: { policy: string; router_mode: string; history: boolean; retention_days: number; max_sources: number; answer_length: string }; destinations: { reports_target: string; webhook_url: string; email: string; threshold: number; auto_submit: boolean }; data: { auto_refresh: boolean; refresh_hours: number } }
+interface Settings { ai: { policy: string; router_mode: string; history: boolean; retention_days: number; max_sources: number; answer_length: string }; destinations: { reports_target: string; webhook_url: string; email: string; threshold: number; auto_submit: boolean }; data: { auto_refresh: boolean; refresh_hours: number }; provoz: { log_dni: number; podnety_dni: number; uklid_zapnut: boolean } }
 
 const EMPTY: Omit<Provider, "id" | "has_key" | "key_hint"> & { api_key: string } = { name: "", kind: "openai", base_url: "http://localhost:1234/v1", model: "", tier: "local", enabled: true, is_default: false, temperature: 0.2, max_tokens: 900, api_key: "" };
 
@@ -251,6 +252,142 @@ function Privacy() {
  *  nainstalovaná (není co nabízet), prohlížeč poslal výzvu (tlačítko), nebo
  *  jsme v Safari na iOS (zbývá návod). Čtvrtý případ — prohlížeč instalaci
  *  neumí — nezobrazuje nic, protože rada, kterou nelze provést, jen mate. */
+/** Provozní log: co se v aplikaci stalo a jak dlouho se to drží.
+ *
+ *  Není to kopie serverového `logging` do konzole — kontejner se restartuje
+ *  a stdout je pryč, kdežto tohle přežije a dá se v tom filtrovat. Do logu
+ *  se schválně nedostane nic osobního: počty, značky a důvody, žádné texty
+ *  podnětů ani dotazy na asistenta.
+ */
+const UROVNE: Record<string, { label: string; tone: "neutral" | "ok" | "warn" | "bad" }> = {
+  info: { label: "Informace", tone: "neutral" },
+  varovani: { label: "Varování", tone: "warn" },
+  chyba: { label: "Chyba", tone: "bad" },
+};
+const ZDROJE: Record<string, string> = { system: "Systém", podnety: "Podněty", asistent: "Asistent", data: "Data", nastaveni: "Nastavení" };
+const NA_STRANKU = 25;
+
+interface LogRadek { id: number; at: string | null; action: string; level: string; source: string; detail: Record<string, unknown> }
+interface LogSouhrn { celkem: number; podle_urovne: Record<string, number>; podle_zdroje: Record<string, number>; nejstarsi: string | null; nejnovejsi: string | null; drzi_dni: number }
+
+function Provoz() {
+  const st = useApi<Settings>("/settings");
+  const [uroven, setUroven] = useState("");
+  const [zdroj, setZdroj] = useState("");
+  const [strana, setStrana] = useState(0);
+  const souhrn = useApi<LogSouhrn>("/provoz/log/souhrn");
+  const zaznamy = useApi<{ celkem: number; polozky: LogRadek[] }>(
+    `/provoz/log?limit=${NA_STRANKU}&offset=${strana * NA_STRANKU}${uroven ? `&uroven=${uroven}` : ""}${zdroj ? `&zdroj=${zdroj}` : ""}`);
+  const [maze, setMaze] = useState(false);
+  const p = st.data?.provoz;
+
+  const obnov = () => { invalidate("/provoz"); souhrn.reload(); zaznamy.reload(); };
+  const uklid = async (telo: Record<string, unknown>, hlaska: string) => {
+    setMaze(true);
+    try {
+      const r = await api<{ smazano: number }>("/provoz/log/uklid", { body: telo });
+      toast("ok", r.smazano ? `${hlaska}: ${num(r.smazano)} záznamů.` : "Nic k mazání.");
+      setStrana(0);
+      obnov();
+    } catch (e) { toast("error", (e as Error).message); }
+    finally { setMaze(false); }
+  };
+
+  const stran = Math.max(1, Math.ceil((zaznamy.data?.celkem ?? 0) / NA_STRANKU));
+
+  return (
+    <div className="stack-y">
+      <Card i={0} title="Co se v aplikaci děje" icon="history">
+        <p className="small muted" style={{ margin: "0 0 14px" }}>
+          Záznamy o provozu: smazané podněty, zablokované dotazy na asistenta, plánované aktualizace dat.
+          Do logu se nezapisuje nic osobního — počty, značky a důvody, ne texty podnětů ani dotazy.
+        </p>
+        {souhrn.data && (
+          <div className="facts-list">
+            <div className="fact-row"><span>Záznamů celkem</span><span className="num">{num(souhrn.data.celkem)}</span></div>
+            <div className="fact-row"><span>Z toho varování a chyb</span><span className="num">{num((souhrn.data.podle_urovne.varovani ?? 0) + (souhrn.data.podle_urovne.chyba ?? 0))}</span></div>
+            <div className="fact-row"><span>Nejstarší záznam</span><span>{souhrn.data.nejstarsi ? date(souhrn.data.nejstarsi) : "—"}</span></div>
+            <div className="fact-row"><span>Drží se</span><span>{souhrn.data.drzi_dni > 0 ? `${souhrn.data.drzi_dni} dní` : "bez omezení"}</span></div>
+          </div>
+        )}
+      </Card>
+
+      <Card i={1} title="Záznamy" icon="book" actions={<button className="btn btn-sm" onClick={obnov}><Icon name="refresh" size={15} /> Načíst znovu</button>}>
+        <div className="filters">
+          <label className="field"><span className="field-label">Úroveň</span>
+            <select className="select" value={uroven} onChange={(e) => { setUroven(e.target.value); setStrana(0); }}>
+              <option value="">Vše</option>
+              {Object.entries(UROVNE).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+          </label>
+          <label className="field"><span className="field-label">Zdroj</span>
+            <select className="select" value={zdroj} onChange={(e) => { setZdroj(e.target.value); setStrana(0); }}>
+              <option value="">Vše</option>
+              {Object.entries(ZDROJE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </label>
+        </div>
+        {zaznamy.data?.polozky.length === 0 && <Empty icon="check" title="Zatím nic">{uroven || zdroj ? "Tomuhle filtru nic neodpovídá." : "Log je prázdný."}</Empty>}
+        {(zaznamy.data?.polozky.length ?? 0) > 0 && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Kdy</th><th>Úroveň</th><th>Zdroj</th><th>Akce</th><th>Podrobnosti</th></tr></thead>
+              <tbody>
+                {zaznamy.data!.polozky.map((r) => (
+                  <tr key={r.id}>
+                    <td className="small mute" style={{ whiteSpace: "nowrap" }}>{dateTime(r.at)}</td>
+                    <td><Pill tone={UROVNE[r.level]?.tone}>{UROVNE[r.level]?.label ?? r.level}</Pill></td>
+                    <td className="small">{ZDROJE[r.source] ?? r.source}</td>
+                    <td className="small strong">{r.action}</td>
+                    <td className="small mute">{Object.entries(r.detail).map(([k, v]) => `${k}: ${String(v)}`).join(" · ") || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {stran > 1 && (
+          <div className="pager">
+            <button className="btn btn-sm" disabled={strana === 0} onClick={() => setStrana((s2) => s2 - 1)}><Icon name="chevron-left" size={15} /> Novější</button>
+            <span className="small mute">Strana {strana + 1} z {stran} · {num(zaznamy.data?.celkem ?? 0)} záznamů</span>
+            <button className="btn btn-sm" disabled={strana + 1 >= stran} onClick={() => setStrana((s2) => s2 + 1)}>Starší <Icon name="chevron-right" size={15} /></button>
+          </div>
+        )}
+      </Card>
+
+      {p && (
+        <Card i={2} title="Úklid a uchování" icon="trash" className="setting-block">
+          <Switch checked={p.uklid_zapnut} onChange={(v) => saveSection("provoz", { uklid_zapnut: v }).then(st.reload)}
+            label="Uklízet automaticky" hint="Jednou denně smaže, co je za lhůtou." />
+          <Row label="Log se drží" hint="Nula znamená nemazat.">
+            <select className="select" style={{ width: "auto" }} value={p.log_dni} onChange={(e) => saveSection("provoz", { log_dni: Number(e.target.value) }).then(st.reload)}>
+              {[0, 7, 30, 90, 180, 365].map((d) => <option key={d} value={d}>{d === 0 ? "bez omezení" : `${d} dní`}</option>)}
+            </select>
+          </Row>
+          {/* Výchozí nula je záměr: automaticky zahazovat, co lidé poslali,
+              musí být vědomé rozhodnutí, ne něco, co se stane samo. */}
+          <Row label="Předané podněty se drží" hint="Maže jen ty už předané kraji. Nula znamená nemazat nikdy.">
+            <select className="select" style={{ width: "auto" }} value={p.podnety_dni} onChange={(e) => saveSection("provoz", { podnety_dni: Number(e.target.value) }).then(st.reload)}>
+              {[0, 90, 180, 365, 730].map((d) => <option key={d} value={d}>{d === 0 ? "bez omezení" : `${d} dní`}</option>)}
+            </select>
+          </Row>
+          <div className="row" style={{ marginTop: 12 }}>
+            <button className="btn btn-sm" disabled={maze} onClick={() => uklid({ starsi_nez_dni: p.log_dni }, "Uklizeno")}>
+              <Icon name="trash" size={15} /> Smazat log za lhůtou
+            </button>
+            <button className="btn btn-sm btn-danger" disabled={maze || !souhrn.data?.celkem} onClick={() => uklid({ vse: true }, "Log vyprázdněn")}>
+              <Icon name="trash" size={15} /> Vyprázdnit celý log
+            </button>
+          </div>
+          <p className="xsmall mute" style={{ marginTop: 10 }}>
+            Podněty se mažou na stránce Podněty — jednotlivě v detailu, nebo hromadně tlačítkem Úklid.
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function Instalace() {
   const [lze, setLze] = useState(lzeVyzvat);
   const [hotovo, setHotovo] = useState(jeNainstalovana);
@@ -323,6 +460,7 @@ export function Settings({ tab }: { tab?: string }) {
           {current === "pristupnost" && <Accessibility />}
           {current === "modely" && <Models />}
           {current === "soukromi" && <Privacy />}
+          {current === "provoz" && <Provoz />}
           {current === "aplikace" && <><AboutApp /><Instalace /></>}
         </div>
       </div>

@@ -79,6 +79,15 @@ export function ago(iso: string | null | undefined, now = Date.now()): string {
   return rtf.format(Math.round(sec / (86400 * 365)), "year");
 }
 
+/** Datum i čas — pro provozní log, kde „14. 9." nestačí: dva záznamy ze
+ *  stejného dne se od sebe musí dát odlišit. */
+export function dateTime(iso: string | null | undefined): string {
+  if (!iso) return DASH;
+  const t = Date.parse(iso.length === 10 ? `${iso}T00:00:00` : iso);
+  if (Number.isNaN(t)) return iso;
+  return new Date(t).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 export function date(iso: string | null | undefined): string {
   if (!iso) return DASH;
   const t = Date.parse(iso.length === 10 ? `${iso}T00:00:00` : iso);

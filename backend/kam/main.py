@@ -61,6 +61,33 @@ def _warm() -> None:
         log.info("Embedding přeskočen: %s", e)
 
 
+def _udrzba() -> None:
+    """Denní úklid. Retence se musí provádět opakovaně, ne jednou při startu:
+    kontejner běží týdny a tabulky mezitím rostou.
+
+    Podněty se automaticky mažou jen tehdy, když si to někdo výslovně
+    nastavil (`podnety_dni > 0`), a jen ty už odeslané. Zahodit lidem hlášení,
+    které ještě nikam nedošlo, protože je staré, by bylo tiché popření toho,
+    k čemu stránka podnětů je.
+    """
+    from . import crowd, logs, prefs
+    from .ai import assistant
+    while True:
+        time.sleep(24 * 3600)
+        if not prefs.get("provoz")["uklid_zapnut"]:
+            continue
+        try:
+            chaty = assistant.purge_old()
+            zaznamy = logs.uklid()
+            dni = prefs.get("provoz")["podnety_dni"]
+            podnety = crowd.uklid(stav="odeslano", starsi_nez_dni=dni) if dni > 0 else {"skupin": 0, "hlaseni": 0}
+            logs.zapis("udrzba", {"chaty": chaty, "log_zaznamu": zaznamy, **{f"podnety_{k}": v for k, v in podnety.items()}})
+        except Exception as e:
+            log.warning("Denní úklid selhal: %s", e)
+            from . import logs as _l
+            _l.zapis("udrzba_selhala", {"chyba": str(e)}, uroven="chyba")
+
+
 def _scheduler() -> None:
     while True:
         cfg = prefs.get("data")
@@ -79,8 +106,12 @@ def _scheduler() -> None:
             simulate.reset()
             rag.build_index(embed=True)
             log.info("Plánovaná aktualizace dat dokončena")
+            from . import logs
+            logs.zapis("data_aktualizovana", {}, zdroj="data")
         except Exception as e:
             log.warning("Plánovaná aktualizace selhala: %s", e)
+            from . import logs
+            logs.zapis("data_aktualizace_selhala", {"chyba": str(e)}, uroven="chyba", zdroj="data")
 
 
 @asynccontextmanager
@@ -91,6 +122,7 @@ async def lifespan(_app: FastAPI):
     if settings.background_jobs:
         threading.Thread(target=_warm, name="kam-warm", daemon=True).start()
         threading.Thread(target=_scheduler, name="kam-refresh", daemon=True).start()
+        threading.Thread(target=_udrzba, name="kam-uklid", daemon=True).start()
     yield
 
 
@@ -133,8 +165,8 @@ def create_app() -> FastAPI:
             response.headers.setdefault("Content-Security-Policy", CSP)
         return response
 
-    from .api import ai, data, model, reports
-    for r in (data.router, model.router, ai.router, reports.router):
+    from .api import ai, data, model, provoz, reports
+    for r in (data.router, model.router, ai.router, reports.router, provoz.router):
         app.include_router(r)
 
     @app.exception_handler(Exception)

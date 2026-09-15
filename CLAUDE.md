@@ -89,7 +89,9 @@ ingest/  → models.Observation (+ Dataset, Territory, Poi, Fact)
 - Assumptions in `analytics/simulate.py::ASSUMPTIONS` carry a value and a reason and are overridable per request.
 - The LLM never computes numbers: `ai/tools.py` produces labelled briefs (FAKT/TREND/MODEL/SCÉNÁŘ) that the model explains.
 - `trends.py` is deliberately robust statistics (Theil–Sen, Mann–Kendall, MAD z-scores) because small-obec counts are never normal; `risks.py` lowers confidence for small populations and short series.
-- Citizens' reports (`crowd.py`) cluster into formal submissions but never feed back into `Observation`.
+- Citizens' reports (`crowd.py`) cluster into formal submissions but never feed back into `Observation`. They can be deleted — `crowd.smaz` for one, `crowd.uklid` for a batch — and `uklid` with no filter deletes nothing on purpose, because a single unparameterised call that wipes the table is a trap, not a feature. Deleting a delivered submission loses the app's only record of what was sent to the kraj, so both write a line to the operations log with the reference and the count, never the text.
+- **`logs.py` is the only writer into `audit_log`.** What goes in `detail` is counts, identifiers and reasons — never report text, chat queries or IP addresses, because the log has its own retention and must not become a second copy of the data it describes. `logs.zapis` swallows its own errors: a log that breaks the operation it is recording has its priorities backwards. Retention is in `prefs` under `provoz`, and **0 means keep forever** — `podnety_dni` defaults to 0 because automatically discarding what people submitted has to be a deliberate choice, and only delivered submissions are ever eligible.
+- `main.py::_udrzba` runs the retention daily. Doing it once at startup (which is all `assistant.purge_old()` used to get) is not retention: the container runs for weeks and the tables grow the whole time.
 
 ## AI notes
 

@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from kam import crowd, prefs
+from kam import crowd, logs, prefs
 from kam.ingest.catalog import classify, freshness
 from kam.ingest.geo import _dp, point_in_rings
 from kam.ingest.link import is_loaded
@@ -208,3 +208,61 @@ def test_eurostat_rows_say_what_territory_they_cover():
     assert sever["region_code"] == 0 and "mapa" not in sever["usage"]
     assert sever["download_url"].endswith("lastTimePeriod=1")
     assert "poslední zveřejněné období 2025" in sever["description"]
+
+def test_smazani_podnetu_odstrani_hlaseni_a_nechá_stopu_v_logu():
+    """Mazání je jediná operace, po které data nejdou vrátit — proto se ověřuje,
+    že po sobě nechá záznam s referencí, ale ani slovo z toho, co lidé napsali."""
+    a = crowd.submit("obec:500002", "bydleni", "Chybí zde dětské hřiště pro malé děti.")
+    cid = a["cluster_id"]
+    pred = logs.souhrn()["celkem"]
+
+    stopa = crowd.smaz(cid)
+    assert stopa["id"] == cid and stopa["hlaseni"] >= 1
+
+    with pytest.raises(KeyError):
+        crowd.document(cid)
+    assert all(c["id"] != cid for c in crowd.clusters())
+
+    zaznamy = logs.seznam(zdroj="podnety")["polozky"]
+    assert logs.souhrn()["celkem"] == pred + 1
+    posledni = zaznamy[0]
+    assert posledni["action"] == "podnet_smazan" and posledni["level"] == "varovani"
+    assert posledni["detail"]["hlaseni"] >= 1
+    assert "hřiště" not in str(posledni["detail"])
+
+
+def test_uklid_podnetu_bez_filtru_nic_nesmaze():
+    """Prázdný úklid by byl past: jedno zavolání bez parametrů by smazalo vše."""
+    crowd.submit("obec:500002", "kultura", "Knihovna má zavřeno každou středu bez oznámení.")
+    pred = len(crowd.clusters())
+    assert crowd.uklid() == {"skupin": 0, "hlaseni": 0}
+    assert len(crowd.clusters()) == pred
+
+
+def test_uklid_podnetu_podle_stavu():
+    n = crowd.uklid(stav="sber")
+    assert n["skupin"] >= 1
+    assert all(c["status"] != "sber" for c in crowd.clusters())
+
+
+def test_log_filtruje_a_uklid_respektuje_nulu():
+    logs.zapis("test_udalost", {"kolik": 3}, uroven="chyba", zdroj="data")
+    chyby = logs.seznam(uroven="chyba")
+    assert chyby["celkem"] >= 1
+    assert chyby["polozky"][0]["source"] == "data"
+    assert logs.seznam(zdroj="asistent", uroven="chyba")["celkem"] == 0
+
+    # Nula znamená „nemazat"; kdyby se brala jako „starší než dnešek", smazala
+    # by při zapnuté údržbě celý log hned první noc.
+    assert logs.uklid(starsi_nez_dni=0) == 0
+    assert logs.seznam()["celkem"] >= 1
+
+    logs.uklid(vse=True)
+    # Po vyprázdnění zbyde jen záznam o tom vyprázdnění.
+    zbytek = logs.seznam()
+    assert zbytek["celkem"] == 1 and zbytek["polozky"][0]["action"] == "log_uklid"
+
+
+def test_log_orizne_dlouhy_detail():
+    logs.zapis("test_dlouhy", {"chyba": "x" * 5000})
+    assert len(logs.seznam(hledat="test_dlouhy")["polozky"][0]["detail"]["chyba"]) <= 400

@@ -21,6 +21,10 @@ DEFAULTS: dict[str, dict] = {
     "ai": {"policy": "hybrid", "router_mode": "heuristic", "history": True, "retention_days": 30, "max_sources": 6, "answer_length": "stredni"},
     "destinations": {"reports_target": "local", "webhook_url": "", "email": "", "threshold": 5, "auto_submit": False},
     "data": {"auto_refresh": True, "refresh_hours": 24},
+    # Nula u obou lhůt znamená „nemazat". U podnětů je to i výchozí
+    # hodnota: automaticky zahazovat, co lidé poslali, musí být vědomé
+    # rozhodnutí, ne něco, co se stane samo hned první noc.
+    "provoz": {"log_dni": 90, "podnety_dni": 0, "uklid_zapnut": True},
 }
 
 CHOICES = {
@@ -29,7 +33,8 @@ CHOICES = {
     ("ai", "answer_length"): {"kratka", "stredni", "podrobna"},
     ("destinations", "reports_target"): {"local", "webhook", "email"},
 }
-RANGES = {("ai", "retention_days"): (1, 365), ("ai", "max_sources"): (2, 12), ("destinations", "threshold"): (2, 50), ("data", "refresh_hours"): (1, 168)}
+RANGES = {("ai", "retention_days"): (1, 365), ("ai", "max_sources"): (2, 12), ("destinations", "threshold"): (2, 50), ("data", "refresh_hours"): (1, 168),
+          ("provoz", "log_dni"): (0, 730), ("provoz", "podnety_dni"): (0, 3650)}
 
 
 def get(section: str) -> dict:

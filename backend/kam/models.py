@@ -272,11 +272,20 @@ class RagChunk(Base):
 
 
 class AuditLog(Base):
+    """Provozní log. Zapisuje se do něj jediným místem — `logs.zapis`.
+
+    `level` a `source` přibyly později; `_ensure_columns` je umí doplnit do
+    starého snímku, proto mají výchozí hodnotu a starší řádky zůstanou
+    platné jako `info` / `system`.
+    """
+
     __tablename__ = "audit_log"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
-    action: Mapped[str] = mapped_column(String(64))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+    action: Mapped[str] = mapped_column(String(64), index=True)
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    level: Mapped[str] = mapped_column(String(16), default="info")
+    source: Mapped[str] = mapped_column(String(24), default="system")
 
 
 class JobState(Base):

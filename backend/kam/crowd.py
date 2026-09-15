@@ -16,9 +16,9 @@ from collections import Counter
 from datetime import UTC, datetime, timedelta
 
 import httpx
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
-from . import prefs
+from . import logs, prefs
 from .ai.guard import mask_pii
 from .ai.rag import plain, tokens
 from .analytics import store
@@ -155,6 +155,50 @@ def deliver(cluster_id: int) -> dict:
         c.submitted_at = now()
         c.submission = info
     return {**info, "reference": doc["reference"]}
+
+
+def smaz(cluster_id: int) -> dict:
+    """Smaže skupinu i hlášení, ze kterých vznikla.
+
+    Mazání je jednosměrné a u odeslaného podnětu přijde aplikace o doklad
+    o tom, co se kraji poslalo — proto o tom vzniká záznam v provozním logu
+    s referencí a počtem hlášení. Log si tu stopu nechá i potom, co je
+    podnět pryč, a přitom v něm není ani řádek toho, co lidé napsali.
+    """
+    with session_scope() as s:
+        c = s.get(Cluster, cluster_id)
+        if not c:
+            raise KeyError(cluster_id)
+        stopa = {"id": c.id, "uzemi": c.territory_id, "kategorie": c.category,
+                 "stav": c.status, "hlaseni": c.count, "reference": c.reference or ""}
+        s.execute(delete(Report).where(Report.cluster_id == cluster_id))
+        s.delete(c)
+    logs.zapis("podnet_smazan", stopa, uroven="varovani", zdroj="podnety")
+    return stopa
+
+
+def uklid(*, stav: str | None = None, starsi_nez_dni: int | None = None) -> dict:
+    """Hromadný úklid. Bez obou filtrů nedělá nic — smazat všechno jedním
+    voláním bez vyjádřeného záměru je past, ne funkce."""
+    if not stav and not starsi_nez_dni:
+        return {"skupin": 0, "hlaseni": 0}
+    with session_scope() as s:
+        q = select(Cluster.id, Cluster.count)
+        if stav:
+            q = q.where(Cluster.status == stav)
+        if starsi_nez_dni:
+            q = q.where(Cluster.updated_at < datetime.now(UTC) - timedelta(days=starsi_nez_dni))
+        rows = s.execute(q).all()
+        ids = [i for i, _ in rows]
+        hlaseni = sum(n or 0 for _, n in rows)
+        if ids:
+            s.execute(delete(Report).where(Report.cluster_id.in_(ids)))
+            s.execute(delete(Cluster).where(Cluster.id.in_(ids)))
+    vysledek = {"skupin": len(ids), "hlaseni": hlaseni}
+    if ids:
+        logs.zapis("podnety_uklid", {**vysledek, "stav": stav or "vše", "starsi_nez_dni": starsi_nez_dni or 0},
+                   uroven="varovani", zdroj="podnety")
+    return vysledek
 
 
 def clusters(territory_id: str | None = None, status: str | None = None, category: str | None = None, limit: int = 100) -> list[dict]:

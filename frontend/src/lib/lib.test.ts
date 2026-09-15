@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { niceTicks } from "../components/charts";
 import { binOf, ramp } from "../components/maps";
 import { parseBlock } from "./api";
-import { compact, fold, num, pct, plural, signed, withUnit } from "./format";
+import { compact, dateTime, fold, num, pct, plural, signed, withUnit } from "./format";
 import { applyAction, DEFAULTS, get, sanitize, set } from "./prefs";
 import { potrebaIosNavod } from "./pwa";
 import { match } from "./router";
@@ -138,5 +138,19 @@ describe("pwa", () => {
   it("v nainstalované aplikaci nenabízí nic", () => {
     expect(potrebaIosNavod(iPhone, 5, true)).toBe(false);
     expect(potrebaIosNavod(iPad, 5, true)).toBe(false);
+  });
+});
+
+describe("dateTime", () => {
+  it("k datu přidá i čas", () => {
+    const out = dateTime("2026-09-15T02:34:00Z");
+    // Log rozlišuje záznamy ze stejného dne, takže hodina a minuta tam musí být.
+    expect(out).toMatch(/2026/);
+    expect(out).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it("prázdnou hodnotu nevydává za datum", () => {
+    expect(dateTime(null)).toBe("—");
+    expect(dateTime("nesmysl")).toBe("nesmysl");
   });
 });
