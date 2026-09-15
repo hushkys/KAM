@@ -1,4 +1,7 @@
-# KAM — spuštění na Windows (PowerShell).
+﻿# KAM — spuštění na Windows (PowerShell).
+#
+# UTF-8 s BOM: bez něj čte Windows PowerShell 5.1 skript jako ANSI a české
+# hlášky se vypíšou rozsypané.
 #   .\start.ps1            spustí aplikaci na http://127.0.0.1:8000
 #   .\start.ps1 -Lan       zpřístupní ji i v místní síti (test na telefonu)
 #   .\start.ps1 -Refresh   znovu stáhne otevřená data

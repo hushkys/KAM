@@ -39,6 +39,8 @@ cd backend && python -m kam.ingest all
 
 Run the server through the Browser preview (`.claude/launch.json`, name `kam`, port 8000). The server serves `frontend/dist`; `/assets` is mounted at startup, so build the frontend before starting the server. `frontend` also has a Vite dev server on 5173 that proxies `/api` to 8000.
 
+Both PowerShell scripts (`start.ps1`, `scripts/deploy.ps1`) must stay UTF-8 **with BOM**. Windows PowerShell 5.1 reads a BOM-less `.ps1` as ANSI, so Czech text turns to mojibake — and an em dash inside a double-quoted string decodes to a sequence containing a quote character, which ends the string early and throws a parse error pointing at a line that is perfectly fine. Validate a change with `[System.Management.Automation.PSParser]::Tokenize` rather than by running the script.
+
 Neither Node nor Python is on PATH on the dev machine; bare `python` hits the Microsoft Store alias stub and fails with code 9009. Node: prefix `$env:PATH = "C:\Users\hushkys\AppData\Local\Programs\nodejs;" + $env:PATH`. Python 3.12 with all requirements installed is at `C:\Users\hushkys\AppData\Local\Programs\Python\Python312\python.exe` — that absolute path is what `.claude/launch.json` uses. (`start.ps1` would instead create a `.venv`; there isn't one here.)
 
 ## Architecture

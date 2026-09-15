@@ -1,4 +1,8 @@
-# Nasadí aplikaci na Cloud Run. Spouští se z kořene repozitáře: .\scripts\deploy.ps1
+﻿# Nasadí aplikaci na Cloud Run. Spouští se z kořene repozitáře: .\scripts\deploy.ps1
+#
+# Soubor musí zůstat v UTF-8 **s BOM**. Windows PowerShell 5.1 bez něj čte
+# skript jako ANSI, diakritika se rozsype a parser spadne na neuzavřeném
+# řetězci — chyba přitom ukazuje na řádek, kde nic špatně není.
 #
 # Cesty jsou tu napevno kvůli tomuhle stroji: gcloud není na PATH a bez
 # CLOUDSDK_PYTHON sáhne po `python`, což na Windows spadne do zástupce
