@@ -283,6 +283,7 @@ function History({ onPick }: { onPick: (id: string) => void }) {
 export function AssistantDrawer() {
   const state = useAssistantState();
   const { path } = useLocation();
+  const box = useRef<HTMLElement>(null);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") { e.preventDefault(); state.open ? closeAssistant() : window.dispatchEvent(new CustomEvent("kam:assistant")); }
@@ -291,9 +292,26 @@ export function AssistantDrawer() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [state.open]);
+
+  // Klepnutí vedle šuplíku ho zavře. Výjimky jsou dvě: tlačítko v navbaru si
+  // přepíná samo (jinak by se šuplík na `pointerdown` zavřel a hned na `click`
+  // zase otevřel) a vrstvy, které leží nad ním — dialog, paleta, kontextové
+  // menu. Ty se zavírají vlastním scrimem a šuplík pod nimi má zůstat.
+  useEffect(() => {
+    if (!state.open || path === "/asistent") return;
+    const vedle = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (!t || box.current?.contains(t)) return;
+      if (t.closest?.("[data-assistant-toggle], .modal-layer, .palette-layer, .ctx-menu")) return;
+      closeAssistant();
+    };
+    document.addEventListener("pointerdown", vedle, true);
+    return () => document.removeEventListener("pointerdown", vedle, true);
+  }, [state.open, path]);
+
   if (!state.open || path === "/asistent") return null;
   return createPortal(
-    <aside className="assistant-drawer glass" aria-label="Asistent">
+    <aside ref={box} className="assistant-drawer glass" aria-label="Asistent">
       <Chat territory={state.territory} compact onClose={closeAssistant} />
     </aside>,
     document.body,

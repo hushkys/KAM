@@ -23,7 +23,7 @@ export function Navbar({ title }: { title: string }) {
         <kbd>Ctrl K</kbd>
       </button>
       <nav className="navbar-actions" aria-label="Rychlé akce">
-        <button className={`icon-btn ${assistant.open ? "is-on" : ""}`} onClick={toggleAssistant} aria-label="Asistent (Ctrl+J)" aria-pressed={assistant.open} title="Asistent (Ctrl+J)">
+        <button data-assistant-toggle className={`icon-btn ${assistant.open ? "is-on" : ""}`} onClick={toggleAssistant} aria-label="Asistent (Ctrl+J)" aria-pressed={assistant.open} title="Asistent (Ctrl+J)">
           <Icon name="sparkle" size={19} />
         </button>
         <Notifications />

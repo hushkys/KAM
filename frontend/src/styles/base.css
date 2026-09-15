@@ -332,10 +332,15 @@ kbd {
 :root[data-dock-labels="off"] .dock-item { min-width: 52px; height: 50px; }
 .dock-sep { width: 1px; margin: 8px 3px; background: var(--border-strong); flex: none; }
 @media (min-width: 900px) {
+  /* Na nízké obrazovce se dock musí dát odrolovat, jinak by poslední položky
+     nešly dosáhnout. Lišta v něm ale vypadá jako chyba rozvržení, takže se
+     schová — kolečko, tah i klávesnice fungují dál. */
   :root[data-dock="side"] .dock {
     left: 12px; top: calc(var(--nav-h) + 22px); bottom: auto; transform: none;
-    flex-direction: column; width: var(--side-w); padding: 8px 6px; max-height: calc(100dvh - var(--nav-h) - 40px); overflow-y: auto;
+    flex-direction: column; width: var(--side-w); padding: 8px 6px; max-height: calc(100dvh - var(--nav-h) - 40px);
+    overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain;
   }
+  :root[data-dock="side"] .dock::-webkit-scrollbar { width: 0; height: 0; }
   :root[data-dock="side"] .dock-item { min-width: 0; width: 100%; height: 58px; }
   :root[data-dock="side"] .dock-item[aria-current="page"]::after { left: 0; bottom: auto; top: 50%; width: 3px; height: 18px; margin: -9px 0 0; }
   :root[data-dock="side"] .dock-sep { width: auto; height: 1px; margin: 4px 10px; }
