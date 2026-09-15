@@ -867,6 +867,23 @@
 
 :root[data-motion="reduce"] .st-art circle { animation: none; }
 
+/* --------------------------------------------- telefon na šířku
+   Pod 900 px se hook skládá pod sebe a na ležícím telefonu je pak vysoký přes
+   dvě obrazovky — než se člověk dostane k prvnímu číslu, dvakrát roluje. Na
+   nízkém okně se proto vrací do dvou sloupců a všechno se zmenší. Rozhoduje
+   výška, ne šířka: tablet na výšku má místa dost a skládat se má. Strop na
+   šířku drží mimo hru nízká okna na monitoru, kde je hook v pohodě. */
+@media (max-height: 540px) and (orientation: landscape) and (max-width: 1100px) {
+  .sc-hook { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; padding: 16px; }
+  .sc-hook.is-slim { grid-template-columns: minmax(0, 1fr) minmax(0, .92fr); }
+  .sc-hook-copy h1 { font-size: clamp(1.05rem, 2.4vw, 1.45rem); margin-bottom: 7px; }
+  .sc-hook-copy .lead { font-size: .8125rem; }
+  .sc-hook .sc-stage { max-height: 200px; }
+  .sc-hook-legend { margin-top: 10px; font-size: .75rem; }
+  .ph-radky { margin-top: 10px; gap: 4px; font-size: .75rem; }
+  .ob-kotvy, .st-ramp { margin-top: 10px; }
+}
+
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
   .icon-btn.sm { width: 40px; height: 40px; }
@@ -888,6 +905,16 @@
   .info-hint { position: relative; }
   .info-hint::after { content: ""; position: absolute; inset: -11px; border-radius: 50%; }
   .input, .select { min-height: 44px; }
+  /* Rozbalovací nadpis („Jak to víme?") a odkaz na zdroj jsou obyčejný text,
+     takže mají výšku řádku — osmnáct pixelů, do kterých se prst netrefí.
+     Roste padding, ne box: `display: flex` by u summary sebralo trojúhelník
+     a u odkazu zalomení. */
+  summary { padding-block: 11px; }
+  .source-link { padding-block: 11px; }
+  /* Dlaždice hotových scénářů a kategorií podnětu jsou tlačítka, ne text —
+     ty dostanou rovnou celou výšku. */
+  .cs-name, .rp-cat { min-height: 44px; }
+  .settings-nav a { min-height: 44px; }
   /* A breadcrumb is a text link, so it grows by padding rather than by box —
      the row keeps its height and the link stops being a 23px sliver. */
   .crumbs { gap: 2px; }
