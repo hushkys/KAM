@@ -13,7 +13,8 @@
 // tu nedopisuje. Dokud práh nikdo nepřekročil, je dokument jen obrys.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num, plural } from "../lib/format";
 
@@ -61,12 +62,12 @@ export function PodnetyHook({ skupiny, prah, hlaseni, children }: {
   const chybi = Math.max(0, art.p - art.nejdal);
 
   return (
-    <section className="sc-hook pd-hook" style={hookTema("podnety")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook pd-hook" {...hookVstup("podnety")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Podněty občanů</div>
-        <h1 id={`${uid}-t`}>{art.p} {plural(art.p, "hlášení", "hlášení", "hlášení")},<br />jeden podnět</h1>
+        <NadpisHooku id={`${uid}-t`}>{art.p} {plural(art.p, "hlášení", "hlášení", "hlášení")},<br />jeden podnět</NadpisHooku>
         <p className="lead">
           Jedno hlášení je stížnost. {art.p} podobných ze stejné obce je doklad — KAM je spojí, přiloží
           k nim čísla z modelu a vznikne formální podnět pro krajský úřad.

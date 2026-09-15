@@ -479,7 +479,16 @@
 
 .sc-hook-copy { position: relative; min-width: 0; }
 .sc-hook .eyebrow::before { background: var(--h1); }
-.sc-hook-copy h1 { font-size: clamp(1.6rem, 3.3vw, 2.5rem); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 12px; }
+.sc-hook-copy h1 {
+  font-family: var(--font-nadpis);
+  /* WONK zkroutí patky a „g" — to je ten rys, kvůli kterému Fraunces v téhle
+     aplikaci je. opsz 120 platí pro displejové velikosti: v malém by bylo
+     písmo příliš kontrastní a při 2,5rem naopak takové být má. */
+  font-variation-settings: "WONK" 1, "opsz" 120;
+  font-weight: 620;
+  font-size: clamp(1.75rem, 3.6vw, 2.85rem);
+  line-height: 1.02; letter-spacing: -.022em; margin: 0 0 14px;
+}
 .sc-hook-copy .lead { max-width: 46ch; }
 .sc-hook-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; font-size: .8125rem; color: var(--text-dim); }
 .sc-hook-legend span { display: inline-flex; align-items: center; gap: 7px; }
@@ -883,6 +892,105 @@
   .ph-radky { margin-top: 10px; gap: 4px; font-size: .75rem; }
   .ob-kotvy, .st-ramp { margin-top: 10px; }
 }
+
+/* =========================================================== nájezd hooku
+   Hook je první, co na stránce uvidíte, a na každé stránce má vypadat jinak —
+   jinak je přechod mezi devíti stránkami devětkrát tentýž fade.
+   Rytmus je společný (obočí → slova nadpisu → text → zbytek), choreografie
+   panelu je podle modulu a navazuje na to, co kresba dělá: mapa se skládá po
+   patrech, dotace se rozpínají ze středu, hospodaření dosedne.
+
+   Všechno je jen `animation` s `both`, žádná smyčka: po dojetí stojí stránka
+   v klidu. Pod `data-motion="reduce"` je celý blok vypnutý. */
+
+.sc-hook .eyebrow { animation: hk-obal 520ms var(--ease-out) both; }
+.sc-hook .lead { animation: hk-obal 620ms var(--ease-out) 260ms both; }
+.sc-hook-legend, .ph-radky, .ob-kotvy, .st-ramp, .sc-hook-copy .row {
+  animation: hk-obal 620ms var(--ease-out) 420ms both;
+}
+@keyframes hk-obal { from { opacity: 0; transform: translateY(10px); } }
+
+/* Slovo po slovu, maskované zdola. Vnější obal je maska, vnitřní se hýbe. */
+.hook-nadpis { }
+.hook-nadpis .hn-slovo {
+  display: inline-block; overflow: hidden; vertical-align: bottom;
+  /* Rezerva na háčky nad velkými písmeny a na dolní dotahy; záporný okraj ji
+     zase vyruší, aby se nerozhodila sazba ani řádkování. */
+  padding: .16em .04em .1em; margin: -.16em -.04em -.1em;
+}
+.hook-nadpis .hn-slovo > span {
+  display: inline-block;
+  animation: hn-slovo 760ms var(--ease-emph) both;
+  animation-delay: calc(90ms + var(--w, 0) * 65ms);
+}
+@keyframes hn-slovo { from { opacity: 0; transform: translateY(115%) rotate(2.5deg); } }
+
+/* Panely: základ pro všechny, choreografii mění `data-vstup`. */
+.sc-hook .sc-pane { animation: hk-panel 760ms var(--ease-emph) both; }
+.sc-hook .sc-pane.p1 { animation-delay: 160ms; }
+.sc-hook .sc-pane.p2 { animation-delay: 240ms; }
+.sc-hook .sc-pane.p3 { animation-delay: 320ms; }
+@keyframes hk-panel { from { opacity: 0; } }
+
+/* — přehled: hřebeny stoupají, panel s nimi ------------------------------ */
+.sc-hook[data-vstup="prehled"] .sc-pane { animation-name: hk-zdola; }
+@keyframes hk-zdola { from { opacity: 0; transform: translate3d(0, 34px, 0) scale(.97); } }
+
+/* — mapa: patra se skládají zprava, jako by dosedla na sebe -------------- */
+.sc-hook[data-vstup="mapa"] .sc-pane { animation-name: hk-zprava; }
+@keyframes hk-zprava { from { opacity: 0; transform: translate3d(38px, 0, 0); } }
+
+/* — obce: hejno se rozletí, panel se srovná ------------------------------ */
+.sc-hook[data-vstup="obce"] .sc-pane { animation-name: hk-naklon; }
+@keyframes hk-naklon { from { opacity: 0; transform: rotate(-2.4deg) scale(.94); } }
+
+/* — výhled: kužel se rozevře, panel se rozloží od svislé osy ------------- */
+.sc-hook[data-vstup="vyhled"] .sc-pane { animation-name: hk-rozevri; transform-origin: 8% 50%; }
+@keyframes hk-rozevri { from { opacity: 0; transform: scaleX(.55) scaleY(.9); } }
+
+/* — scénáře: dvě cesty se rozdělí, stoh se rozestoupí -------------------- */
+.sc-hook[data-vstup="scenare"] .sc-pane { animation-name: hk-rozestup; }
+@keyframes hk-rozestup { from { opacity: 0; transform: translate3d(0, 26px, 0); } }
+.sc-hook[data-vstup="scenare"] .sc-pane.p3 { animation-name: hk-rozestup-h; }
+@keyframes hk-rozestup-h { from { opacity: 0; transform: translate3d(-22px, -10px, 0) rotate(-6deg); } }
+
+/* — hospodaření: dosedne shora a zapruží (sloupce rostou od osy) --------- */
+.sc-hook[data-vstup="hospodareni"] .sc-pane { animation-name: hk-dosed; animation-timing-function: var(--ease-spring); }
+@keyframes hk-dosed { from { opacity: 0; transform: translate3d(0, -30px, 0) scale(.98); } }
+
+/* — dotace: letokruhy se rozpínají, panel se středu drží ----------------- */
+.sc-hook[data-vstup="dotace"] .sc-pane { animation-name: hk-ze-stredu; transform-origin: 50% 50%; }
+@keyframes hk-ze-stredu { from { opacity: 0; transform: scale(.86); } }
+
+/* — podněty: razítko dosedne zleva -------------------------------------- */
+.sc-hook[data-vstup="podnety"] .sc-pane { animation-name: hk-zleva; }
+@keyframes hk-zleva { from { opacity: 0; transform: translate3d(-34px, 0, 0) scale(.97); } }
+
+/* — data: dlaždice se sesypou, panel se odkryje šikmým setřením ---------- */
+.sc-hook[data-vstup="data"] .sc-pane { animation-name: hk-setreni; }
+@keyframes hk-setreni {
+  from { opacity: 0; clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+  to { opacity: 1; clip-path: polygon(0 0, 140% 0, 140% 100%, 0 100%); }
+}
+
+/* — statistiky: tečky se zaostří ---------------------------------------- */
+.sc-hook[data-vstup="statistiky"] .sc-pane { animation-name: hk-zaostri; }
+@keyframes hk-zaostri { from { opacity: 0; transform: scale(1.04); filter: blur(10px); } }
+
+/* Barevné skvrny za sklem nabíhají poslední, aby nepřebily kresbu. */
+.sc-hook .sc-blobs { animation: hk-zare 900ms var(--ease-out) 240ms both; }
+@keyframes hk-zare { from { opacity: 0; } }
+
+:root[data-motion="reduce"] .sc-hook .eyebrow,
+:root[data-motion="reduce"] .sc-hook .lead,
+:root[data-motion="reduce"] .sc-hook-legend,
+:root[data-motion="reduce"] .ph-radky,
+:root[data-motion="reduce"] .ob-kotvy,
+:root[data-motion="reduce"] .st-ramp,
+:root[data-motion="reduce"] .sc-hook-copy .row,
+:root[data-motion="reduce"] .hook-nadpis .hn-slovo > span,
+:root[data-motion="reduce"] .sc-hook .sc-pane,
+:root[data-motion="reduce"] .sc-hook .sc-blobs { animation: none; }
 
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }

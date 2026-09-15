@@ -14,7 +14,8 @@
 // prázdný.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -71,12 +72,12 @@ export function FinanceHook({ roky, kryti, territory, children }: {
   }, [roky]);
 
   return (
-    <section className="sc-hook fi-hook" style={hookTema("hospodareni")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook fi-hook" {...hookVstup("hospodareni")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Hospodaření</div>
-        <h1 id={`${uid}-t`}>Zbude, nebo nezbude?</h1>
+        <NadpisHooku id={`${uid}-t`}>Zbude, nebo nezbude?</NadpisHooku>
         <p className="lead">
           Nad osou je to, co z příjmů zbylo po zaplacení provozu. Pod osou to, co obec ten rok
           proměnila v majetek. Když je zlatý sloupec vyšší, zaplatila si investici sama.

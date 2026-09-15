@@ -9,6 +9,11 @@
 
 :root {
   --font: "Manrope Variable", "Manrope", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* Nadpisy hooků. Serif s výraznými přechody proti neutrálnímu grotesku:
+     hook je jedna vyslovená věta, ne popisek, a zaslouží si hlas. Fraunces
+     má latin-ext, takže háčky a kroužky sedí; kdyby se sáhlo po fontu bez
+     něj, česká slova by v nadpisu přeskakovala do náhradního písma. */
+  --font-nadpis: "Fraunces Variable", "Iowan Old Style", Georgia, "Times New Roman", serif;
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   --font-scale: 1;
 

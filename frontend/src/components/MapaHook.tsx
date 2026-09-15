@@ -11,7 +11,8 @@
 // Počty se nepíšou, počítají se z rozsahu území, který stránka stejně stahuje.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 
 const W = 640, H = 132;
 const PAD = { l: 18, r: 18, t: 16, b: 14 };
@@ -53,12 +54,12 @@ export function MapaHook({ kraje, orp, obce, krajCode = KHK, children }: {
   }, [kraje, orp, obce, krajCode]);
 
   return (
-    <section className="sc-hook mp-hook is-slim" style={hookTema("mapa")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook mp-hook is-slim" {...hookVstup("mapa")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Mapa</div>
-        <h1 id={`${uid}-t`}>Tři měřítka, jedna mapa</h1>
+        <NadpisHooku id={`${uid}-t`}>Tři měřítka, jedna mapa</NadpisHooku>
         <p className="lead">
           Česko po krajích, kraj po ORP, ORP po obcích. Klepnutí na území vás pustí o patro níž.
           V pohledu na kraj navíc mapu přepnete do skutečného terénu.

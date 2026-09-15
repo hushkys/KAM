@@ -12,3 +12,10 @@ export function hookTema(modul: string): CSSProperties {
   const b = modulBarvy(modul);
   return { ["--h1" as string]: b.a, ["--h2" as string]: b.b, ["--h3" as string]: b.c } as CSSProperties;
 }
+
+/** Barva i nájezd jedním rozbalením. `data-vstup` říká stylu, kterou
+ *  choreografii má hook při načtení použít — každá stránka jinou, aby
+ *  přechod mezi nimi nebyl devětkrát tentýž fade. */
+export function hookVstup(modul: string): { style: CSSProperties; "data-vstup": string } {
+  return { style: hookTema(modul), "data-vstup": modul };
+}

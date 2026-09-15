@@ -15,7 +15,8 @@
 // obrázek nedal odhadnout, nad tisíc by splynuly v plochu.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -65,12 +66,12 @@ export function StatistikyHook({ roky, children }: { roky: RokHodnot[]; children
   }, [roky]);
 
   return (
-    <section className="sc-hook st-hook" style={hookTema("statistiky")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook st-hook" {...hookVstup("statistiky")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Statistiky</div>
-        <h1 id={`${uid}-t`}>{art ? <>Každá tečka<br />je {num(art.jednotka)} čísel</> : <>Čísla o datech a o KAM</>}</h1>
+        <NadpisHooku id={`${uid}-t`}>{art ? <>Každá tečka<br />je {num(art.jednotka)} čísel</> : <>Čísla o datech a o KAM</>}</NadpisHooku>
         <p className="lead">
           {art
             ? <>Model drží {num(art.celkem)} měřených hodnot z let {art.od}–{art.do}. Tady jsou všechny najednou —

@@ -14,7 +14,8 @@
 // do kterých se nevejde popisek a plochy se přestanou dát porovnat.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { num } from "../lib/format";
 
 export interface Oblast { key: string; label: string; count: number }
@@ -88,12 +89,12 @@ export function DataHook({ oblasti, overenych, celkem, poskytovatelu, children }
   }, [oblasti]);
 
   return (
-    <section className="sc-hook da-hook" style={hookTema("data")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook da-hook" {...hookVstup("data")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Otevřená data</div>
-        <h1 id={`${uid}-t`}>Katalog není seznam.<br />Je to krajina.</h1>
+        <NadpisHooku id={`${uid}-t`}>Katalog není seznam.<br />Je to krajina.</NadpisHooku>
         <p className="lead">
           Každá dlaždice je jedna oblast a její plocha odpovídá počtu datových sad s ověřeným odkazem.
           {art && <> Největší je {art.nej.label.toLowerCase()} — {num(Math.round((100 * art.nej.count) / art.soucet))} % katalogu.</>}

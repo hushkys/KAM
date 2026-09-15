@@ -14,7 +14,8 @@
 // z rozpočtu (ČSÚ MOS), bez dat panel zůstane prázdný.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -74,12 +75,12 @@ export function DotaceHook({ cerpani, territory, children }: {
   }, [cerpani]);
 
   return (
-    <section className="sc-hook dt-hook" style={hookTema("dotace")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook dt-hook" {...hookVstup("dotace")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Dotace</div>
-        <h1 id={`${uid}-t`}>Každý rok<br />jeden letokruh</h1>
+        <NadpisHooku id={`${uid}-t`}>Každý rok<br />jeden letokruh</NadpisHooku>
         <p className="lead">
           Uprostřed je území, kolem něj roky. Tloušťka prstence je částka, která toho roku doopravdy
           dotekla do rozpočtu — hubený rok tenká linka, silný rok široký pás.

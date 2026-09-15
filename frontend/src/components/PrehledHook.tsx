@@ -13,7 +13,8 @@
 // součást odpovědi, ne něco, co by se mělo zarovnat.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -64,12 +65,12 @@ export function PrehledHook({ kpis, pozorovani, children }: {
   }, [kpis]);
 
   return (
-    <section className="sc-hook ph-hook" style={hookTema("prehled")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook ph-hook" {...hookVstup("prehled")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Královéhradecký kraj</div>
-        <h1 id={`${uid}-t`}>{art ? <>{art.rozsah} let kraje<br />na jednom obrázku</> : <>Co se v kraji děje</>}</h1>
+        <NadpisHooku id={`${uid}-t`}>{art ? <>{art.rozsah} let kraje<br />na jednom obrázku</> : <>Co se v kraji děje</>}</NadpisHooku>
         <p className="lead">
           Každý hřeben je jeden sledovaný ukazatel přes stejné roky. Každý je normalizovaný na vlastní
           rozsah, takže se srovnávají tvary, ne výšky — a řada, která začíná později, začíná později

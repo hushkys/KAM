@@ -14,7 +14,8 @@
 // `data-motion="reduce"`.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -50,12 +51,12 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
   }, [baseline, scenario]);
 
   return (
-    <section className="sc-hook" style={hookTema("scenare")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook" {...hookVstup("scenare")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Co kdyby?</div>
-        <h1 id={`${uid}-t`}>Dvě budoucnosti<br />stejného území</h1>
+        <NadpisHooku id={`${uid}-t`}>Dvě budoucnosti<br />stejného území</NadpisHooku>
         <p className="lead">
           Vlevo sestavíte zásah. Vpravo běží stejný model dvakrát — bez něj a s ním — a rozdíl mezi oběma cestami
           je to jediné, co zásah ve skutečnosti způsobí.

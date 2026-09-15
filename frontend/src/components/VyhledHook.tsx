@@ -13,7 +13,8 @@
 // panel zůstane prázdný.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -78,12 +79,12 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
   }, [historie, cesty, pravdepodobny, pasmo]);
 
   return (
-    <section className="sc-hook vy-hook" style={hookTema("vyhled")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook vy-hook" {...hookVstup("vyhled")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Výhled 2026–2040{territory ? ` · ${territory}` : ""}</div>
-        <h1 id={`${uid}-t`}>Budoucnost není čára.<br />Je to kužel.</h1>
+        <NadpisHooku id={`${uid}-t`}>Budoucnost není čára.<br />Je to kužel.</NadpisHooku>
         <p className="lead">
           Každé vlákno je jeden běh modelu, který si vylosoval porodnost, úmrtnost a migraci z vlastní
           historie území. Vlevo splývají, protože minulost je jedna. Doprava se rozestupují — a to

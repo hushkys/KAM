@@ -15,7 +15,8 @@
 // odpověď na otázku, jak vypadá kraj.
 
 import { useId, useMemo } from "react";
-import { hookTema } from "./hook-tema";
+import { NadpisHooku } from "./hook-nadpis";
+import { hookVstup } from "./hook-tema";
 import { Icon } from "./Icon";
 import { num } from "../lib/format";
 
@@ -90,12 +91,12 @@ export function ObceHook({ obce, loading, onOpen, children }: {
   );
 
   return (
-    <section className="sc-hook ob-hook" style={hookTema("obce")} aria-labelledby={`${uid}-t`}>
+    <section className="sc-hook ob-hook" {...hookVstup("obce")} aria-labelledby={`${uid}-t`}>
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
         <div className="eyebrow">Živé profily</div>
-        <h1 id={`${uid}-t`}>Kraj není jedno místo.{art && <><br />Je jich {num(art.body.length)}.</>}</h1>
+        <NadpisHooku id={`${uid}-t`}>Kraj není jedno místo.{art && <><br />Je jich {num(art.body.length)}.</>}</NadpisHooku>
         <p className="lead">
           Jedna tečka je jedna obec a její plocha odpovídá počtu obyvatel. Od největšího města po vesnici
           o pár desítkách lidí — a každá z nich má profil ve všech sledovaných oblastech, rizika i výhled.
