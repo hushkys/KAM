@@ -277,9 +277,9 @@ cd frontend && npm test       # 9 testů
 ## Nasazení
 
 Postup je v [DEPLOY.md](DEPLOY.md). Ve zkratce: aplikace je jeden kontejner
-(`Dockerfile`), data leží v PostgreSQL (`DATABASE_URL`), snímek se tam nahraje
-skriptem `scripts/migrate_to_postgres.py` a celý web schová za heslo proměnná
-`KAM_AUTH_PASSWORD`.
+(`Dockerfile`), data leží v PostgreSQL (`DATABASE_URL`) a snímek se tam nahraje
+skriptem `scripts/migrate_to_postgres.py`. Nasazená aplikace je veřejná a bez
+přihlašování — otevřená data jsou otevřená.
 
 ## Licence
 

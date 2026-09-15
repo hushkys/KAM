@@ -131,36 +131,22 @@ def test_crowd_separates_unrelated_and_refuses_duplicates_and_masks_pii():
         crowd.submit("obec:999", "jine", "neexistující obec v kraji")
 
 
-def test_basic_auth_gate_protects_everything_but_health(monkeypatch):
-    """A password turns the whole site into HTTP Basic — except the health
-    probe, which the hosting platform has to reach without credentials."""
-    import base64
-    from dataclasses import replace
+def test_aplikace_je_verejna():
+    """Žádná brána: aplikace je veřejná a musí odpovídat bez přihlášení.
 
+    Test hlídá, aby se heslo nevrátilo omylem — třeba tím, že by někdo znovu
+    přidal middleware, který vrací 401. QR kód na letáku vede rovnou do
+    aplikace a nic se po člověku chtít nesmí.
+    """
     from fastapi.testclient import TestClient
 
     from kam import main
 
-    monkeypatch.setattr(main, "settings", replace(main.settings, auth_user="kam", auth_password="tajne"))
     client = TestClient(main.create_app())
-    header = {"Authorization": "Basic " + base64.b64encode(b"kam:tajne").decode()}
-
-    assert client.get("/api/health").status_code == 200
-    assert client.get("/api/overview").status_code == 401
-    assert client.get("/api/overview", headers=header).status_code == 200
-    assert client.get("/api/overview", headers={"Authorization": "Basic " + base64.b64encode(b"kam:jine").decode()}).status_code == 401
-    assert "Basic" in client.get("/").headers.get("www-authenticate", "")
-
-
-def test_no_password_means_no_gate(monkeypatch):
-    from dataclasses import replace
-
-    from fastapi.testclient import TestClient
-
-    from kam import main
-
-    monkeypatch.setattr(main, "settings", replace(main.settings, auth_password=""))
-    assert TestClient(main.create_app()).get("/api/overview").status_code == 200
+    for cesta in ("/api/health", "/api/overview", "/api/territories?limit=1", "/"):
+        r = client.get(cesta)
+        assert r.status_code != 401, cesta
+        assert "www-authenticate" not in {k.lower() for k in r.headers}, cesta
 
 
 def test_eurostat_classification_uses_english_stems():

@@ -8,9 +8,7 @@ thread so the first request never waits for them.
 
 from __future__ import annotations
 
-import base64
 import logging
-import secrets
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -130,29 +128,6 @@ def create_app() -> FastAPI:
     app = FastAPI(title="KAM — Krajský analytický model", version=__version__, lifespan=lifespan,
                   docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
     app.add_middleware(GZipMiddleware, minimum_size=1200)
-
-    if settings.auth_password:
-        @app.middleware("http")
-        async def gate(request: Request, call_next):
-            """HTTP Basic over the whole site when KAM_AUTH_PASSWORD is set.
-
-            One shared password, because the deployment is a demo behind a link
-            and not a service with accounts. `/api/health` stays open so the
-            hosting platform can probe the container without credentials.
-            """
-            if request.url.path == "/api/health":
-                return await call_next(request)
-            header = request.headers.get("authorization", "")
-            if header.startswith("Basic "):
-                try:
-                    user, _, password = base64.b64decode(header[6:]).decode("utf-8").partition(":")
-                except (ValueError, UnicodeDecodeError):
-                    user = password = ""
-                # compare_digest on both halves: a plain == leaks the password
-                # one character at a time to anyone who can time the response.
-                if secrets.compare_digest(user, settings.auth_user) and secrets.compare_digest(password, settings.auth_password):
-                    return await call_next(request)
-            return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="KAM", charset="UTF-8"'})
 
     @app.middleware("http")
     async def headers(request: Request, call_next):

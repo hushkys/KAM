@@ -62,11 +62,9 @@ class Settings:
     # Background jobs (catalogue refresh, embeddings). Off in tests.
     background_jobs: bool = os.environ.get("KAM_BACKGROUND", "1") != "0"
 
-    # Deployment. A password turns on HTTP Basic for the whole site (empty =
-    # open, which is what a laptop wants); the Fernet key moves off disk so a
-    # container redeploy keeps the API keys stored in the database readable.
-    auth_user: str = os.environ.get("KAM_AUTH_USER", "kam")
-    auth_password: str = os.environ.get("KAM_AUTH_PASSWORD", "")
+    # Deployment. Aplikace je veřejná a žádné heslo nemá; Fernet klíč se
+    # drží mimo disk, aby redeploy kontejneru nezneplatnil API klíče uložené
+    # v databázi.
     secret_key: str = os.environ.get("KAM_SECRET_KEY", "")
 
     @property

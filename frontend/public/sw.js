@@ -17,7 +17,7 @@
 // Bez toho by tiše ukazovala včerejšek jako dnešek, což je přesně ta věc,
 // kterou KAM jinde vytýká ostatním.
 
-const VERZE = "kam-v2";
+const VERZE = "kam-v3";
 const SKORAPKA = `${VERZE}-skorapka`;
 const SOUBORY = `${VERZE}-soubory`;
 const DATA = `${VERZE}-data`;
@@ -51,8 +51,7 @@ function sitSeStropem(request, ms) {
   });
 }
 
-/** Skořápka z mezipaměti. Použije se jen tehdy, když zařízení nemá síť —
- *  viz komentář u `fetch` níž, proč se do online navigace nesmí sahat. */
+/** Skořápka z mezipaměti — poslední záchrana, když síť nedá nic. */
 async function skorapka() {
   try {
     return (await caches.match("/", { ignoreSearch: true })) ?? Response.error();
@@ -61,11 +60,22 @@ async function skorapka() {
   }
 }
 
-/** Uloží skořápku na později. Vedlejší efekt, ne součást odpovědi. */
-function schovejSkorapku(request) {
-  fetch(request)
-    .then((r) => (r.ok ? caches.open(SKORAPKA).then((c) => c.put("/", r.clone())) : null))
-    .catch(() => null);
+async function navigace(request) {
+  let ze_site = null;
+  try {
+    ze_site = await sitSeStropem(request, SIT_STROP);
+  } catch {
+    ze_site = null;
+  }
+  if (ze_site && ze_site.ok) {
+    // Uložení je vedlejší efekt, ne součást odpovědi: selhání zápisu nesmí
+    // shodit stránku, která už ze sítě dorazila.
+    caches.open(SKORAPKA).then((c) => c.put("/", ze_site.clone())).catch(() => null);
+    return ze_site;
+  }
+  // Odpověď, která není v pořádku (500, 502), je pořád lepší poslat dál než
+  // předstírat, že je vše v pořádku — jen skořápka nahradí úplné ticho.
+  return ze_site ?? skorapka();
 }
 
 async function zMezipameti(request, jmeno) {
@@ -135,22 +145,12 @@ self.addEventListener("fetch", (e) => {
   // kouscích a `clone()` by ji zadržel do konce.
   if ((request.headers.get("accept") || "").includes("text/event-stream")) return;
 
-  // Do online navigace se nesahá, a je to ta nejdůležitější věta v tomhle
-  // souboru. Aplikace stojí za HTTP Basic a přihlašovací okno umí vyvolat
-  // jedině prohlížeč sám, při skutečné navigaci. Odpověď, která projde přes
-  // `respondWith`, tenhle dialog nespustí — prohlížeč místo něj vykreslí
-  // holé „401 Unauthorized" a na stránku se nedá dostat vůbec.
-  //
-  // Skořápka z mezipaměti se proto nabízí jen tehdy, když zařízení opravdu
-  // nemá síť. Tím zůstane zachované to, kvůli čemu service worker vznikl
-  // (v letovém režimu se aplikace otevře), a zároveň se nerozbije přihlášení.
-  // Cenou je, že při dostupné síti a nedostupném serveru ukáže prohlížeč
-  // vlastní chybovou stránku místo naší uložené — to je výrazně menší zlo.
-  if (request.mode === "navigate") {
-    if (!self.navigator.onLine) e.respondWith(skorapka());
-    else schovejSkorapku(request.clone());
-    return;
-  }
+  // POZOR, kdyby se aplikace někdy vrátila za heslo: tahle větev se musí
+  // zrušit. Přihlašovací okno umí vyvolat jedině prohlížeč sám při skutečné
+  // navigaci; odpověď, která projde přes `respondWith`, ho nespustí a místo
+  // něj se vykreslí holé „401 Unauthorized". Jednou už to celý web zamklo.
+  // Dokud je aplikace veřejná, je nejdřív síť a skořápka jako záloha správně.
+  if (request.mode === "navigate") { e.respondWith(navigace(request)); return; }
   if (url.pathname.startsWith("/assets/")) { e.respondWith(zMezipameti(request, SOUBORY)); return; }
   if (url.pathname.startsWith("/api/")) {
     if (url.pathname === "/api/health") return;

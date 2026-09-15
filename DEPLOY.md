@@ -78,8 +78,7 @@ gcloud run deploy kam --source . --region europe-west1 \
   --env-vars-file env.yaml
 ```
 
-`env.yaml` (mimo repozitář) nese `DATABASE_URL`, `KAM_AUTH_USER`,
-`KAM_AUTH_PASSWORD`, `KAM_SECRET_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
+`env.yaml` (mimo repozitář) nese `DATABASE_URL`, `KAM_SECRET_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
 `LOCAL_LLM_BASE_URL`, `KAM_BACKGROUND`.
 
 ### 4. Veřejná adresa
@@ -135,4 +134,3 @@ Naposledy ověřeno: 23 839 sad (21 998 s ověřeným odkazem), 407 134 pozorov�
   a nahrát `scripts/migrate_to_postgres.py`.
 - **Embeddingy**: vektorové vyhledávání potřebuje lokální embedding model.
   Na serveru žádný není, takže RAG jede na BM25 — navržený fallback, ne porucha.
-- **Změna hesla**: přepsat `KAM_AUTH_PASSWORD` v `env.yaml` a nasadit znovu.
