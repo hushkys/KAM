@@ -1,5 +1,6 @@
 import { BarList, ChartSwitch, Columns, Donut, ShareBar } from "../components/charts";
-import { Card, PageHeader, Pill, Stat } from "../components/ui";
+import { StatistikyHook } from "../components/StatistikyHook";
+import { Card, Pill, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { ago, compact, num } from "../lib/format";
 import type { Sources } from "../lib/types";
@@ -21,7 +22,7 @@ export function Stats() {
   const f = data?.datasets.by_freshness ?? {};
   return (
     <>
-      <PageHeader eyebrow="Statistiky" title="Čísla o datech a o KAM" lead="Kolik dat model drží, odkud jsou, jak čerstvá a jak se aplikace používá." />
+      <StatistikyHook roky={data?.observations_per_year ?? []} />
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
         <Stat i={0} label="Funkčních datových sad" value={num(data?.datasets.verified ?? null)} sub={data ? `${num(data.datasets.total)} v katalogu` : ""} />
         <Stat i={1} label="Měřených hodnot" value={compact(obs)} />

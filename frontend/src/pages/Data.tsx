@@ -9,7 +9,7 @@ import { Card, Empty, ErrorBox, Pill, Severity, Stat, Tabs } from "../components
 import { useApi } from "../lib/api";
 import { ago, date, num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
-import type { Sources } from "../lib/types";
+import type { SourceRow, Sources } from "../lib/types";
 
 interface Ds { id: number; title: string; description: string; publisher: string; source: string; url: string; alt_url: string; download_url: string; formats: string; pillar: string; pillar_label: string; region: string; modified: string; freshness: string; loaded: boolean; usage: string[]; check_status: string; check_code: number }
 interface DsPage { total: number; page: number; size: number; items: Ds[] }
@@ -98,43 +98,89 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
   );
 }
 
+/** Poskytovatelů je skoro čtyři sta a vykreslit je všechny najednou je na
+ *  přepnutí záložky znát. Data přijdou jedním dotazem, jen se ukazují po
+ *  dávkách — a dávka je dost velká na to, aby se v největší skupině dalo
+ *  hledat, aniž by se tlačítko mačkalo pořád dokola. */
+const ZDROJU_NAJEDNOU = 24;
+
+function ZdrojeSkupina({ label, rows, i }: { label: string; rows: SourceRow[]; i: number }) {
+  const [limit, setLimit] = useState(ZDROJU_NAJEDNOU);
+  const videt = rows.slice(0, limit);
+  const zbyva = rows.length - videt.length;
+  return (
+    <Card i={i} title={`${label} (${num(rows.length)})`} icon="layers" flush>
+      <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
+        <table className="table">
+          <thead><tr><th>Zdroj</th><th>Typ</th><th className="r">Funkčních</th><th className="r">Celkem</th><th>Sklizeno</th><th /></tr></thead>
+          <tbody>
+            {videt.map((s) => (
+              <tr key={s.id}>
+                <td className="strong">{s.name.replace("NKOD — ", "")}</td>
+                <td className="small mute">{{ nkod: "NKOD (SPARQL)", dcat: "DCAT-AP", csw: "CSW (INSPIRE)", api: "REST API", file: "Soubory", portal: "Portál" }[s.kind] ?? s.kind}</td>
+                <td className="r">{s.datasets ? num(s.verified) : "—"}</td>
+                <td className="r mute">{s.datasets ? num(s.datasets) : "—"}</td>
+                <td className="small mute">{s.harvested_at ? ago(s.harvested_at) : "—"}</td>
+                <td className="r" style={{ whiteSpace: "nowrap" }}>
+                  {s.portal_url && <a className="icon-btn sm" href={s.portal_url} target="_blank" rel="noopener noreferrer" aria-label={`Otevřít ${s.name}`}><Icon name="external" size={15} /></a>}
+                  {s.datasets > 0 && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady"><Icon name="filter" size={15} /></Link>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {zbyva > 0 && (
+        <div className="zdroje-dalsi">
+          <button className="btn btn-sm" onClick={() => setLimit((l) => l + ZDROJU_NAJEDNOU)}>
+            <Icon name="chevron-down" size={15} /> Zobrazit dalších {Math.min(zbyva, ZDROJU_NAJEDNOU)}
+          </button>
+          <span className="xsmall mute">zobrazeno {num(videt.length)} z {num(rows.length)}</span>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function SourcesTab({ data }: { data: Sources | undefined }) {
   if (!data) return <span className="skeleton" style={{ height: 300, width: "100%" }} />;
   const groups: [string, string][] = [["core", "Královéhradecký kraj a státní zdroje"], ["kraje", "Kraje a krajské portály"], ["ostatni", "Obce, města, úřady a další poskytovatelé v NKOD"]];
   return (
     <div className="stack-y">
       {groups.map(([g, label], gi) => (
-        <Card key={g} i={gi} title={`${label} (${num(data.sources.filter((s) => s.group === g && s.datasets).length)})`} icon="layers" flush>
-          <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
-            <table className="table">
-              <thead><tr><th>Zdroj</th><th>Typ</th><th className="r">Funkčních</th><th className="r">Celkem</th><th>Sklizeno</th><th /></tr></thead>
-              <tbody>
-                {data.sources.filter((s) => s.group === g && (s.datasets > 0 || s.kind !== "nkod")).map((s) => (
-                  <tr key={s.id}>
-                    <td className="strong">{s.name.replace("NKOD — ", "")}</td>
-                    <td className="small mute">{{ nkod: "NKOD (SPARQL)", dcat: "DCAT-AP", csw: "CSW (INSPIRE)", api: "REST API", file: "Soubory", portal: "Portál" }[s.kind] ?? s.kind}</td>
-                    <td className="r">{s.datasets ? num(s.verified) : "—"}</td>
-                    <td className="r mute">{s.datasets ? num(s.datasets) : "—"}</td>
-                    <td className="small mute">{s.harvested_at ? ago(s.harvested_at) : "—"}</td>
-                    <td className="r" style={{ whiteSpace: "nowrap" }}>
-                      {s.portal_url && <a className="icon-btn sm" href={s.portal_url} target="_blank" rel="noopener noreferrer" aria-label={`Otevřít ${s.name}`}><Icon name="external" size={15} /></a>}
-                      {s.datasets > 0 && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady"><Icon name="filter" size={15} /></Link>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <ZdrojeSkupina key={g} i={gi} label={label} rows={data.sources.filter((s) => s.group === g && (s.datasets > 0 || s.kind !== "nkod"))} />
       ))}
       <p className="small mute">Duplicity mezi NKOD a portály krajů a měst jsou sloučené — každá sada je započítána jednou a nese oba odkazy. Funkční = odkaz na data nebo stránku sady při poslední kontrole odpověděl. IČ 17651921 patří Digitální a informační agentuře.</p>
     </div>
   );
 }
 
+/** Barva buňky: od červené (nic) po zelenou (úplné pokrytí). Škála je spojitá,
+ *  protože stupně by dvě sousední hodnoty stavěly proti sobě víc, než odpovídá
+ *  rozdílu mezi nimi. */
 function cellColor(score: number): string {
   const t = score / 100;
   return `color-mix(in oklab, var(--accent) ${Math.round(12 + 70 * t)}%, var(--bad) ${Math.round(70 * (1 - t))}%)`;
+}
+
+/** O kolik bodů se buňka musí lišit od krajského čísla, aby stálo za to si jí
+ *  všimnout. Pod tím je to šum měření, ne vlastnost území. */
+const ODCHYLKA = 8;
+
+/** Krátké nadpisy sloupců. Popisky z API jsou věty („Sociální oblast a trh
+ *  práce") a v hlavičce matice by se zalomily přes tři řádky. */
+const KRATCE: Record<string, string> = { ...Object.fromEntries(PILLARS), kultura: "Kultura", zdravotnictvi: "Zdraví" };
+
+/** Rozsah mezi oblastmi proti rozsahu mezi ORP — spočítaný, ne napsaný. */
+function coverageVeta(c: Gaps["coverage"]): string {
+  const po = c.pillars.map((p) => p.score);
+  const pu = c.matrix.map((r) => Math.round(r.cells.reduce((a, x) => a + x.score, 0) / Math.max(1, r.cells.length)));
+  if (!po.length || !pu.length) return "";
+  const pMin = Math.min(...po), pMax = Math.max(...po), uMin = Math.min(...pu), uMax = Math.max(...pu);
+  const zaver = pMax - pMin > (uMax - uMin) * 2
+    ? "Chybějící data nejsou otázka místa, ale oboru."
+    : "Liší se i jednotlivá území mezi sebou.";
+  return `Mezi oblastmi je rozdíl ${pMin}–${pMax} %, mezi ORP ${uMin}–${uMax} %. ${zaver}`;
 }
 
 function Needs() {
@@ -156,16 +202,47 @@ function Needs() {
         {data.alerts.filter((a) => a.kind === "pokryti").length > 0 && <p className="small mute">+ {data.alerts.filter((a) => a.kind === "pokryti").length} upozornění na nízké pokrytí v ORP (matice níže).</p>}
       </Card>
       <Card span={12} i={2} title="Pokrytí dat: ORP × oblast" icon="grid" actions={<span className="xsmall mute">podíl obcí s daty v posledním roce, snížený za stáří dat</span>}>
+        <p className="small mute" style={{ margin: "0 0 14px" }}>{coverageVeta(data.coverage)}</p>
         <div className="table-wrap">
-          <div className="matrix" role="table" aria-label="Pokrytí dat">
-            <div className="matrix-row" role="row"><span />{PILLARS.slice(0, 8).map(([k, l]) => <span key={k} className="matrix-head" role="columnheader">{l}</span>)}</div>
-            {data.coverage.matrix.map((r) => (
-              <div className="matrix-row" role="row" key={r.territory.id}>
-                <Link className="matrix-name" to={`/obce/${r.territory.id}`} role="rowheader">{r.territory.name}</Link>
-                {r.cells.map((c) => <span key={c.pillar} role="cell" className="matrix-cell" title={c.missing.length ? `Chybí u části obcí: ${c.missing.join(", ")}` : "Úplné pokrytí"} style={{ background: cellColor(c.score), color: c.score > 55 ? "var(--accent-fg)" : "#fff" }}>{c.score}</span>)}
-              </div>
-            ))}
+          <div className="matrix" role="table" aria-label="Pokrytí dat"
+            style={{ ["--sloupce" as string]: data.coverage.pillars.length } as CSSProperties}>
+            <div className="matrix-row" role="row">
+              <span className="matrix-head vlevo" role="columnheader">ORP</span>
+              {/* V hlavičce je rovnou krajské číslo. Sloupec je totiž ta
+                  odpověď: rozdíly jsou mezi oblastmi, ne mezi územími. */}
+              {data.coverage.pillars.map((p) => (
+                <span key={p.key} className="matrix-head" role="columnheader" title={p.label}>
+                  {KRATCE[p.key] ?? p.label}<i>{p.score}</i>
+                </span>
+              ))}
+              <span className="matrix-head" role="columnheader">Celkem</span>
+            </div>
+            {data.coverage.matrix.map((r) => {
+              const prumer = Math.round(r.cells.reduce((a, c) => a + c.score, 0) / Math.max(1, r.cells.length));
+              return (
+                <div className="matrix-row" role="row" key={r.territory.id}>
+                  <Link className="matrix-name" to={`/obce/${r.territory.id}`} role="rowheader">{r.territory.name}</Link>
+                  {r.cells.map((c) => {
+                    const kraj = data.coverage.pillars.find((p) => p.key === c.pillar)?.score ?? c.score;
+                    const jina = Math.abs(c.score - kraj) >= ODCHYLKA;
+                    return (
+                      <span key={c.pillar} role="cell" className={jina ? "matrix-cell je-jina" : "matrix-cell"}
+                        title={`${r.territory.name} · ${KRATCE[c.pillar] ?? c.pillar}: ${c.score} % (kraj ${kraj} %)${c.missing.length ? `
+Chybí u části obcí: ${c.missing.join(", ")}` : ""}`}
+                        style={{ background: cellColor(c.score) }}>{c.score}</span>
+                    );
+                  })}
+                  <span role="cell" className="matrix-cell je-soucet" title={`Průměr přes všechny oblasti: ${prumer} %`}>{prumer}</span>
+                </div>
+              );
+            })}
           </div>
+        </div>
+        <div className="matrix-legenda">
+          <span>0 %</span>
+          <span className="skala" style={{ background: `linear-gradient(90deg, ${cellColor(0)}, ${cellColor(50)}, ${cellColor(100)})` }} />
+          <span>100 %</span>
+          <span style={{ marginLeft: 6 }}><span className="obrys">42</span> odchylka od kraje o {ODCHYLKA} a více bodů</span>
         </div>
       </Card>
       <Card span={6} i={3} title="Čerstvost sad Královéhradeckého kraje" icon="refresh" flush>

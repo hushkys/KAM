@@ -555,11 +555,27 @@
 .ds-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ds-links { display: flex; gap: 4px; align-items: flex-start; }
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; margin-bottom: 16px; }
-.matrix { display: grid; gap: 3px; min-width: 720px; }
-.matrix-row { display: grid; grid-template-columns: 170px repeat(8, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
-.matrix-head { font-size: .6875rem; font-weight: 700; color: var(--text-mute); text-transform: uppercase; letter-spacing: .05em; padding: 4px; text-align: center; line-height: 1.2; }
-.matrix-name { font-size: .8125rem; font-weight: 650; padding: 8px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.matrix-cell { display: grid; place-items: center; min-height: 34px; border-radius: 6px; font-size: .75rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+/* Počet sloupců řídí `--sloupce` z dat. Když byl natvrdo, přibyla v API
+   devátá oblast a její buňka se zalomila pod jméno ORP — z matice byl
+   zubatý blok, ve kterém se nedalo číst vůbec nic. */
+.matrix { display: grid; gap: 3px; min-width: 780px; }
+.matrix-row { display: grid; grid-template-columns: 162px repeat(var(--sloupce, 8), minmax(0, 1fr)) 60px; gap: 3px; align-items: stretch; }
+.matrix-head { font-size: .625rem; font-weight: 750; color: var(--text-mute); text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 3px 6px; text-align: center; line-height: 1.25; display: grid; gap: 1px; align-content: end; }
+.matrix-head i { font-style: normal; font-size: .75rem; font-weight: 800; color: var(--text-dim); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.matrix-head.vlevo { text-align: left; }
+.matrix-name { font-size: .8125rem; font-weight: 650; padding: 5px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; }
+.matrix-cell { display: grid; place-items: center; min-height: 26px; border-radius: 5px; font-size: .6875rem; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--accent-fg); }
+/* Skoro všechna čísla ve sloupci jsou stejná — jediné, co stojí za pohled,
+   je buňka, která se od krajského čísla odchyluje. Ta dostane obrys. */
+.matrix-cell.je-jina { box-shadow: inset 0 0 0 1.6px var(--text); }
+.matrix-cell.je-soucet { background: var(--surface-2); color: var(--text); font-weight: 800; }
+.matrix-legenda { display: flex; align-items: center; gap: 9px; margin-top: 12px; font-size: .75rem; color: var(--text-mute); flex-wrap: wrap; }
+.matrix-legenda .skala { width: 130px; height: 8px; border-radius: 4px; }
+.zdroje-dalsi { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+  padding: 0 var(--card-pad) var(--card-pad); }
+.matrix-legenda .obrys { display: inline-grid; place-items: center; min-width: 26px; height: 18px; border-radius: 5px; margin-right: 6px; vertical-align: -4px;
+  box-shadow: inset 0 0 0 1.6px var(--text); font-size: .625rem; font-weight: 750; color: var(--text); }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 .method h3 { margin-bottom: 6px; }
 .method p { color: var(--text-dim); font-size: .9063rem; }
@@ -838,6 +854,18 @@
 :root[data-motion="reduce"] .pd-art .pd-skupina,
 :root[data-motion="reduce"] .pd-art .pd-dok,
 :root[data-motion="reduce"] .da-art .da-dlazdice { animation: none; }
+
+/* -------------------------------------------------- hook stránky statistik
+   Stejně velké tečky, protože otázka zní „kolik", ne „čeho víc" — plocha by
+   srovnávala, tečky počítají. Nájezd jde po šedesátkách, čtyři sta vlastních
+   zpoždění by prohlížeč počítal zbytečně dlouho. */
+.st-ramp { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: .75rem; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+.st-ramp i { flex: 1 1 auto; max-width: 200px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--h2), var(--h3)); }
+.st-art circle { animation: st-vstup 420ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 9ms);
+  transform-box: fill-box; transform-origin: center; }
+@keyframes st-vstup { from { opacity: 0; transform: scale(.3); } }
+
+:root[data-motion="reduce"] .st-art circle { animation: none; }
 
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
