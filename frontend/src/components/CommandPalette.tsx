@@ -88,7 +88,7 @@ export function CommandPalette() {
   let lastGroup = "";
   return createPortal(
     <div className="palette-layer" onPointerDown={(e) => e.target === e.currentTarget && setOpen(false)}>
-      <div className="palette glass" role="dialog" aria-modal="true" aria-label="Hledat">
+      <div className="palette" role="dialog" aria-modal="true" aria-label="Hledat">
         <div className="palette-input">
           <Icon name="search" size={20} />
           <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Obec, datová sada, stránka nebo příkaz…" aria-label="Hledat"
