@@ -12,7 +12,10 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 [![licence MIT](https://img.shields.io/badge/licence-MIT-3c7a2b)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3c7a2b)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-3c7a2b)](https://react.dev/)
-[![testy](https://img.shields.io/badge/testy-97%20%2B%2013-3c7a2b)](#testy)
+[![otevřené API](https://img.shields.io/badge/otev%C5%99en%C3%A9%20API-v1-3c7a2b)](docs/API.md)
+[![testy](https://img.shields.io/badge/testy-111%20%2B%2017-3c7a2b)](#testy)
+
+**[Živá aplikace](https://hack-a-ton-hushkys.web.app)** · **[Otevřené API](docs/API.md)**
 
 Tým **Popojedem.** · Hackathon Královéhradeckého kraje
 
@@ -34,6 +37,49 @@ větou — ale čísla nepočítá on, ty mu podává model.
 
 **Každé číslo v aplikaci se počítá z databáze.** Žádné se nepíše do textu
 stránky. Když zdroj nic neví, aplikace to řekne, místo aby si domyslela.
+
+## Otevřené API
+
+Data nezůstávají uvnitř aplikace. Všechno, co KAM posbíral, si kdokoli stáhne
+jedním rozhraním — **bez klíče, bez registrace, bez omezení počtu dotazů**:
+
+```bash
+curl https://hack-a-ton-hushkys.web.app/api/v1
+```
+
+To je rozcestník: vypíše, co tu je, kolik toho je a jak se ptát. `cesty`
+a `priklady` v odpovědi jsou funkční adresy, takže se dá začít pracovat bez
+čtení dokumentace.
+
+```bash
+# Počet obyvatel všech obcí od roku 2020, rovnou do tabulky
+curl -o obce.csv "…/api/v1/hodnoty?ukazatel=110900&uroven=obec&od=2020&format=csv"
+
+# Všechno, co model ví o jedné obci
+curl "…/api/v1/hodnoty?uzemi=obec:569810"
+```
+
+Jeden řádek je jedno číslo: území, ukazatel, rok, hodnota, **a původce**. Nic se
+nedopočítává — podíly a přepočty si aplikace počítá až při čtení, takže v API
+je jen to, co někdo doopravdy zveřejnil.
+
+| | |
+|---|---|
+| Formáty | `json` se stránkováním, `csv` pro tabulky, `ndjson` pro velké dávky |
+| Streamování | CSV a NDJSON nemají strop — projde jimi celá databáze |
+| Z prohlížeče | `Access-Control-Allow-Origin: *`, jen na `/api/v1` |
+| Napojení | `id` území je kód RÚIAN, takže data sednou na jiné registry |
+
+Celý návod je v **[docs/API.md](docs/API.md)**, strojový popis na `/api/docs`.
+V repozitáři je i [`scripts/kam.py`](scripts/kam.py) — klient do příkazové
+řádky, který si vystačí se standardní knihovnou Pythonu:
+
+```bash
+python scripts/kam.py info
+python scripts/kam.py ukazatele --hledat lékař
+python scripts/kam.py data --ukazatel 110900 --uzemi obec:569810
+python scripts/kam.py stahni hodnoty --format csv --do-souboru vse.csv
+```
 
 ## Jak to vypadá
 
@@ -111,6 +157,14 @@ využití. Plocha dlaždice odpovídá počtu sad v oblasti.
 
 <img src="docs/screenshots/data.png" alt="Katalog otevřených dat podle oblastí" width="100%">
 
+### API pro všechny
+
+Jedno rozhraní na všechna data, živé ukázky ke zkopírování a klient do
+příkazové řádky. Kdo si aplikaci vezme pod sebe, nemusí obcházet dvacet
+katalogů.
+
+<img src="docs/screenshots/api.png" alt="Otevřené API: cesty, ukázky a formáty" width="100%">
+
 ### Statistiky
 
 Kolik toho model drží, spočítané po tečkách. Jedna tečka je tisíc měřených
@@ -126,13 +180,16 @@ pro představu:
 
 | | |
 |---|---:|
-| Datových sad v katalogu | **24 273** |
-| z toho s ověřeným odkazem | **22 432** |
+| Datových sad v katalogu | **24 273** |
+| z toho s ověřeným odkazem | **22 432** |
 | Poskytovatelů dat | **394** |
-| Naměřených hodnot (2005–2026) | **407 214** |
+| Naměřených hodnot (2005–2026) | **407 214** |
 | Území (kraj, okresy, ORP, obce) | **483** |
-| Zařízení a zastávek | **11 616** |
-| Ukazatelů | **138** |
+| Zařízení a zastávek | **11 616** |
+| Ukazatelů | **115** |
+| Nečíselných údajů | **2 233** |
+
+Všechna tahle čísla vrátí `GET /api/v1` živě.
 
 ## Spuštění
 
@@ -270,9 +327,13 @@ minut, protože každou sadu ověřuje.
 ## Testy
 
 ```bash
-python -m pytest              # 89 testů
-cd frontend && npm test       # 9 testů
+python -m pytest              # 111 testů
+cd frontend && npm test       # 17 testů
 ```
+
+Testy hlídají i věci, které se snadno rozbijí potichu: že nasazená aplikace
+nikde nevrací 401 (`test_aplikace_je_verejna`), že veřejné API posílá CORS jen
+na `/api/v1`, že CSV má BOM kvůli Excelu a že ke každé hodnotě patří původce.
 
 ## Nasazení
 

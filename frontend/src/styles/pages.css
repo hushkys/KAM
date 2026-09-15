@@ -992,6 +992,20 @@
 :root[data-motion="reduce"] .sc-hook .sc-pane,
 :root[data-motion="reduce"] .sc-hook .sc-blobs { animation: none; }
 
+/* ------------------------------------------------------ otevřené API
+   Ukázky jsou živé odkazy, ne obrázky v dokumentaci — proto mají vedle sebe
+   kopírování i otevření a na úzkém okně se skládají pod sebe. */
+.api-ukazka { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center;
+  padding: 11px 0; border-top: 1px solid var(--border); }
+.api-ukazka:first-of-type { border-top: 0; }
+.api-popis { font-size: .875rem; font-weight: 600; }
+.api-url { grid-column: 1; font-size: .75rem; color: var(--text-mute); overflow-wrap: anywhere;
+  background: none; padding: 0; }
+.api-akce { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 4px; }
+.api-kod { margin: 0; padding: 14px 16px; border-radius: var(--r-md); background: var(--surface-2);
+  border: 1px solid var(--border); overflow-x: auto; font-size: .8125rem; line-height: 1.7; }
+.api-kod code { background: none; padding: 0; color: var(--text-dim); white-space: pre; }
+
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
   .icon-btn.sm { width: 40px; height: 40px; }

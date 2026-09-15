@@ -9,6 +9,7 @@ import { Card, Empty, ErrorBox, Pill, Severity, Stat, Tabs } from "../components
 import { useApi } from "../lib/api";
 import { ago, date, num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
+import { toast } from "../lib/toast";
 import type { SourceRow, Sources } from "../lib/types";
 
 interface Ds { id: number; title: string; description: string; publisher: string; source: string; url: string; alt_url: string; download_url: string; formats: string; pillar: string; pillar_label: string; region: string; modified: string; freshness: string; loaded: boolean; usage: string[]; check_status: string; check_code: number }
@@ -267,6 +268,139 @@ function Methods() {
   );
 }
 
+/** Otevřené API: jedno místo, odkud si kdokoli stáhne samotná data.
+ *
+ *  Stránka Data doteď nabízela export katalogu — tedy seznam, co kde je.
+ *  Tohle je ten druhý krok: samotné naměřené hodnoty, území a zařízení,
+ *  bez obcházení dvaceti katalogů. Ukázky jsou živé odkazy, ne obrázky
+ *  v dokumentaci; kdo na ně klikne, vidí odpověď hned.
+ */
+interface ApiIndex {
+  verze: string;
+  rozsah: { kraj: number; roky: number[]; hodnoty: number; ukazatele: number; uzemi: number; zarizeni: number; fakta: number; katalog: number };
+  cesty: Record<string, string>;
+}
+
+const CESTY: { cesta: string; nazev: string; popis: string; parametry: string }[] = [
+  { cesta: "/api/v1", nazev: "Rozcestník", popis: "Co tu je, kolik toho je a jak se ptát.", parametry: "—" },
+  { cesta: "/api/v1/hodnoty", nazev: "Naměřené hodnoty", popis: "Jeden řádek je jedno číslo: území, ukazatel, rok, hodnota.", parametry: "ukazatel, uzemi, uroven, od, do, limit, offset, format" },
+  { cesta: "/api/v1/ukazatele", nazev: "Registr ukazatelů", popis: "Co zkratka znamená, v čem se měří, kdo je původce.", parametry: "oblast, hledat, format" },
+  { cesta: "/api/v1/uzemi", nazev: "Území", popis: "Obce, ORP, okresy a kraj i s kódy RÚIAN.", parametry: "uroven, hledat, format" },
+  { cesta: "/api/v1/fakta", nazev: "Nečíselné údaje", popis: "Text s datem platnosti a odkazem na zdroj.", parametry: "uzemi, klic, format" },
+  { cesta: "/api/v1/zarizeni", nazev: "Zařízení a zastávky", popis: "Body v území včetně souřadnic.", parametry: "druh, obec, format" },
+  { cesta: "/api/v1/katalog", nazev: "Katalog sad", popis: "Datové sady i s odkazy na originál.", parametry: "hledat, oblast, poskytovatel, limit, offset, format" },
+  { cesta: "/api/v1/zdroje", nazev: "Zdroje", popis: "Odkud se sklízí a kdy naposledy.", parametry: "format" },
+];
+
+const UKAZKY: { popis: string; url: string }[] = [
+  { popis: "Počet obyvatel všech obcí od roku 2020, jako CSV do tabulky", url: "/api/v1/hodnoty?ukazatel=110900&uroven=obec&od=2020&format=csv" },
+  { popis: "Všechno, co model ví o jedné obci", url: "/api/v1/hodnoty?uzemi=obec:569810" },
+  { popis: "Které ukazatele se týkají zdravotnictví", url: "/api/v1/ukazatele?oblast=zdravotnictvi" },
+  { popis: "Seznam ORP i s kódy RÚIAN", url: "/api/v1/uzemi?uroven=orp" },
+  { popis: "Datové sady o dopravě", url: "/api/v1/katalog?hledat=doprava" },
+];
+
+function Api() {
+  const idx = useApi<ApiIndex>("/v1");
+  const r = idx.data?.rozsah;
+  const [zkopirovano, setZkopirovano] = useState("");
+  const zaklad = typeof window === "undefined" ? "" : window.location.origin;
+
+  const kopiruj = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setZkopirovano(text);
+      toast("ok", "Zkopírováno do schránky.");
+      window.setTimeout(() => setZkopirovano(""), 2000);
+    } catch {
+      toast("warn", "Schránka není dostupná, zkopírujte odkaz ručně.");
+    }
+  };
+
+  return (
+    <div className="stack-y">
+      <Card i={0} title="Jedno API na všechna data" icon="database"
+        actions={<a className="btn btn-sm" href="/api/docs" target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Technická dokumentace</a>}>
+        <p className="small muted" style={{ margin: "0 0 14px" }}>
+          Data, která KAM posbíral, si můžete stáhnout a použít po svém — bez klíče, bez registrace
+          a bez omezení počtu dotazů. Volat jde i přímo z prohlížeče na cizí stránce; hlavička CORS
+          je na <code>/api/v1</code> schválně.
+        </p>
+        {r && (
+          <div className="facts-list">
+            <div className="fact-row"><span>Naměřených hodnot</span><span className="num">{num(r.hodnoty)}</span></div>
+            <div className="fact-row"><span>Ukazatelů</span><span className="num">{num(r.ukazatele)}</span></div>
+            <div className="fact-row"><span>Území</span><span className="num">{num(r.uzemi)}</span></div>
+            <div className="fact-row"><span>Zařízení a zastávek</span><span className="num">{num(r.zarizeni)}</span></div>
+            <div className="fact-row"><span>Datových sad v katalogu</span><span className="num">{num(r.katalog)}</span></div>
+            <div className="fact-row"><span>Roky</span><span>{r.roky[0]}–{r.roky[1]}</span></div>
+          </div>
+        )}
+        <p className="xsmall mute" style={{ marginTop: 12 }}>
+          Licence dat se řídí původním zdrojem a je uvedená u každé datové sady v katalogu. Kód aplikace je MIT.
+        </p>
+      </Card>
+
+      <Card i={1} title="Vyzkoušejte hned" icon="play">
+        <p className="small muted" style={{ marginTop: 0 }}>Odkazy jsou živé — otevřou se v novém panelu s opravdovou odpovědí.</p>
+        {UKAZKY.map((u) => (
+          <div className="api-ukazka" key={u.url}>
+            <span className="api-popis">{u.popis}</span>
+            <code className="api-url">{u.url}</code>
+            <span className="api-akce">
+              <button className="icon-btn sm" onClick={() => kopiruj(zaklad + u.url)} aria-label="Kopírovat odkaz" title="Kopírovat odkaz">
+                <Icon name={zkopirovano === zaklad + u.url ? "check" : "copy"} size={15} />
+              </button>
+              <a className="icon-btn sm" href={u.url} target="_blank" rel="noopener noreferrer" aria-label="Otevřít" title="Otevřít"><Icon name="external" size={15} /></a>
+            </span>
+          </div>
+        ))}
+      </Card>
+
+      <Card i={2} title="Všechny cesty" icon="layers" flush>
+        <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
+          <table className="table">
+            <thead><tr><th>Cesta</th><th>Co vrací</th><th>Parametry</th></tr></thead>
+            <tbody>
+              {CESTY.map((c) => (
+                <tr key={c.cesta}>
+                  <td><a className="ds-title" href={c.cesta} target="_blank" rel="noopener noreferrer">{c.cesta}</a></td>
+                  <td className="small"><strong>{c.nazev}</strong><br /><span className="mute">{c.popis}</span></td>
+                  <td className="xsmall mute">{c.parametry}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Card i={3} title="Formáty a stahování po dávkách" icon="download">
+        <div className="facts-list">
+          <div className="fact-row"><span><code>format=json</code></span><span className="mute small">výchozí, se stránkováním a počtem</span></div>
+          <div className="fact-row"><span><code>format=csv</code></span><span className="mute small">pro tabulkový procesor, s BOM kvůli Excelu</span></div>
+          <div className="fact-row"><span><code>format=ndjson</code></span><span className="mute small">řádek = záznam, pro velké dávky</span></div>
+        </div>
+        <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
+          CSV a NDJSON se streamují a nemají strop, takže jimi projde i celá databáze najednou.
+          JSON stránkuje po <code>limit</code> položkách a v odpovědi posílá <code>dalsi</code>
+          {" "}s adresou další stránky.
+        </p>
+      </Card>
+
+      <Card i={4} title="Klient do příkazové řádky" icon="chart">
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Ve zdrojovém kódu je <code>scripts/kam.py</code> — klient, který si vystačí se standardní
+          knihovnou Pythonu. Nástroj, kvůli kterému si musí úřad nejdřív něco nainstalovat, se nepoužije.
+        </p>
+        <pre className="api-kod"><code>{`python kam.py info
+python kam.py ukazatele --hledat lékař
+python kam.py data --ukazatel 110900 --uzemi obec:569810
+python kam.py stahni hodnoty --format csv --do-souboru vse.csv`}</code></pre>
+      </Card>
+    </div>
+  );
+}
+
 export function DataPage() {
   const { query } = useLocation();
   const tab = query.get("tab") ?? "katalog";
@@ -277,6 +411,7 @@ export function DataPage() {
       <DataHook oblasti={d?.by_pillar ?? []} overenych={d?.verified} celkem={d?.total} poskytovatelu={d?.publishers}>
         <div className="row" style={{ marginTop: 20 }}>
           <a className="btn" href="/api/datasets/export.csv"><Icon name="download" size={16} /> Export katalogu (CSV)</a>
+          <Link className="btn btn-primary" to="/data?tab=api"><Icon name="share" size={16} /> Otevřené API</Link>
         </div>
       </DataHook>
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
@@ -287,10 +422,11 @@ export function DataPage() {
         <Stat i={4} label="Vyřazeno" value={num(d ? d.broken + d.no_link : null)} sub="nedostupný nebo chybějící odkaz" />
       </div>
       <Tabs label="Sekce" value={tab} onChange={(v) => setQuery({ tab: v === "katalog" ? null : v, page: null })}
-        tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Datové potřeby", icon: "gauge" }, { value: "metodika", label: "Metodika", icon: "book" }]} />
+        tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Datové potřeby", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />
       <div style={{ "--i": 0 } as CSSProperties}>
         {tab === "katalog" && <Catalog sources={d} />}
         {tab === "zdroje" && <SourcesTab data={d} />}
+        {tab === "api" && <Api />}
         {tab === "potreby" && <Needs />}
         {tab === "metodika" && <Methods />}
       </div>

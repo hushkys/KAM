@@ -132,6 +132,14 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def headers(request: Request, call_next):
         response: Response = await call_next(request)
+        # Veřejné API smí volat kdokoli odkudkoli — to je celý jeho smysl.
+        # Hlavička je schválně jen na `/api/v1`: zbytek API obsluhuje tuhle
+        # aplikaci a cizí stránka do něj nemá co mluvit.
+        if request.url.path.startswith("/api/v1"):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers.setdefault("Cache-Control", "public, max-age=300")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
@@ -140,8 +148,8 @@ def create_app() -> FastAPI:
             response.headers.setdefault("Content-Security-Policy", CSP)
         return response
 
-    from .api import ai, data, model, provoz, reports
-    for r in (data.router, model.router, ai.router, reports.router, provoz.router):
+    from .api import ai, data, model, provoz, reports, verejne
+    for r in (data.router, model.router, ai.router, reports.router, provoz.router, verejne.router):
         app.include_router(r)
 
     @app.exception_handler(Exception)

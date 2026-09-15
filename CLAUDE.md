@@ -93,6 +93,13 @@ ingest/  → models.Observation (+ Dataset, Territory, Poi, Fact)
 - **`logs.py` is the only writer into `audit_log`.** What goes in `detail` is counts, identifiers and reasons — never report text, chat queries or IP addresses, because the log has its own retention and must not become a second copy of the data it describes. `logs.zapis` swallows its own errors: a log that breaks the operation it is recording has its priorities backwards. Retention is in `prefs` under `provoz`, and **0 means keep forever** — `podnety_dni` defaults to 0 because automatically discarding what people submitted has to be a deliberate choice, and only delivered submissions are ever eligible.
 - `main.py::_udrzba` runs the retention daily. Doing it once at startup (which is all `assistant.purge_old()` used to get) is not retention: the container runs for weeks and the tables grow the whole time.
 
+## Veřejné API
+
+- **`api/verejne.py` (`/api/v1`) je jiná vrstva než zbytek `/api`.** Ten obsluhuje tuhle aplikaci a vrací hotové profily a výhledy; `/api/v1` vydává samotná data, aby si je kdokoli stáhl a udělal si s nimi své. Index na `/api/v1` je samopopisný — `cesty` i `priklady` jsou funkční adresy, takže API jde použít bez dokumentace.
+- **CORS je schválně jen na `/api/v1`** (nastavuje ho middleware `headers` v `main.py`). Právě tohle má kdokoli volat ze svého webu; do zbytku API cizí stránce nic není a `test_v1_ma_cors_a_zbytek_api_ne` to hlídá.
+- **CSV a NDJSON se streamují přes `yield_per` a nemají strop**, JSON stránkuje po `limit` a vrací `dalsi`. CSV začíná BOM, jinak Excel na Windows přečte diakritiku jako paskvil. Ke každé hodnotě patří `puvodce` z `Indicator.origin` — číslo bez původu je tvrzení, ne data.
+- `scripts/kam.py` je klient API a **záměrně nemá závislosti mimo standardní knihovnu**: nástroj, kvůli kterému si musí úřad nejdřív něco nainstalovat, se nepoužije. Míří na veřejné nasazení, vlastní instance se zadá přes `--server`.
+
 ## AI notes
 
 - Chat is one pipeline in `ai/assistant.py`: guard → commands → route → tools + retrieval → model, streamed as SSE (`meta`, `action`, `token`, `done`).

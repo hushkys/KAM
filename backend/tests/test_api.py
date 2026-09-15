@@ -111,3 +111,68 @@ def test_spa_fallback_and_api_404(client):
     assert client.get("/api/neexistuje").status_code == 404
     r = client.get("/obce/obec:500001")
     assert r.status_code in (200, 503)
+
+# ----------------------------------------------------------- veřejné API v1
+def test_v1_index_je_samopopisny(client):
+    """Kdo API nezná, musí začít jedním dotazem a nemusí číst dokumentaci."""
+    d = client.get("/api/v1").json()
+    assert d["rozsah"]["hodnoty"] > 0 and d["rozsah"]["ukazatele"] > 0
+    assert set(d["cesty"]) >= {"hodnoty", "ukazatele", "uzemi", "katalog"}
+    assert d["priklady"] and all(u.startswith("http") for u in d["priklady"])
+
+
+def test_v1_ma_cors_a_zbytek_api_ne(client):
+    """Hlavička patří jen na /api/v1 — do zbytku API cizí stránce nic není."""
+    assert client.get("/api/v1").headers["access-control-allow-origin"] == "*"
+    assert "access-control-allow-origin" not in {k.lower() for k in client.get("/api/overview").headers}
+
+
+def test_v1_hodnoty_filtruji_a_strankuji(client):
+    vse = client.get("/api/v1/hodnoty?limit=5").json()
+    assert vse["celkem"] > 5 and len(vse["polozky"]) == 5
+    assert vse["dalsi"] and "offset=5" in vse["dalsi"]
+
+    r = vse["polozky"][0]
+    # Ke každému číslu patří původ; hodnota bez něj je tvrzení, ne data.
+    assert {"uzemi", "ukazatel", "rok", "hodnota", "jednotka", "puvodce"} <= set(r)
+
+    jedna = client.get("/api/v1/hodnoty?uzemi=obec:500001&ukazatel=110900").json()
+    assert jedna["celkem"] >= 1
+    assert all(x["uzemi"] == "obec:500001" and x["ukazatel"] == "110900" for x in jedna["polozky"])
+
+    roky = client.get("/api/v1/hodnoty?od=2020&do=2020").json()
+    assert all(x["rok"] == 2020 for x in roky["polozky"])
+
+
+def test_v1_csv_ma_bom_a_hlavicku(client):
+    r = client.get("/api/v1/hodnoty?ukazatel=110900&format=csv")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+    telo = r.content.decode("utf-8")
+    # BOM: bez něj Excel na Windows přečte diakritiku jako paskvil.
+    assert telo.startswith("﻿")
+    assert telo.splitlines()[0].lstrip("﻿").startswith("uzemi,uzemi_nazev")
+
+
+def test_v1_ndjson_je_radek_na_zaznam(client):
+    r = client.get("/api/v1/hodnoty?ukazatel=110900&format=ndjson")
+    radky = [x for x in r.text.splitlines() if x.strip()]
+    assert radky and all(json.loads(x)["ukazatel"] == "110900" for x in radky)
+
+
+def test_v1_neznamy_format_rekne_ktere_jsou(client):
+    r = client.get("/api/v1/ukazatele?format=xml")
+    assert r.status_code == 400 and "csv" in r.json()["detail"]
+
+
+def test_v1_uzemi_nese_kody_ruian(client):
+    d = client.get("/api/v1/uzemi?uroven=obec").json()
+    assert d["celkem"] >= 1
+    t = d["polozky"][0]
+    # Bez kódu RÚIAN se data nedají napojit na jiný registr.
+    assert t["kod_ruian"] and t["id"].startswith("obec:")
+
+
+def test_v1_katalog_hleda_a_rozlisuje_nactene(client):
+    d = client.get("/api/v1/katalog?jen_funkcni=false").json()
+    assert d["celkem"] >= 1
+    assert set(x["nacteno_do_modelu"] for x in d["polozky"]) <= {"ano", "ne"}

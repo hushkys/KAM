@@ -39,6 +39,7 @@ ZABERY: list[tuple[str, str, int, int, bool]] = [
     ("podnety", "/podnety", 1440, 900, False),
     ("data", "/data", 1440, 980, False),
     ("statistiky", "/statistiky", 1440, 900, False),
+    ("api", "/data?tab=api", 1440, 1400, False),
 ]
 
 
