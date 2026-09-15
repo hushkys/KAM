@@ -52,29 +52,50 @@ function sitSeStropem(request, ms) {
 }
 
 async function navigace(request) {
+  let ze_site = null;
   try {
-    const r = await sitSeStropem(request, SIT_STROP);
-    if (r && r.ok) (await caches.open(SKORAPKA)).put("/", r.clone());
-    return r;
+    ze_site = await sitSeStropem(request, SIT_STROP);
   } catch {
+    ze_site = null;
+  }
+  if (ze_site) {
+    // Uložení skořápky je vedlejší efekt, ne součást odpovědi: kdyby selhalo
+    // úložiště, nesmí to shodit navigaci, která ze sítě už dorazila.
+    if (ze_site.ok) caches.open(SKORAPKA).then((c) => c.put("/", ze_site.clone())).catch(() => null);
+    return ze_site;
+  }
+  try {
     return (await caches.match("/", { ignoreSearch: true })) ?? Response.error();
+  } catch {
+    return Response.error();
   }
 }
 
 async function zMezipameti(request, jmeno) {
-  const cache = await caches.open(jmeno);
-  const ulozene = await cache.match(request);
-  if (ulozene) return ulozene;
-  const r = await fetch(request);
-  if (r && r.ok && r.type === "basic") cache.put(request, r.clone());
-  return r;
+  try {
+    const cache = await caches.open(jmeno);
+    const ulozene = await cache.match(request);
+    if (ulozene) return ulozene;
+    const r = await fetch(request);
+    if (r && r.ok && r.type === "basic") cache.put(request, r.clone());
+    return r;
+  } catch {
+    // Mezipaměť umí selhat celá — plná kvóta, soukromé okno, prohlížeč
+    // s vypnutým úložištěm. Kdyby se to propsalo do odpovědi, nenačte se
+    // skript aplikace a zůstane bílá stránka. Sítí to projde i tak.
+    return fetch(request);
+  }
 }
 
 async function obnovitNaPozadi(request, jmeno) {
-  const cache = await caches.open(jmeno);
-  const ulozene = await cache.match(request);
-  const sit = fetch(request).then((r) => { if (r && r.ok && r.type === "basic") cache.put(request, r.clone()); return r; }).catch(() => null);
-  return ulozene ?? (await sit) ?? Response.error();
+  try {
+    const cache = await caches.open(jmeno);
+    const ulozene = await cache.match(request);
+    const sit = fetch(request).then((r) => { if (r && r.ok && r.type === "basic") cache.put(request, r.clone()); return r; }).catch(() => null);
+    return ulozene ?? (await sit) ?? Response.error();
+  } catch {
+    return fetch(request);
+  }
 }
 
 /** Řekne otevřeným oknům, jestli data tečou, nebo se berou z mezipaměti.
@@ -86,7 +107,13 @@ function ohlas(stav) {
 }
 
 async function api(request) {
-  const cache = await caches.open(DATA);
+  let cache = null;
+  try {
+    cache = await caches.open(DATA);
+  } catch {
+    // Bez mezipaměti se dá pořád chodit na síť; jen offline režim odpadne.
+    return fetch(request);
+  }
   try {
     const r = await sitSeStropem(request, SIT_STROP);
     if (r && r.ok) { cache.put(request, r.clone()); ohlas("online"); }
