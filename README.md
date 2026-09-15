@@ -12,7 +12,7 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 [![licence MIT](https://img.shields.io/badge/licence-MIT-3c7a2b)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3c7a2b)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-3c7a2b)](https://react.dev/)
-[![testy](https://img.shields.io/badge/testy-89%20%2B%209-3c7a2b)](#testy)
+[![testy](https://img.shields.io/badge/testy-97%20%2B%2013-3c7a2b)](#testy)
 
 Tým **Popojedem.** · Hackathon Královéhradeckého kraje
 
@@ -97,6 +97,20 @@ další.
 
 <img src="docs/screenshots/dotace.png" alt="Dotace: čerpání a rozcestník vyhlašovatelů" width="900">
 
+### Podněty občanů
+
+Jedno hlášení je stížnost. Pět podobných ze stejné obce je doklad — KAM je
+spojí, přiloží čísla z modelu a vznikne formální podnět pro kraj.
+
+<img src="docs/screenshots/podnety.png" alt="Podněty: z pěti hlášení vzniká formální podnět" width="900">
+
+### Otevřená data
+
+Celý katalog, ze kterého KAM čerpá: u každé sady ověřený odkaz a popsané
+využití. Plocha dlaždice odpovídá počtu sad v oblasti.
+
+<img src="docs/screenshots/data.png" alt="Katalog otevřených dat podle oblastí" width="900">
+
 ## Stav dat
 
 Snímek z posledního sběru — počty se v aplikaci počítají živě, tohle je jen
@@ -104,13 +118,13 @@ pro představu:
 
 | | |
 |---|---:|
-| Datových sad v katalogu | **23 839** |
-| z toho s ověřeným odkazem | **21 998** |
-| Poskytovatelů dat | **393** |
-| Naměřených hodnot (2005–2026) | **407 134** |
+| Datových sad v katalogu | **24 273** |
+| z toho s ověřeným odkazem | **22 432** |
+| Poskytovatelů dat | **394** |
+| Naměřených hodnot (2005–2026) | **407 214** |
 | Území (kraj, okresy, ORP, obce) | **483** |
-| Zařízení a zastávek | **11 616** |
-| Ukazatelů | **111** |
+| Zařízení a zastávek | **11 616** |
+| Ukazatelů | **138** |
 
 ## Spuštění
 

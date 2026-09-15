@@ -3,8 +3,9 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { BarList } from "../components/charts";
+import { DataHook } from "../components/DataHook";
 import { Icon } from "../components/Icon";
-import { Card, Empty, ErrorBox, PageHeader, Pill, Severity, Stat, Tabs } from "../components/ui";
+import { Card, Empty, ErrorBox, Pill, Severity, Stat, Tabs } from "../components/ui";
 import { useApi } from "../lib/api";
 import { ago, date, num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
@@ -196,7 +197,11 @@ export function DataPage() {
   const d = src.data;
   return (
     <>
-      <PageHeader eyebrow="Otevřená data" title="Data, ze kterých KAM vychází" lead={d ? <><strong>{num(d.verified)}</strong> funkčních datových sad od {num(d.publishers)} poskytovatelů — u každé ověřený odkaz a popsané využití. Hodnoty {num(d.loaded)} sad jsou načtené přímo do analytického modelu.</> : "Načítám…"} />
+      <DataHook oblasti={d?.by_pillar ?? []} overenych={d?.verified} celkem={d?.total} poskytovatelu={d?.publishers}>
+        <div className="row" style={{ marginTop: 20 }}>
+          <a className="btn" href="/api/datasets/export.csv"><Icon name="download" size={16} /> Export katalogu (CSV)</a>
+        </div>
+      </DataHook>
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
         <Stat i={0} label="Funkčních datových sad" value={num(d?.verified ?? null)} sub={d ? `z ${num(d.total)} v katalogu` : ""} />
         <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="NKOD, kraje, města, CENIA" />

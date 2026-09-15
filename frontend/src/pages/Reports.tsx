@@ -5,8 +5,9 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { Icon, PILLAR_ICON } from "../components/Icon";
+import { PodnetyHook } from "../components/PodnetyHook";
 import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Empty, Modal, PageHeader, Pill, Segmented } from "../components/ui";
+import { Empty, Modal, Pill, Segmented } from "../components/ui";
 import { api, invalidate, useApi } from "../lib/api";
 import { date, fold, num, plural } from "../lib/format";
 import { useLocation } from "../lib/router";
@@ -75,8 +76,11 @@ export function Reports() {
 
   return (
     <>
-      <PageHeader eyebrow="Podněty občanů" title="Podněty a hlášení" lead={`Nahlaste problém ve své obci nebo chybějící data. Podobná hlášení se seskupí a od ${threshold} ${plural(threshold, "hlášení", "hlášení", "hlášení")} vznikne formální podnět pro krajský úřad.`}
-        actions={<button className="btn btn-primary" onClick={() => form.current?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="plus" size={16} /> Nový podnět</button>} />
+      <PodnetyHook skupiny={clusters.data ?? []} prah={threshold} hlaseni={stats.data?.reports}>
+        <div className="row" style={{ marginTop: 20 }}>
+          <button className="btn btn-primary" onClick={() => form.current?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="plus" size={16} /> Nový podnět</button>
+        </div>
+      </PodnetyHook>
 
       <div className="rp-kpis">
         {kpis.map((k, i) => (

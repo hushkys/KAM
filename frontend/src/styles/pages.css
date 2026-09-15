@@ -458,6 +458,10 @@
    shodl s barvou své ikony v docku. Výchozí je zelená značky. */
 .sc-hook {
   --h1: var(--accent); --h2: var(--info); --h3: var(--lime);
+  /* Barvy modulů jsou pevné hexy ve světlém i tmavém motivu, takže inkoust
+     na ploše z nich obarvené musí být pevný taky — `--accent-fg` se obrací
+     podle motivu a na modré dlaždici by ve světlém zbělal. */
+  --h-ink: #0d1117;
   position: relative; isolation: isolate; overflow: hidden;
   display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 28px; align-items: center;
   padding: clamp(20px, 3.4vw, 40px); margin-bottom: var(--gap);
@@ -790,6 +794,50 @@
 :root[data-motion="reduce"] .mp-art .mp-patro,
 :root[data-motion="reduce"] .fi-art .fi-rok,
 :root[data-motion="reduce"] .dt-art .dt-kruh { animation: none; }
+
+/* ---------------------------------------------------- hook stránky podnětů
+   Kreslí se pravidlo, ne objem: prázdné kolečko je stejně důležité jako
+   plné, protože říká, kolik hlášení ještě chybí. Dokument vpravo proto
+   zůstává jen obrysem, dokud práh nikdo nepřekročil. */
+.pd-art .pd-osa { stroke: var(--border-strong); stroke-width: 2; stroke-linecap: round; }
+.pd-art .pd-pole circle { stroke: var(--h1); stroke-width: 2; opacity: .4; }
+.pd-art .pd-pole.je-plne circle { stroke: none; opacity: 1; }
+.pd-art .pd-fajfka { fill: none; stroke: var(--surface); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.pd-art .pd-cislo { fill: var(--text-mute); font-size: 11px; font-weight: 700; }
+.pd-art .pd-pole.je-plne .pd-cislo { fill: var(--h3); }
+.pd-art .pd-skupina { fill: var(--h1); opacity: .55; }
+.pd-art .pd-skupina.hotova { fill: var(--h3); opacity: 1; }
+.pd-art .pd-prah { stroke: var(--h1); stroke-width: 1.4; stroke-dasharray: 4 5; opacity: .7; }
+.pd-art .pd-popis { fill: var(--text-mute); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.pd-art .pd-dok rect { fill: none; stroke: var(--h1); stroke-width: 1.6; stroke-dasharray: 5 5; opacity: .45; }
+.pd-art .pd-dok .pd-radek { stroke: var(--h1); stroke-width: 3; stroke-linecap: round; opacity: .22; }
+.pd-art .pd-dok .pd-razitko { fill: none; stroke: var(--h1); stroke-width: 1.6; opacity: .3; }
+.pd-art .pd-dok .pd-fajfka.velka { stroke: var(--h1); stroke-width: 2.6; opacity: .3; }
+.pd-art .pd-dok.je-hotovy rect { fill: color-mix(in oklab, var(--h1) 12%, transparent); stroke-dasharray: none; opacity: 1; }
+.pd-art .pd-dok.je-hotovy .pd-radek { opacity: .5; }
+.pd-art .pd-dok.je-hotovy .pd-razitko { fill: var(--h1); stroke: none; opacity: 1; }
+.pd-art .pd-dok.je-hotovy .pd-fajfka.velka { stroke: var(--surface); opacity: 1; }
+.pd-art .pd-pole { animation: pd-vstup 480ms var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 90ms);
+  transform-box: fill-box; transform-origin: center; }
+@keyframes pd-vstup { from { opacity: 0; transform: scale(.4); } }
+.pd-art .pd-skupina { animation: pd-vstup 420ms var(--ease-out) both; animation-delay: calc(600ms + var(--i, 0) * 30ms); }
+.pd-art .pd-dok { animation: pd-dok 620ms var(--ease-out) 560ms both; }
+@keyframes pd-dok { from { opacity: 0; transform: translateX(-14px); } }
+
+/* -------------------------------------------------------- hook stránky dat
+   Dlaždice se nepřekrývají, takže stačí plná barva s klesající sytostí —
+   pořadí sytostí je zároveň pořadím velikostí a oko čte obojí najednou. */
+.da-art .da-dlazdice rect { fill: color-mix(in oklab, var(--h1) var(--sila, 70%), var(--surface)); }
+.da-art .da-nazev { fill: var(--h-ink); font-size: 12.5px; font-weight: 750; }
+.da-art .da-pocet { fill: var(--h-ink); font-size: 15px; font-weight: 800; opacity: .78; font-variant-numeric: tabular-nums; }
+.da-art .da-dlazdice { animation: da-vstup 560ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 55ms);
+  transform-box: fill-box; transform-origin: center; }
+@keyframes da-vstup { from { opacity: 0; transform: scale(.88); } }
+
+:root[data-motion="reduce"] .pd-art .pd-pole,
+:root[data-motion="reduce"] .pd-art .pd-skupina,
+:root[data-motion="reduce"] .pd-art .pd-dok,
+:root[data-motion="reduce"] .da-art .da-dlazdice { animation: none; }
 
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }
