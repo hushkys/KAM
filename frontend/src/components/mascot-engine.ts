@@ -91,6 +91,16 @@ export const PISMENA = [
 ] as const;
 /** Kraj pravého ramene M, odkud se leze dolů; osa lezení je kus za hranou,
  *  aby se maskot držel z venku a nelezl skrz písmeno. */
+/** Rámeček kresby a posun, po kterém je „KAM." i s tečkou uprostřed.
+ *
+ *  Písmena končí na x = 310, ale tečka je maskot se středem na 331 a poloměrem
+ *  R, takže nápis sahá až k 348. Dokud tečka nedoskákala, je vidět jen „KAM"
+ *  a vypadá vycentrovaně; jakmile dosedne, je vlevo od K mezera 70 a vpravo od
+ *  tečky jen 12. Proto se celá kresba na úzké obrazovce posune doleva — po
+ *  posunu je z obou stran 41. */
+export const RAMEC = { x: -70, sirka: 430 };
+export const POSUN_STRED = (RAMEC.x + RAMEC.sirka / 2) - (DOMA.x + R) / 2;
+
 export const HRANA_X = 306;
 export const LEZENI_X = 322;
 export const HRANA_KONEC = 74;

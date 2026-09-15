@@ -16,7 +16,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  clamp, DOMA, easeIn, easeInOut, easeOut, HRANA_X, LEZENI_X, lerp, PISMENA, POVRCH, prichod, Pruzina, R, telo,
+  clamp, DOMA, easeIn, easeInOut, easeOut, HRANA_X, LEZENI_X, lerp, PISMENA, POSUN_STRED, POVRCH, prichod, Pruzina, R, telo,
   type Poloha, type Usek,
 } from "./mascot-engine";
 
@@ -29,6 +29,29 @@ type Klid = "nic" | "vrti" | "drbe" | "sedi" | "salto";
 function tiseji(): boolean {
   return document.documentElement.dataset.motion === "reduce"
     || matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** Průběh odtlačení: dvě zabrání s oddechem mezi nimi.
+ *
+ *  Vrací, jak daleko je posun (0–1) a jestli se právě zabírá — podle toho se
+ *  tělo zapře a obličej zasoustředí. */
+const TLAK = [
+  { od: 0.10, do: 0.56, kam: 0.62 },
+  { od: 0.78, do: 1.24, kam: 1 },
+] as const;
+export const TLAK_CELKEM = 1.42;
+
+function zabrani(t: number): [number, boolean] {
+  let p = 0;
+  for (const z of TLAK) {
+    if (t >= z.do) { p = z.kam; continue; }
+    if (t > z.od) {
+      const u = (t - z.od) / (z.do - z.od);
+      return [p + (z.kam - p) * (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2), true];
+    }
+    return [p, false];
+  }
+  return [p, false];
 }
 
 export function WordmarkHop({ onDone }: { onDone?: () => void }) {
@@ -50,6 +73,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
   const naraz = useRef<SVGCircleElement>(null);
   const stin = useRef<SVGEllipseElement>(null);
   const skupina = useRef<SVGGElement>(null);
+  const scena_ = useRef<SVGGElement>(null);
   const pismena = useRef<(SVGPathElement | null)[]>([]);
   const hotovo = useRef(false);
 
@@ -85,7 +109,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     let nohy = 0;        // 0 schované, 1 venku
     let krok = 0;        // fáze chůze
     let ruce = 0;        // 0 schované, 1 venku
-    let rezimRukou: "nic" | "lez" | "obejmi" | "drbe" = "nic";
+    let rezimRukou: "nic" | "lez" | "obejmi" | "drbe" | "tlaci" = "nic";
     let sed = 0;         // turecký sed
     let mrk = 0;         // 0 otevřené, 1 zavřené
     let pohled = 0, pohledY = 0;
@@ -94,6 +118,17 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     let cas = 0;         // pro dýchání
     let narazT = 9;      // čas od posledního dopadu (9 = dávno)
     let narazX = 0, narazY = 0, narazSila = 0;
+
+    // Posun celé kresby doleva, aby „KAM." i s tečkou sedělo na střed.
+    // Dělá se to až po doskákání: dokud tečka není na místě, je nápis „KAM"
+    // vycentrovaný sám a posouvat ho by bylo proti smyslu.
+    let posun = 0;
+    let tlacFaze: "ne" | "ceka" | "tlaci" | "hotovo" = "ne";
+    let tlacT = 0;
+    // Na širokém okně je nápis v levém sloupci a zarovnaný doleva; tam by
+    // posun působil jako překlep v rozvržení.
+    const uzke = window.matchMedia("(max-width: 960px)");
+    const cilPosunu = () => (uzke.matches ? POSUN_STRED : 0);
 
     let mrkDo = 0.9 + Math.random() * 1.4;
     let pohledDo = 2.2;
@@ -246,6 +281,45 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
         pohledDo = 1.5 + Math.random() * 2.8;
       }
 
+      // ---- odtlačení nápisu na střed ------------------------------------
+      if (tlacFaze === "ne") { tlacFaze = cilPosunu() !== 0 ? "ceka" : "hotovo"; tlacT = 0; }
+      if (tlacFaze === "ceka") {
+        // Chvilka na nadechnutí: dopadnout a hned tlačit vypadá jako spěch.
+        tlacT += dt;
+        if (tlacT >= 0.5) { tlacFaze = "tlaci"; tlacT = 0; klid = "nic"; }
+      }
+      if (tlacFaze === "tlaci") {
+        tlacT += dt;
+        const cil = cilPosunu();
+        // Dvě zabrání, ne jedno plynulé klouzání: jedním tahem by to vypadalo,
+        // že nápis odjel sám a maskot u toho jen náhodou stál.
+        const [p, zabira] = zabrani(tlacT);
+        posun = cil * p;
+        rezimRukou = "tlaci";
+        ruce = clamp(tlacT * 6, 0, 1);
+        nohy = clamp(tlacT * 5, 0, 1);
+        pohled = -1; pohledY = 0.2;
+        // Při zabrání se tělo zapře a stlačí, mezi zabráními povolí.
+        usmev = zabira ? 0.1 : 0.45;
+        oci = zabira ? 0.72 : 1;
+        naklExtra = zabira ? -2.6 : -0.8;
+        sq.cil = zabira ? 0.93 : 1;
+        if (tlacT >= TLAK_CELKEM) {
+          tlacFaze = "hotovo";
+          posun = cil;
+          rezimRukou = "nic"; ruce = 0; nohy = 0;
+          naklExtra = 0; pohled = 0; pohledY = 0; usmev = 1; oci = 1; sq.cil = 1;
+          // Po práci je chvíli klid, ať je vidět, že je hotovo.
+          klidDo = 2.2 + Math.random() * 3;
+        }
+      } else if (tlacFaze === "hotovo") {
+        // Když se okno mezitím zvětší nebo zúží, cíl se změní; dojede tam sám.
+        const cil = cilPosunu();
+        if (Math.abs(posun - cil) > 0.05) posun += (cil - posun) * Math.min(1, dt * 6);
+        else posun = cil;
+      }
+      if (tlacFaze === "tlaci") return;   // při práci se nechilluje
+
       if (klid === "nic") {
         klidDo -= dt;
         if (klidDo <= 0) {
@@ -364,6 +438,8 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
         nz.style.opacity = String((t < 1 ? 0.42 * narazSila * (1 - t) ** 1.4 : 0).toFixed(3));
       }
 
+      if (scena_.current) scena_.current.setAttribute("transform", `translate(${posun.toFixed(2)} 0)`);
+
       const p: Poloha = { x, y, rot, rTop, rBot, rL, rR, shear: sk * 2.2, flat };
       body!.setAttribute("d", telo(p));
       g!.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${(rot + hl * 0.8).toFixed(2)})`);
@@ -400,6 +476,12 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
       } else if (rezimRukou === "obejmi") {
         rukaL.current!.setAttribute("d", `M${-12},${1} Q${-9},${9} ${-2},${11}`);
         rukaP.current!.setAttribute("d", `M${12},${1} Q${9},${9} ${2},${11}`);
+      } else if (rezimRukou === "tlaci") {
+        // Obě ruce dopředu vlevo, dlaně opřené o hranu M — ta je jen pár
+        // jednotek za povrchem těla, takže se natahují krátce a zapřeně.
+        const z = Math.sin(clamp(tlacT, 0, 9) * 14) * 0.8;
+        rukaL.current!.setAttribute("d", `M${-7},${-3.4} Q${-14},${-4.2 + z} ${-19.5},${-3.4}`);
+        rukaP.current!.setAttribute("d", `M${-7},${3.6} Q${-14},${4.4 - z} ${-19.5},${3.6}`);
       } else if (rezimRukou === "drbe") {
         rukaL.current!.setAttribute("d", `M${-12},${2} Q${-14},${7} ${-11},${10}`);
         rukaP.current!.setAttribute("d", `M${10},${0} Q${16},${6} ${9},${11}`);
@@ -461,16 +543,23 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
   if (tise) {
     return (
       <svg viewBox="-70 -46 430 152" role="img" aria-label="KAM." className="wordmark hop">
-        <path d={K} fill="currentColor" fillRule="evenodd" />
-        <path d={A} fill="currentColor" fillRule="evenodd" />
-        <path d={M} fill="currentColor" fillRule="evenodd" />
-        <circle cx={DOMA.x} cy="86" r="14" fill="var(--lime)" />
+        {/* Bez animace je tečka na místě rovnou, takže se centruje stylem —
+            jinak by uživatel s vypnutým pohybem viděl nápis natlačený vpravo. */}
+        <g className="ms-stred" style={{ ["--posun" as string]: `${POSUN_STRED}px` }}>
+          <path d={K} fill="currentColor" fillRule="evenodd" />
+          <path d={A} fill="currentColor" fillRule="evenodd" />
+          <path d={M} fill="currentColor" fillRule="evenodd" />
+          <circle cx={DOMA.x} cy="86" r="14" fill="var(--lime)" />
+        </g>
       </svg>
     );
   }
 
   return (
     <svg ref={svg} viewBox="-70 -46 430 152" role="img" aria-label="KAM." className="wordmark hop is-zivy">
+      {/* Posouvá se celá scéna, ne jen písmena: maskot je tečka toho nápisu,
+          takže se musí hnout s ním, jinak se mezera mezi M a tečkou roztáhne. */}
+      <g ref={scena_}>
       <path ref={(e) => { pismena.current[0] = e; }} className="ltr" d={K} fill="currentColor" fillRule="evenodd" />
       <path ref={(e) => { pismena.current[1] = e; }} className="ltr" d={A} fill="currentColor" fillRule="evenodd" />
       <path ref={(e) => { pismena.current[2] = e; }} className="ltr" d={M} fill="currentColor" fillRule="evenodd" />
@@ -492,6 +581,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
           <path ref={smichP} className="ms-smich" d="M3.2,-1.6 q2.6,-3.4 5.2,0" />
           <path ref={pusa} className="ms-pusa" />
         </g>
+      </g>
       </g>
     </svg>
   );

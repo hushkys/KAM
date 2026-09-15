@@ -589,6 +589,9 @@ a.list-row:hover .list-title { color: var(--accent); }
    transformací. Kdyby se sem vrátily keyframes, přebily by to, co zapisuje
    smyčka, a maskot by poskakoval na dvou místech naráz. */
 .wordmark.hop { overflow: visible; }
+/* Nápis bez animace se na úzké obrazovce vycentruje i s tečkou. Živou verzi
+   posouvá smyčka maskota — ta tuhle třídu nemá, aby si to nepřebíjely. */
+@media (max-width: 960px) { .wordmark.hop .ms-stred { transform: translateX(var(--posun, 0)); } }
 .wordmark.hop .ltr { transform-box: fill-box; transform-origin: bottom center; }
 .wordmark.hop.is-zivy .ms { will-change: transform; }
 .wordmark.hop .ms-telo { fill: var(--lime); }
