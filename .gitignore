@@ -30,6 +30,10 @@ secrets.env
 # Při nasazení se kopírují sem do kořene, odkud je gcloud čte.
 env.yaml
 data/secret.key
+# Klíč servisního účtu pro nasazování. Dlouhodobé heslo do projektu —
+# do repozitáře nesmí ani omylem.
+deploy-key.json
+*-key.json
 
 # Nástroje
 firebase-debug.log
