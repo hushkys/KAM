@@ -589,3 +589,26 @@ a.list-row:hover .list-title { color: var(--accent); }
 /* Prstenec dopadu kreslí ráz do písmene, ne kruh na vodě — proto tenký. */
 .wordmark.hop .ms-naraz { fill: none; stroke: var(--lime); stroke-width: 1.6; }
 .wordmark.hop .ms-smich { fill: none; stroke: #0a120c; stroke-width: 2; stroke-linecap: round; }
+
+/* ------------------------------------------------- offline
+   Pod navbarem, ne nad dockem: u spodní hrany překrýval na telefonu tlačítka
+   v hlavičce stránky. Nahoře je to hlášení o stavu spojení tam, kde ho člověk
+   čeká, a zakrývá jen okraj obsahu. */
+.offline-pruh {
+  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  top: calc(var(--nav-h) + 12px + env(safe-area-inset-top));
+  display: flex; align-items: center; gap: 9px;
+  /* Bez `width: max-content` se pruh smrskne na polovinu obrazovky: u prvku
+     s `left: 50%` je dostupná šířka jen to, co zbývá vpravo od té poloviny,
+     a text se zalomí do tří řádků. */
+  width: max-content; max-width: min(94vw, 520px); padding: 9px 15px;
+  border-radius: var(--r-pill); border: 1px solid var(--warn);
+  background: var(--surface); color: var(--text-dim);
+  font-size: .8125rem; box-shadow: var(--shadow-md);
+  animation: offline-vstup 260ms var(--ease-out) both;
+}
+.offline-pruh strong { color: var(--text); }
+.offline-pruh svg { color: var(--warn); flex: none; }
+@keyframes offline-vstup { from { opacity: 0; transform: translate(-50%, -12px); } }
+:root[data-motion="reduce"] .offline-pruh { animation: none; }
+

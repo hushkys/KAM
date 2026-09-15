@@ -151,6 +151,12 @@ def create_app() -> FastAPI:
             return JSONResponse({"detail": "Nenalezeno"}, status_code=404)
         target = (DIST / path).resolve()
         if path and target.is_file() and DIST.resolve() in target.parents:
+            # Service worker je jediný soubor, který se nesmí ukládat na den:
+            # je to ten, který ohlašuje novou verzi všech ostatních. Hlavička
+            # Service-Worker-Allowed mu dovolí řídit celý web, i kdyby se
+            # jednou servíroval z podadresáře.
+            if path == "sw.js":
+                return FileResponse(target, headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
             return FileResponse(target, headers={"Cache-Control": "public, max-age=86400"})
         index = DIST / "index.html"
         if index.is_file():

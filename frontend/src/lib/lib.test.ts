@@ -4,6 +4,7 @@ import { binOf, ramp } from "../components/maps";
 import { parseBlock } from "./api";
 import { compact, fold, num, pct, plural, signed, withUnit } from "./format";
 import { applyAction, DEFAULTS, get, sanitize, set } from "./prefs";
+import { potrebaIosNavod } from "./pwa";
 import { match } from "./router";
 import { DOMA, POVRCH, prichod, Pruzina, R, telo } from "../components/mascot-engine";
 
@@ -113,5 +114,29 @@ describe("maskot", () => {
     expect(delka).toBeGreaterThan(3);
     expect(delka).toBeLessThan(5.5);
     expect(DOMA.y - R).toBe(86);
+  });
+});
+
+describe("pwa", () => {
+  const iPhone = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const iPad = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+  const chromeNaIos = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/126.0 Mobile/15E148 Safari/604.1";
+  const android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36";
+  const mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
+
+  it("nabídne návod jen v Safari na iOS", () => {
+    expect(potrebaIosNavod(iPhone, 5, false)).toBe(true);
+    // iPadOS se od verze 13 hlásí jako Mac; pozná se až podle dotykových bodů.
+    expect(potrebaIosNavod(iPad, 5, false)).toBe(true);
+    expect(potrebaIosNavod(mac, 0, false)).toBe(false);
+    // Chrome na iOS „Přidat na plochu" nemá, takže by návod nikam nevedl.
+    expect(potrebaIosNavod(chromeNaIos, 5, false)).toBe(false);
+    // Android pošle beforeinstallprompt, tam je tlačítko, ne návod.
+    expect(potrebaIosNavod(android, 5, false)).toBe(false);
+  });
+
+  it("v nainstalované aplikaci nenabízí nic", () => {
+    expect(potrebaIosNavod(iPhone, 5, true)).toBe(false);
+    expect(potrebaIosNavod(iPad, 5, true)).toBe(false);
   });
 });

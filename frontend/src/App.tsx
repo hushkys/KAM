@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { AssistantDrawer } from "./components/Assistant";
+import { Offline } from "./components/Offline";
 import { openAssistant } from "./components/assistantBus";
 import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
@@ -73,6 +74,7 @@ export function App() {
       <CommandPalette />
       <ContextMenu />
       <AssistantDrawer />
+      <Offline />
       <Toasts />
     </div>
   );

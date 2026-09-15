@@ -2,12 +2,13 @@
 // models, routing and data destinations live on the server (they decide what
 // leaves the machine).
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Icon } from "../components/Icon";
 import { Card, Empty, Modal, PageHeader, Pill, Segmented, Switch } from "../components/ui";
 import { api, invalidate, useApi } from "../lib/api";
 import { num } from "../lib/format";
 import { DEFAULTS, reset, set as setPrefs, usePrefs } from "../lib/prefs";
+import { jeNainstalovana, lzeVyzvat, nabidniInstalaci, potrebaIosNavod, sledujInstalaci } from "../lib/pwa";
 import { Link } from "../lib/router";
 import { toast } from "../lib/toast";
 
@@ -246,6 +247,49 @@ function Privacy() {
   );
 }
 
+/** Instalace na plochu. Tři stavy, které se navzájem vylučují: už je
+ *  nainstalovaná (není co nabízet), prohlížeč poslal výzvu (tlačítko), nebo
+ *  jsme v Safari na iOS (zbývá návod). Čtvrtý případ — prohlížeč instalaci
+ *  neumí — nezobrazuje nic, protože rada, kterou nelze provést, jen mate. */
+function Instalace() {
+  const [lze, setLze] = useState(lzeVyzvat);
+  const [hotovo, setHotovo] = useState(jeNainstalovana);
+  useEffect(() => sledujInstalaci(() => setLze(lzeVyzvat())), []);
+  const ios = potrebaIosNavod(navigator.userAgent, navigator.maxTouchPoints, hotovo);
+  if (!lze && !ios && !hotovo) return null;
+
+  return (
+    <><div className="section-gap" />
+    <Card i={1} title="Aplikace na ploše" icon="download">
+      {hotovo ? (
+        <p className="small muted" style={{ margin: 0 }}>
+          KAM běží jako nainstalovaná aplikace. Otevře se i bez signálu — čísla jsou pak z poslední návštěvy
+          a aplikace to nahoře přizná.
+        </p>
+      ) : (
+        <>
+          <p className="small muted" style={{ marginTop: 0 }}>
+            Přidejte si KAM na plochu: spustí se na celou obrazovku, bez adresního řádku, a otevře se
+            i bez signálu.
+          </p>
+          {lze ? (
+            <button className="btn btn-primary" onClick={async () => {
+              const ano = await nabidniInstalaci();
+              if (ano) { setHotovo(true); toast("ok", "Hotovo, KAM najdete mezi aplikacemi."); }
+            }}><Icon name="download" size={16} /> Instalovat aplikaci</button>
+          ) : (
+            <ol className="small" style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 4 } as CSSProperties}>
+              <li>Klepněte na <strong>Sdílet</strong> ve spodní liště Safari.</li>
+              <li>Sjeďte na <strong>Přidat na plochu</strong>.</li>
+              <li>Potvrďte <strong>Přidat</strong>.</li>
+            </ol>
+          )}
+        </>
+      )}
+    </Card></>
+  );
+}
+
 function AboutApp() {
   const h = useApi<{ ok: boolean; observations: number; time: string }>("/health");
   return (
@@ -279,7 +323,7 @@ export function Settings({ tab }: { tab?: string }) {
           {current === "pristupnost" && <Accessibility />}
           {current === "modely" && <Models />}
           {current === "soukromi" && <Privacy />}
-          {current === "aplikace" && <AboutApp />}
+          {current === "aplikace" && <><AboutApp /><Instalace /></>}
         </div>
       </div>
     </div>

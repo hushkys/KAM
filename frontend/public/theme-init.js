@@ -18,4 +18,8 @@
   r.setAttribute("data-focus", p.focusRing ? "strong" : "normal");
   if (p.fontScale) r.style.setProperty("--font-scale", String(p.fontScale));
   r.style.colorScheme = theme;
+  // Barva systémové lišty v nainstalované aplikaci. Nastavuje se už tady,
+  // jinak by na světlém motivu byla do načtení Reactu tmavá.
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", theme === "dark" ? "#0a0d0c" : "#f3f5f3");
 })();
