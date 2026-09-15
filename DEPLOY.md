@@ -55,8 +55,21 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 
 ### 3. Nasazení
 
-Proměnné se předávají souborem, ne `--set-env-vars` — connection string
-obsahuje znaky, které by se v seznamu odděleném čárkami rozbily:
+```powershell
+.\scripts\deploy.ps1
+```
+
+Skript nejdřív sestaví frontend — levná kontrola, protože typová chyba pak
+praskne za pět vteřin místo po pěti minutách v Cloud Buildu — a teprve pak
+pošle zdroje na Cloud Run. Dvě věci má napevno kvůli tomuhle stroji a obě
+jdou přebít proměnnou prostředí: `gcloud` není na PATH (`GCLOUD_CMD`) a bez
+`CLOUDSDK_PYTHON` sáhne po `python`, což na Windows spadne do zástupce
+Microsoft Store. Bez `env.yaml` v kořeni nasazovat odmítne: prázdné proměnné
+by u běžící revize shodily připojení k databázi.
+
+Ručně je to tohle. Proměnné se předávají souborem, ne `--set-env-vars` —
+connection string obsahuje znaky, které by se v seznamu odděleném čárkami
+rozbily:
 
 ```bash
 gcloud run deploy kam --source . --region europe-west1 \
