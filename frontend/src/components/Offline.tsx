@@ -47,6 +47,15 @@ export function Offline() {
     return () => window.clearTimeout(id);
   }, [venku]);
 
+  // Stav se hlásí i do dokumentu: asistentův šuplík se pod pruhem posune,
+  // aby mu nestál v rohu. Vrstvy o sobě jinak nemají jak vědět.
+  useEffect(() => {
+    const r = document.documentElement;
+    if (venku) r.dataset.spojeni = "pryc";
+    else delete r.dataset.spojeni;
+    return () => { delete r.dataset.spojeni; };
+  }, [venku]);
+
   if (!venku) return null;
   return (
     <div className={`offline-pruh glass ${maly ? "je-maly" : ""}`} role="status"

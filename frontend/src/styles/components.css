@@ -662,7 +662,9 @@ a.list-row:hover .list-title { color: var(--accent); }
    v hlavičce stránky. Nahoře je to hlášení o stavu spojení tam, kde ho člověk
    čeká, a zakrývá jen okraj obsahu. */
 .offline-pruh {
-  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  /* Nad šuplíkem asistenta i nad dockem: hlášení o stavu spojení, které je
+     zpola schované pod jinou vrstvou, vypadá jako chyba vykreslení. */
+  position: fixed; z-index: 90; left: 50%; transform: translateX(-50%);
   top: calc(var(--nav-h) + 10px + env(safe-area-inset-top));
   display: flex; align-items: center; gap: 6px;
   /* Bez `width: max-content` se pruh smrskne na polovinu obrazovky: u prvku

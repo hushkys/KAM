@@ -64,7 +64,10 @@
 
 /* Uvítání. Sedí dole svého prostoru, takže s polem pod sebou tvoří jeden blok
    uprostřed okna a ne dvě věci daleko od sebe. */
-.chat-uvod { flex: 1; min-height: 0; display: grid; align-content: end; justify-items: center; text-align: center;
+/* `safe end`, ne `end`: v nízkém okně se obsah nevejde a obyčejné `end` ho
+   vystrčí nahoru ven z boxu — text pak leží přes hlavičku. `safe` se v ten
+   okamžik chová jako `start` a `overflow: hidden` dořeší zbytek. */
+.chat-uvod { flex: 1; min-height: 0; overflow: hidden; display: grid; align-content: safe end; justify-items: center; text-align: center;
   gap: 12px; padding: 20px 22px 14px; animation: chat-uvod-in 720ms var(--ease-emph) both; }
 @keyframes chat-uvod-in { from { opacity: 0; transform: translateY(14px); } }
 .chat-jiskra { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #fff;
@@ -178,6 +181,27 @@
 .assistant-drawer .chat-uvod { padding: 16px 18px 10px; }
 .assistant-drawer .chat-pozdrav { font-size: 1.5rem; }
 @media (max-width: 720px) { .assistant-drawer { height: min(88dvh, calc(var(--vvh, 100dvh) - 12px)); } }
+
+/* Nízké okno: uvítání se svléká odshora, ať zůstane pole a aspoň jeden návrh.
+   Řídí se výškou samotného chatu, ne obrazovky — šuplík i stránka mají svoje. */
+.chat { container-type: size; }
+@container (max-height: 520px) { .chat-uvod-text { display: none; } }
+@container (max-height: 430px) {
+  .chat-jiskra { display: none; }
+  .chat-navrhy .navrh:nth-child(n+3) { display: none; }
+  .chat-history { display: none; }
+}
+@container (max-height: 340px) {
+  .chat-pozdrav { font-size: 1.25rem; }
+  .chat-navrhy { display: none; }
+  .chat-disclaimer { display: none; }
+}
+
+/* Pruh „bez spojení" sedí nahoře uprostřed a na užším okně by zajel pod roh
+   šuplíku. Když spojení chybí, šuplík o kousek povolí a pruh je nad ním. */
+@media (min-width: 721px) {
+  :root[data-spojeni="pryc"] .assistant-drawer { top: calc(var(--nav-h) + 52px + env(safe-area-inset-top)); }
+}
 
 /* Vypnutá průhlednost: jedním blokem zpátky na neprůhledný povrch. */
 :root[data-transparency="off"] .assistant-drawer,

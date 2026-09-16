@@ -7,6 +7,11 @@
 // Tlačítka nad ním jsou skleněná, takže barva prosvítá skrz ně — proto to
 // funguje jako podsvícení a ne jako druhé pozadí. Bez ukazatele (než se na
 // něco najede) sedí na prvním tlačítku, aby bylo vidět, kam vede hlavní cesta.
+//
+// Goo filtr běží **jen po dobu cesty**. V klidu totiž rozmazává i osamocené
+// těleso, takže se podsvícení rozlilo přes obě tlačítka jako elipsa — a to je
+// právě ten stav, ve kterém se na ně člověk dívá nejdéle. Během přesunu je
+// rozmazání to, co dvě tělesa spojí krkem, takže tam smysl má.
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
@@ -21,6 +26,7 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
   const trail = useRef<HTMLSpanElement>(null);
   const last = useRef<Ram | null>(null);
   const bezi = useRef<Animation[]>([]);
+  const dojezd = useRef<number | undefined>(undefined);
 
   const umisti = useCallback((cil: HTMLElement | null, animovat: boolean) => {
     const b = box.current, lead = pill.current, tail = trail.current;
@@ -31,6 +37,11 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
     if (!er.width || !br.width) return;
     const next: Ram = { x: er.left - br.left, y: er.top - br.top, w: er.width, h: er.height };
     const prev = last.current;
+    const stejne = !!prev && Math.abs(next.x - prev.x) < 0.5 && Math.abs(next.y - prev.y) < 0.5 && Math.abs(next.w - prev.w) < 0.5;
+    // `pointerover` přiletí znovu z každého vnitřního prvku tlačítka. Když už
+    // jedeme na tentýž cíl, není co řešit — jinak by druhá událost zrušila
+    // rozjetou cestu a podsvícení by na místo skočilo.
+    if (stejne && bezi.current.some((a) => a.playState === "running")) return;
 
     for (const a of bezi.current) { try { a.cancel(); } catch { /* už doběhla */ } }
     bezi.current = [];
@@ -44,25 +55,44 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
     park(lead); park(tail);
     b.dataset.morf = "ano";
 
+    const vrstva = lead.parentElement as HTMLElement;
     const tichy = document.documentElement.dataset.motion === "reduce";
-    if (!animovat || !prev || tichy || (Math.abs(next.x - prev.x) < 0.5 && Math.abs(next.y - prev.y) < 0.5)) {
+    if (!animovat || !prev || tichy || stejne) {
+      // Nikam se nejede, takže ani rozmazávat není co. Bez tohohle řádku by
+      // `hybe` zůstalo viset na „ano" pokaždé, když `pointerover` přiletí
+      // podruhé ze stejného tlačítka — a filtr by se nikdy nevypnul.
+      window.clearTimeout(dojezd.current);
+      vrstva.dataset.hybe = "ne";
       last.current = next;
       return;
     }
-    const drah = Math.abs(next.x - prev.x) + Math.abs(next.y - prev.y);
-    const tah = Math.min(1.3, 1 + drah / 420);
+    const dx = Math.abs(next.x - prev.x), dy = Math.abs(next.y - prev.y);
+    // Napnout se musí ve směru cesty. Na širokém okně jsou tlačítka vedle
+    // sebe, na úzkém pod sebou — a vodorovné napnutí při svislé cestě je
+    // přesně ta placatá elipsa, která tam nemá co dělat.
+    const svisle = dy > dx;
+    const tah = Math.min(1.28, 1 + (dx + dy) / 460);
+    const napni = (v: number) => (svisle ? `scaleY(${v})` : `scaleX(${v})`);
     const snimky = (roztah: number): Keyframe[] => [
-      { transform: `translate(${prev.x}px, ${prev.y}px) scaleX(1)`, width: `${prev.w}px`, height: `${prev.h}px` },
-      { transform: `translate(${(prev.x + next.x) / 2}px, ${(prev.y + next.y) / 2}px) scaleX(${roztah})`, width: `${(prev.w + next.w) / 2}px`, offset: 0.46 },
-      { transform: `translate(${next.x}px, ${next.y}px) scaleX(1)`, width: `${next.w}px`, height: `${next.h}px` },
+      { transform: `translate(${prev.x}px, ${prev.y}px) ${napni(1)}`, width: `${prev.w}px`, height: `${prev.h}px` },
+      { transform: `translate(${(prev.x + next.x) / 2}px, ${(prev.y + next.y) / 2}px) ${napni(roztah)}`, width: `${(prev.w + next.w) / 2}px`, offset: 0.46 },
+      { transform: `translate(${next.x}px, ${next.y}px) ${napni(1)}`, width: `${next.w}px`, height: `${next.h}px` },
     ];
+    vrstva.dataset.hybe = "ano";
+    // Vypnutí filtru visí na hodinách, ne na `finished`: na skryté záložce se
+    // animace nehýbou, slib nikdy nedoběhne a rozmazání by po návratu zůstalo
+    // viset. Čas doběhu je známý, tak ať to rozhodne on.
+    window.clearTimeout(dojezd.current);
+    dojezd.current = window.setTimeout(() => { vrstva.dataset.hybe = "ne"; }, 560);
     const pust = (t: HTMLElement, kf: Keyframe[], ms: number) => {
       const a = t.animate(kf, { duration: ms, easing: "cubic-bezier(.32,.72,0,1)", fill: "forwards" });
       a.finished.then(() => a.cancel()).catch(() => { /* přebito */ });
       bezi.current.push(a);
     };
     pust(lead, snimky(tah), 420);
-    pust(tail, snimky(1), 600);
+    // Jen o kousek pomalejší: čím déle jsou tělesa od sebe, tím víc je z krku
+    // kaňka. Stačí, aby stopa dojela chvilku po pilulce.
+    pust(tail, snimky(1), 520);
     last.current = next;
   }, []);
 
@@ -72,7 +102,7 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
     window.addEventListener("resize", znovu);
     // Písmo doskočí později a tlačítko s ním změní šířku.
     document.fonts?.ready.then(znovu).catch(() => { /* bez webfontu */ });
-    return () => window.removeEventListener("resize", znovu);
+    return () => { window.removeEventListener("resize", znovu); window.clearTimeout(dojezd.current); };
   }, [umisti]);
 
   const naCil = (e: React.SyntheticEvent) => {

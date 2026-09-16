@@ -34,6 +34,16 @@ const VRSTVY = [
   { n: "04", title: "Datové potřeby", text: "Průběžně hlídá, která data chybí nebo stárnou, a řekne to dřív, než se z díry v datech stane díra v rozhodnutí.", to: "/data?tab=potreby", ikona: "database", cta: "Co chybí" },
 ];
 
+/** Cesta od údaje k rozhodnutí. Je to pořadí, ve kterém aplikace pracuje,
+ *  a zároveň jediná věc, kterou je na úvodní stránce potřeba pochopit. */
+const CESTA = [
+  { n: "01", t: "Profil", d: "Co o území víme. Každý údaj má rok a zdroj — a když zdroj mlčí, řekne se to.", to: "/obce" },
+  { n: "02", t: "Riziko", d: "Kde se řada láme. Robustní statistika, protože počty v malé obci nejsou normální rozdělení.", to: "/prehled" },
+  { n: "03", t: "Výhled", d: "Kam to při současných trendech vede, s pásmem nejistoty a přiznanou mírou důvěry.", to: "/vyhled" },
+  { n: "04", t: "Scénář", d: "Co se změní, když zasáhneme. Tentýž model dvakrát a rozdíl mezi oběma cestami.", to: "/scenare" },
+  { n: "05", t: "Podnět", d: "Co data nevidí, přidají lidé z místa. Opakovaná hlášení se spojí do podnětu kraji.", to: "/podnety" },
+];
+
 const TECHNOLOGIE = ["React + TypeScript", "FastAPI (Python)", "SQLite / PostgreSQL", "Gemma 4 v LM Studiu", "Gemini (cloud)", "nomic-embed + BM25, RRF", "ČÚZK RÚIAN", "vlastní vektorová mapa"];
 
 const tichy = () => typeof document !== "undefined" && document.documentElement.dataset.motion === "reduce";
@@ -86,10 +96,19 @@ function useScena(koren: RefObject<HTMLElement | null>) {
       }
     };
     const tik = () => { if (!raf) raf = requestAnimationFrame(kresli); };
+    // Na skryté záložce `requestAnimationFrame` neběží, takže scéna zamrzne
+    // tam, kde byla. Po návratu se dopočítá rovnou, ne až při prvním posunu.
+    const zpet = () => { if (!document.hidden) kresli(); };
     kresli();
     window.addEventListener("scroll", tik, { passive: true });
     window.addEventListener("resize", tik);
-    return () => { window.removeEventListener("scroll", tik); window.removeEventListener("resize", tik); cancelAnimationFrame(raf); };
+    document.addEventListener("visibilitychange", zpet);
+    return () => {
+      window.removeEventListener("scroll", tik);
+      window.removeEventListener("resize", tik);
+      document.removeEventListener("visibilitychange", zpet);
+      cancelAnimationFrame(raf);
+    };
   }, [koren]);
 }
 
@@ -182,6 +201,7 @@ export function Hook() {
         <span className="hp-nav-cesta" aria-hidden="true"><i /></span>
         <nav aria-label="Úvod">
           <a className="hp-nav-odkaz" href="#cisla">Čísla</a>
+          <a className="hp-nav-odkaz" href="#cesta">Jak to čteme</a>
           <a className="hp-nav-odkaz" href="#vrstvy">Vrstvy</a>
           <a className="hp-nav-odkaz" href="#tym">Tým</a>
           <Link to="/prehled" className="btn btn-primary btn-sm">Otevřít KAM <Icon name="arrow-right" size={15} /></Link>
@@ -225,7 +245,7 @@ export function Hook() {
 
       {/* ------------------------------------------------------------ 2 */}
       <section className="hp-akt hp-cisla" id="cisla" data-p>
-        <div className="hp-hlavicka">
+        <div className="hp-hlavicka" data-p data-drift>
           <div className="eyebrow" data-vjezd>Živá čísla</div>
           <h2 className="hp-nadpis" data-vjezd>Postaveno na skutečných datech</h2>
           <p className="hp-podnadpis" data-vjezd>
@@ -233,7 +253,7 @@ export function Hook() {
             čísla vrátí i veřejné API, takže si je může kdokoli přepočítat.
           </p>
         </div>
-        <div className="hp-bento">
+        <div className="hp-bento" data-p data-drift="P">
           {cisla.map((c, i) => (
             <div className={`hp-dlazdice ${c.velky ? "je-velka" : ""}`} key={c.l} data-vjezd style={{ "--i": i } as CSSProperties}>
               <span className="hp-dlazdice-cislo"><Pocitadlo hodnota={c.v} format={c.f} /></span>
@@ -245,7 +265,32 @@ export function Hook() {
       </section>
 
       {/* ------------------------------------------------------------ 3
-          Připíchnuté dějství: svislé rolování veze dráhu do strany. */}
+          První připíchnuté dějství: cesta modelu jako vodorovná linka.
+          Svislé rolování ji veze do strany a zároveň plní čáru pod ní. */}
+      <section className="hp-pin hp-pin-cesta" id="cesta" data-pin>
+        <div className="hp-pin-scena">
+          <div className="hp-pin-hlava">
+            <div className="eyebrow">Jak to čteme</div>
+            <h2 className="hp-nadpis">Od údaje k rozhodnutí<br />v pěti krocích</h2>
+            <p className="hp-podnadpis">Pořadí, ve kterém aplikace pracuje. Každý krok stojí na tom předchozím — a nikde se nepřeskakuje.</p>
+            <span className="hp-pin-ukazatel" aria-hidden="true"><i /></span>
+          </div>
+          <div className="hp-cesta" data-draha>
+            <span className="hp-cesta-linka" aria-hidden="true"><i /></span>
+            {CESTA.map((c, i) => (
+              <Link key={c.n} to={c.to} className="hp-krok" style={{ "--i": i } as CSSProperties}>
+                <span className="hp-krok-bod" aria-hidden="true" />
+                <span className="hp-krok-cislo">{c.n}</span>
+                <h3>{c.t}</h3>
+                <p>{c.d}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------ 4
+          Druhé připíchnuté dějství: čtyři vrstvy modelu. */}
       <section className="hp-pin" id="vrstvy" data-pin>
         <div className="hp-pin-scena">
           <div className="hp-pin-hlava">
@@ -270,7 +315,7 @@ export function Hook() {
 
       {/* ------------------------------------------------------------ 4 */}
       <section className="hp-akt hp-zdroje" data-p>
-        <div className="hp-hlavicka">
+        <div className="hp-hlavicka" data-p data-drift="P">
           <div className="eyebrow" data-vjezd>Co jsme využili</div>
           <h2 className="hp-nadpis" data-vjezd>Celý katalog, ne vybrané sady</h2>
           <p className="hp-podnadpis" data-vjezd>
@@ -293,14 +338,14 @@ export function Hook() {
             </div>
           ))}
         </div>
-        <div className="hp-tech" data-vjezd>
+        <div className="hp-tech" data-vjezd data-p data-drift>
           {TECHNOLOGIE.map((t) => <span className="hp-tech-stitek" key={t}>{t}</span>)}
         </div>
       </section>
 
       {/* ------------------------------------------------------------ 5 */}
       <section className="hp-akt hp-tym" id="tym" data-p>
-        <div className="hp-hlavicka">
+        <div className="hp-hlavicka" data-p data-drift="P">
           <div className="eyebrow" data-vjezd>Tým Popojedem.</div>
           <h2 className="hp-nadpis" data-vjezd>Loni jsme ukázali, co dělat,<br />když problém nastane.<br /><em>Letos ho chceme vidět dřív.</em></h2>
           <p className="hp-podnadpis" data-vjezd>

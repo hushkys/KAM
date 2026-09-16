@@ -132,10 +132,17 @@
    Podsvícení putuje mezi tlačítky a ta jsou skleněná, takže skrz ně barva
    prosvítá. Kdyby byla neprůhledná, bylo by to druhé pozadí, ne podsvícení. */
 .morf-skupina { position: relative; display: inline-flex; flex-wrap: wrap; gap: 10px; }
-.ms-vrstva { position: absolute; inset: 0; pointer-events: none; z-index: 0; filter: var(--goo); opacity: 0; transition: opacity var(--t-md); }
+/* Rozmazání jen po dobu cesty: v klidu by z osamoceného tělesa udělalo
+   rozlitou elipsu přes obě tlačítka, a to je stav, na který se člověk dívá
+   nejdéle. Za jízdy je to naopak ono — spojuje dvě tělesa krkem. */
+.ms-vrstva { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0; transition: opacity var(--t-md); }
+.ms-vrstva[data-hybe="ano"] { filter: var(--goo); }
 .morf-skupina[data-morf="ano"] .ms-vrstva { opacity: 1; }
 .ms-telo { position: absolute; top: 0; left: 0; border-radius: var(--r-pill); background: var(--accent); transform-origin: center; will-change: transform, width; }
-.ms-stopa { opacity: .55; }
+/* V klidu stopa leží přesně pod pilulkou, takže není co prosvítat; smysl má
+   až ve chvíli, kdy se obě rozjedou. */
+.ms-stopa { opacity: 0; }
+.ms-vrstva[data-hybe="ano"] .ms-stopa { opacity: .6; }
 .hp-tlacitko {
   position: relative; z-index: 1;
   display: inline-flex; align-items: center; gap: 10px;
@@ -265,6 +272,38 @@
 .hp-vrstva p { color: var(--text-dim); font-size: .9375rem; line-height: 1.6; }
 .hp-vrstva-cta { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-weight: 700; font-size: .875rem; }
 
+/* ------------------------------------------------------ cesta modelu
+   Druhé vodorovné dějství. Linka pod kroky se plní podle `--p`, takže je
+   pořád vidět, kolik cesty ještě zbývá — u samotných karet to poznat nejde. */
+.hp-cesta { position: relative; display: flex; align-items: stretch; gap: clamp(14px, 1.8vw, 28px);
+  padding: 0 var(--hp-pad); will-change: transform;
+  transform: translate3d(calc(var(--p, 0) * var(--drah, 0px) * -1), 0, 0); }
+.hp-cesta-linka { position: absolute; left: var(--hp-pad); right: var(--hp-pad); top: 46px; height: 2px;
+  background: var(--border); border-radius: 2px; overflow: hidden; }
+.hp-cesta-linka i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--lime));
+  transform-origin: left; transform: scaleX(calc(.1 + var(--p, 0) * .9)); }
+.hp-krok { position: relative; flex: 0 0 clamp(230px, 24vw, 300px); display: grid; align-content: start; gap: 8px;
+  padding: 74px 4px 0; color: var(--text); text-decoration: none !important; }
+.hp-krok-bod { position: absolute; top: 39px; left: 4px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--bg); border: 3px solid var(--accent); transition: transform var(--t-md) var(--ease-spring), border-color var(--t-sm); }
+.hp-krok:hover .hp-krok-bod { transform: scale(1.25); border-color: var(--lime); }
+.hp-krok-cislo { font-family: var(--font-nadpis); font-size: .875rem; font-weight: 800; letter-spacing: .14em; color: var(--text-mute); }
+.hp-krok h3 { font-family: var(--font-nadpis); font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; }
+.hp-krok:hover h3 { color: var(--accent); }
+.hp-krok p { color: var(--text-dim); font-size: .9375rem; line-height: 1.6; }
+
+/* ------------------------------------------------- boční drift obsahu
+   Blok dojede na své místo, až je uprostřed obrazovky, a zase odplouvá.
+   Je to paralaxa napříč, ne animace: řídí ji `--p`, takže to jde oběma směry
+   a při zastavení to stojí. Jen na myši a jen na širokém okně — na telefonu
+   by se to pralo s gestem pro přepínání stránek a stálo výkon. */
+@media (min-width: 1001px) and (pointer: fine) {
+  [data-drift] { transform: translate3d(calc((var(--p, .5) - .5) * var(--drift, 130px)), 0, 0); }
+  [data-drift="P"] { --drift: -130px; }
+  .hp-bento[data-drift] { --drift: -70px; }
+  .hp-tech[data-drift] { --drift: 90px; }
+}
+
 /* ---------------------------------------------------------------- zdroje
    Dva pásy proti sobě. Je to výčet, ne seznam k přečtení — jde o to ukázat,
    že jich je hodně a že mají jména. */
@@ -330,10 +369,12 @@
 @media (max-width: 900px), (pointer: coarse) {
   .hp-pin { height: auto; }
   .hp-pin-scena { position: static; height: auto; padding: clamp(60px, 10vh, 110px) 0; }
-  .hp-draha { transform: none; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  .hp-draha, .hp-cesta { transform: none; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
     padding-bottom: 8px; scroll-padding-left: var(--hp-pad); }
-  .hp-draha::-webkit-scrollbar { height: 0; }
+  .hp-draha::-webkit-scrollbar, .hp-cesta::-webkit-scrollbar { height: 0; }
   .hp-vrstva { scroll-snap-align: start; flex-basis: min(78vw, 340px); }
+  .hp-krok { scroll-snap-align: start; flex-basis: min(72vw, 300px); }
+  .hp-cesta-linka { display: none; }
   .hp-pin-ukazatel { display: none; }
 }
 
@@ -355,10 +396,14 @@
 :root[data-motion="reduce"] .hp-aurora,
 :root[data-motion="reduce"] .hp-vrstevnice,
 :root[data-motion="reduce"] .hp-hero-vizual,
+:root[data-motion="reduce"] [data-drift],
+:root[data-motion="reduce"] .hp-cesta,
 :root[data-motion="reduce"] .hp-draha { transform: none; }
 :root[data-motion="reduce"] .hp-pin { height: auto; }
 :root[data-motion="reduce"] .hp-pin-scena { position: static; height: auto; }
-:root[data-motion="reduce"] .hp-draha { overflow-x: auto; }
+:root[data-motion="reduce"] .hp-draha,
+:root[data-motion="reduce"] .hp-cesta { overflow-x: auto; }
+:root[data-motion="reduce"] .hp-cesta-linka { display: none; }
 
 /* Tým na úvodní stránce je ze stejného materiálu jako zbytek scény. */
 .hp .person, .hp .lead-card {
