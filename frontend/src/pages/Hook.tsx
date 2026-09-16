@@ -14,7 +14,7 @@
 // Pod `data-motion="reduce"` se smyčka vůbec nespustí, všechno stojí na
 // koncových hodnotách a stránka je obyčejný dlouhý dokument.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { openAssistant } from "../components/assistantBus";
 import { Icon } from "../components/Icon";
 import { KrajVizual } from "../components/KrajVizual";
@@ -112,9 +112,17 @@ function useScena(koren: RefObject<HTMLElement | null>) {
 }
 
 /** Vjezd na první pohled. Pozorovatel, ne rolovací smyčka: tohle se má stát
- *  jednou a pak dát pokoj. */
+ *  jednou a pak dát pokoj.
+ *
+ *  `useLayoutEffect`, ne `useEffect`: při vypnutém pohybu se `je-videt`
+ *  přidává hned, ale `useEffect` běží až *po* prvním vykreslení, takže by
+ *  prohlížeč stihl na zlomek snímku vykreslit prvky v jejich výchozím stavu
+ *  (`opacity: 0`) — na pomalém stroji nebo ve snímku pořízeném přesně v tu
+ *  chvíli (viz `scripts/screenshots.py`) to bylo vidět jako napůl průsvitný
+ *  nadpis. `useLayoutEffect` doběhne ještě před tím, než prohlížeč cokoli
+ *  nakreslí. */
 function useVjezdy(koren: RefObject<HTMLElement | null>) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = koren.current;
     if (!el) return;
     const prvky = Array.from(el.querySelectorAll<HTMLElement>("[data-vjezd]"));

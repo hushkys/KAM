@@ -13,13 +13,18 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3c7a2b)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-3c7a2b)](https://react.dev/)
 [![otevřené API](https://img.shields.io/badge/otev%C5%99en%C3%A9%20API-v1-3c7a2b)](docs/API.md)
-[![testy](https://img.shields.io/badge/testy-111%20%2B%2017-3c7a2b)](#testy)
+[![testy](https://img.shields.io/badge/testy-109%20%2B%2017-3c7a2b)](#testy)
 
 **[Živá aplikace](https://hack-a-ton-hushkys.web.app)** · **[Otevřené API](docs/API.md)**
 
 Tým **Popojedem.** · Hackathon Královéhradeckého kraje
 
 <img src="docs/screenshots/uvod.png" alt="Úvodní obrazovka KAM" width="100%">
+
+*Úvodní stránka je jeden dlouhý hook: kraj a jeho výhled do roku 2040 v jednom
+obrázku, živá čísla, která se natočí, až na ně dojedete, a dvě vodorovná
+dějství — cesta modelu v pěti krocích a čtyři vrstvy — kterými svislé rolování
+veze dráhu do strany. Na telefonu je z nich posuv prstem.*
 
 </div>
 
@@ -150,6 +155,14 @@ spojí, přiloží čísla z modelu a vznikne formální podnět pro kraj.
 
 <img src="docs/screenshots/podnety.png" alt="Podněty: z pěti hlášení vzniká formální podnět" width="100%">
 
+### Asistent
+
+Neotevře se chat, ale pole. Uprostřed pozdrav, jedna věta a řádek — a jakmile
+odejde první otázka, pole sjede dolů a nad ním se rozbalí rozhovor. Odpovídá
+z dat KAM, ovládá aplikaci a u každého čísla ukáže zdroj.
+
+<img src="docs/screenshots/asistent.png" alt="Asistent: pozdrav a pole, chat až s odpovědí" width="100%">
+
 ### Otevřená data
 
 Celý katalog, ze kterého KAM čerpá: u každé sady ověřený odkaz a popsané
@@ -249,7 +262,18 @@ periodicity, strukturální mezery. Aplikace hlídá i data samotná.
 
 **Asistent** — příkazy aplikace bez modelu („zapni tmavý režim"), router mezi
 lokálním a cloudovým modelem, hybridní RAG nad celým katalogem, citace zdrojů
-a ochrana proti jailbreaku i prompt injection.
+a ochrana proti jailbreaku i prompt injection. Otevírá se jako pole, ne jako
+prázdný chat; rozhovor se rozbalí až s první odpovědí.
+
+**Vyhledávání přes celou aplikaci** — jedno pole (Ctrl+K nebo `/`) na území,
+datové sady, ukazatele, metodiku, stránky i příkazy. Výsledky jsou rozdělené
+do kategorií a řadí se podle shody, takže „rozpočet" vrátí Hospodaření dřív
+než cizí sadu, která to slovo má v názvu. Hledá se i podle kódu RÚIAN.
+
+**Na telefonu** — přejetím prstem se přepíná mezi místy v navigaci, aplikace
+se dá nainstalovat a funguje i bez signálu; v tom případě přizná, že čísla
+jsou z poslední návštěvy. Veškerý pohyb se dá vypnout jedním přepínačem ve
+Vzhledu — pro slabší telefony i pro každého, komu animace vadí.
 
 ## Architektura
 
@@ -327,7 +351,7 @@ minut, protože každou sadu ověřuje.
 ## Testy
 
 ```bash
-python -m pytest              # 111 testů
+python -m pytest              # 109 testů
 cd frontend && npm test       # 17 testů
 ```
 
@@ -341,6 +365,12 @@ Postup je v [DEPLOY.md](DEPLOY.md). Ve zkratce: aplikace je jeden kontejner
 (`Dockerfile`), data leží v PostgreSQL (`DATABASE_URL`) a snímek se tam nahraje
 skriptem `scripts/migrate_to_postgres.py`. Nasazená aplikace je veřejná a bez
 přihlašování — otevřená data jsou otevřená.
+
+Server naběhne i tehdy, když databáze mlčí: `/api/health` v tu chvíli vrátí
+`ok: false` i s důvodem a aplikace se sama vrátí do provozu, jakmile databáze
+naskočí. Je to schválně — kontejner, který se kvůli databázi vůbec nerozběhne,
+je z venku k nerozeznání od smazané aplikace a nejde nahradit ani opravenou
+verzí.
 
 ## Licence
 

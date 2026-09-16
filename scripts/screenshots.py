@@ -5,8 +5,13 @@ Potřebuje Chrome (proměnná CHROME) a Pillow.
 
 Vynucené `prefers-reduced-motion` je tu kvůli spolehlivosti: aplikace na něj
 reaguje tím, že zkrátí nájezdové animace na nulu, takže snímek nepadne
-doprostřed prolnutí a karty na něm nejsou poloprůhledné. Výjimkou je úvodní
-stránka — tam animace naopak potřebujeme, aby maskot doskákal na místo tečky.
+doprostřed prolnutí a karty na něm nejsou poloprůhledné.
+
+Platí to i pro úvodní stránku. Dřív se fotila s pohybem, aby maskot doskákal
+na místo tečky, jenže od chvíle, kdy je z ní prezentace s desítkou nájezdů,
+se do rozpočtu virtuálního času nevejdou všechny — a snímek pak ukazuje
+poloprůhledný nadpis a prázdnou mapu. Bez pohybu kreslí maskot rovnou celý
+nápis i s tečkou, takže se nic neztratí.
 
 Fotí se na dvojnásobek a zmenšuje zpátky: text je pak ostrý i po zmenšení.
 """
@@ -27,7 +32,7 @@ SCENAR_URL = (
     "MDI4LCJ0eXAiOiJieXRvdmVfZG9teSJ9fSx7InR5cGUiOiJ6c19taXN0YSIsInBhcmFtcyI6eyJwb2NldCI6MTIwLCJyb2siOjIwMjl9fV0="
 )
 ZABERY: list[tuple[str, str, int, int, bool]] = [
-    ("uvod", "/", 1440, 900, True),
+    ("uvod", "/", 1440, 900, False),
     ("prehled", "/prehled", 1440, 980, False),
     ("mapa-3d", "/mapa?view=khk&3d=1&ind=d_podil_65", 1440, 1000, False),
     ("obce", "/obce", 1440, 760, False),
@@ -39,6 +44,7 @@ ZABERY: list[tuple[str, str, int, int, bool]] = [
     ("podnety", "/podnety", 1440, 900, False),
     ("data", "/data", 1440, 980, False),
     ("statistiky", "/statistiky", 1440, 900, False),
+    ("asistent", "/asistent", 1440, 900, False),
     ("api", "/data?tab=api", 1440, 1400, False),
 ]
 
