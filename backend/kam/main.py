@@ -114,10 +114,17 @@ def _scheduler() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    init_db()
-    from .ai.providers import seed_defaults
-    seed_defaults()
-    if settings.background_jobs:
+    # Start nesmí viset na databázi. Když mlčí, server se rozběhne bez ní a
+    # `/api/health` to přizná — jinak by výpadek databáze vypadal jako spadlý
+    # kontejner a nešlo by nasadit ani opravu.
+    db_ok = init_db()
+    if db_ok:
+        from .ai.providers import seed_defaults
+        try:
+            seed_defaults()
+        except Exception as e:
+            log.warning("Výchozí poskytovatele se nepodařilo založit: %s", e)
+    if db_ok and settings.background_jobs:
         threading.Thread(target=_warm, name="kam-warm", daemon=True).start()
         threading.Thread(target=_scheduler, name="kam-refresh", daemon=True).start()
         threading.Thread(target=_udrzba, name="kam-uklid", daemon=True).start()

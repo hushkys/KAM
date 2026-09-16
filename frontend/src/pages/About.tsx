@@ -167,8 +167,8 @@ export function About() {
           <Card span={6} i={6} title="Co děláme" icon="users">
             <div className="prose">
               <p>Tým má dvě oblasti a každá svého vedoucího. <strong>Ondřej Hušek</strong> vede vývoj a technologie — navrhl architekturu a postavil aplikaci od sklizně dat přes analytické a simulační jádro po AI vrstvu. <strong>Josef Efler</strong> vede brand, produkt a veřejnou komunikaci: značku, brandstorming, marketing a právní stránku projektu.</p>
-              <p><strong>Matěj Jirásek</strong> odpovídá za uživatelský zážitek a vizuální jazyk — aby byla složitá data srozumitelná na první pohled.</p>
-              <p><strong>Damián Roháček</strong> se stará o backend, datové služby a jejich spolehlivost.</p>
+              <p><strong>Matěj Jirásek</strong> odpovídá za uživatelský zážitek a vizuální jazyk — aby byla složitá data srozumitelná na první pohled — a je klíčový motivátor týmu.</p>
+              <p><strong>Damián Roháček</strong> má dozor nad aplikací: hlídá backend, datové služby a to, aby fungovaly, i když se na ně nikdo zrovna nedívá.</p>
             </div>
           </Card>
 

@@ -7,6 +7,9 @@ used by `kam.models` exists in both dialects, so switching is a URL change.
 
 from __future__ import annotations
 
+import logging
+import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -15,6 +18,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
+
+log = logging.getLogger("kam")
 
 
 class Base(DeclarativeBase):
@@ -36,7 +41,11 @@ def _make_engine(url: str) -> Engine:
             cur.close()
 
         return engine
-    return create_engine(url, pool_pre_ping=True, pool_size=10, max_overflow=20, future=True)
+    # `connect_timeout` je tu schválně: bez něj čeká libpq na TCP timeout
+    # operačního systému, takže nedostupná databáze neshodí požadavek, ale
+    # zasekne ho — a s ním i start serveru, který na schéma čeká.
+    return create_engine(url, pool_pre_ping=True, pool_size=10, max_overflow=20, future=True,
+                         connect_args={"connect_timeout": 10})
 
 
 engine: Engine = _make_engine(settings.db_url)
@@ -51,11 +60,61 @@ def rebind(url: str) -> None:
     SessionLocal.configure(bind=engine)
 
 
-def init_db() -> None:
+#: Poslední důvod, proč se nepodařilo sáhnout na databázi, nebo `None`.
+#: Čte to `/api/health`, aby šlo poznat „server běží, ale databáze mlčí" od
+#: „server neběží" — což jsou z venku dva úplně stejně vypadající stavy.
+posledni_chyba: str | None = None
+
+
+def init_db(pokusu: int = 2) -> bool:
+    """Založí schéma. Vrací, jestli se to povedlo.
+
+    **Neúspěch není výjimka.** Když databáze mlčí (spící instance, vyčerpaná
+    kvóta, spadlá síť), nemá to shodit celý proces: kontejner, který se kvůli
+    tomu nerozběhne, je z venku k nerozeznání od smazané aplikace a nejde
+    nasadit ani oprava. Server se rozběhne, přizná to na `/api/health` a zkusí
+    to znovu, až o to někdo požádá."""
+    global posledni_chyba
     from . import models  # noqa: F401  (registers tables)
 
-    Base.metadata.create_all(engine)
-    _ensure_columns()
+    for pokus in range(pokusu):
+        try:
+            Base.metadata.create_all(engine)
+            _ensure_columns()
+            posledni_chyba = None
+            return True
+        except Exception as e:
+            posledni_chyba = f"{type(e).__name__}: {str(e).splitlines()[0][:200]}"
+            if pokus + 1 < pokusu:
+                time.sleep(1.5 * (pokus + 1))
+    log.error("Databáze není dostupná: %s", posledni_chyba)
+    return False
+
+
+_obnova_bezi = False
+_obnova_kdy = 0.0
+
+
+def zkus_obnovit() -> None:
+    """Zkusí na pozadí, jestli se databáze nevzpamatovala.
+
+    Na pozadí schválně: kdo se ptá na `/api/health`, čeká odpověď hned, ne
+    až vyprší připojovací limit. Nejvýš jednou za půl minuty, ať se z kontroly
+    stavu nestane útok na spící databázi."""
+    global _obnova_bezi, _obnova_kdy
+    if _obnova_bezi or time.time() - _obnova_kdy < 30:
+        return
+    _obnova_bezi, _obnova_kdy = True, time.time()
+
+    def beh() -> None:
+        global _obnova_bezi
+        try:
+            if init_db(pokusu=1):
+                log.info("Databáze je zpátky.")
+        finally:
+            _obnova_bezi = False
+
+    threading.Thread(target=beh, name="kam-db-obnova", daemon=True).start()
 
 
 def _ensure_columns() -> None:

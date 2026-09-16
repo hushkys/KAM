@@ -17,13 +17,9 @@ interface Vzhled {
   plet: string;
   vlasy: string;
   tricko: string;
-  /** Silueta vlasů přes hlavu. */
+  /** Silueta vlasů přes hlavu. Je to jediné, co portréty od sebe kromě barev
+   *  odlišuje — proto musí být každá vlastní, ne varianta téhož oblouku. */
   ucesy: ReactElement;
-  /** Vousy. Kreslí se **pod** obličej, jinak by přemalovaly ústa a z portrétu
-   *  je maska. */
-  vousy?: ReactElement;
-  /** Brýle a spol. — nahoru, ty přes obličej patří. */
-  doplnek?: ReactElement;
 }
 
 const VZHLED: Record<string, Vzhled> = {
@@ -39,18 +35,10 @@ const VZHLED: Record<string, Vzhled> = {
   },
   josef: {
     pozadi: ["#27456b", "#111f33"], plet: "#f0c9a4", vlasy: "#6d4326", tricko: "#e9b44c",
-    // Pěšinka a vlna dozadu.
+    // Pěšinka vlevo a vlna dozadu: mezi čtyřmi portréty je účes jediné, co je
+    // od sebe odliší, takže musí být poznat i v malé velikosti.
     ucesy: (
-      <path d="M60 23c-13 0-22 9-22 22 0 2 .2 4 .5 6 1-7 3-11 6-13.6 4-3.4 9-4.8 15-4.8 7 0 13 1.6 17 5.4 2.6 2.4 4.2 6.4 5 13 .3-2 .5-4 .5-6 0-13-9-22-22-22z" />
-    ),
-    doplnek: (
-      // Tenké brýle: dva rámečky a můstek, žádné panty — v téhle velikosti
-      // by z nich byly jen tečky.
-      <g fill="none" stroke="#20242b" strokeWidth="2.1" opacity=".85">
-        <rect x="42.5" y="50" width="15" height="12" rx="5" />
-        <rect x="62.5" y="50" width="15" height="12" rx="5" />
-        <path d="M57.5 55.5h5M42.5 54l-5 1M77.5 54l5 1" strokeLinecap="round" />
-      </g>
+      <path d="M60 22.5c-13.4 0-22.4 9.2-22.4 22.5 0 2.2.2 4.4.6 6.4.8-6.2 2.4-10.4 4.8-13.2 2-2.4 4.6-4 7.8-5-.6 2.4-.8 4.8-.6 7.4 2.6-3.4 6-5.4 10-6.4 4-1 8.4-.8 12.6.6 4 1.4 7 3.8 8.8 7.2 1.2 2.4 2 5.6 2.4 9.4.4-2 .6-4.2.6-6.4 0-13.3-9-22.5-22.6-22.5z" />
     ),
   },
   matej: {
@@ -65,12 +53,6 @@ const VZHLED: Record<string, Vzhled> = {
     pozadi: ["#14484a", "#0a2526"], plet: "#e7b98f", vlasy: "#2a1d15", tricko: "#8fa3a0",
     ucesy: (
       <path d="M60 23c-13 0-22 9-22 23 0 3 .3 6 .8 8 .8-7 2.6-11.6 5.6-14.4 3.6-3.4 9-5 15.6-5 6 0 11 1.4 14.6 4.4 3 2.6 5 7.4 6 15 .5-2.6.8-5.4.8-8 0-14-9-23-21.4-23z" />
-    ),
-    // Krátký plnovous po linii čelisti. Světlejší než vlasy a bez knírku přes
-    // ústa: tmavá plocha přes celou spodní půlku obličeje vypadá jako škraboška.
-    vousy: (
-      <path d="M41.5 59c.6 7.6 2.6 13.6 6 17.6 3.6 4.2 8 6.4 12.5 6.4s8.9-2.2 12.5-6.4c3.4-4 5.4-10 6-17.6-1.8 5-4 8.4-6.6 10.2-3.2 2.2-7.4 3.2-11.9 3.2s-8.7-1-11.9-3.2c-2.6-1.8-4.8-5.2-6.6-10.2z"
-        fill="#3b2a1e" />
     ),
   },
 };
@@ -114,8 +96,6 @@ export function Avatar({ who, size = 96, title }: { who: keyof typeof VZHLED | s
         <path d="M60 26c13 0 21 9 21 22 0 7-1 13-4 18-3.4 6-9.6 10.6-17 10.6S46.4 72 43 66c-3-5-4-11-4-18 0-13 8-22 21-22z" fill={v.plet} />
         <path d="M60 26c13 0 21 9 21 22 0 7-1 13-4 18-3.4 6-9.6 10.6-17 10.6V26z" fill="#000" opacity=".1" />
 
-        {v.vousy}
-
         {/* oči: víčko je tmavší oblouk nad duhovkou, ne jen tečka */}
         <g fill="#1b1b20">
           <ellipse cx="50.5" cy="56" rx="2.7" ry="3.1" />
@@ -135,7 +115,6 @@ export function Avatar({ who, size = 96, title }: { who: keyof typeof VZHLED | s
         <path d="M54 70.5c3.6 2.8 8.4 2.8 12 0" fill="none" stroke="#000" strokeOpacity=".45" strokeWidth="2.1" strokeLinecap="round" />
 
         <g fill={v.vlasy}>{v.ucesy}</g>
-        {v.doplnek}
       </g>
     </svg>
   );
@@ -164,13 +143,13 @@ export const OBLASTI: { key: string; name: string; lead: Clovek; lide: Clovek[] 
     key: "vyvoj",
     name: "Vývoj a technologie",
     lead: { who: "ondrej", name: "Ondřej Hušek", role: "Vývoj, architektura a AI", school: "UHK · FIM · Informační a síťová bezpečnost", oblast: "Vývoj a technologie", vede: true },
-    lide: [{ who: "matej", name: "Matěj Jirásek", role: "UX/UI designer", school: "UHK · FIM · Informační a síťová bezpečnost", oblast: "Vývoj a technologie" }],
+    lide: [{ who: "matej", name: "Matěj Jirásek", role: "UX/UI designer a klíčový motivátor", school: "UHK · FIM · Informační a síťová bezpečnost", oblast: "Vývoj a technologie" }],
   },
   {
     key: "brand",
     name: "Brand, produkt a veřejná komunikace",
     lead: { who: "josef", name: "Josef Efler", role: "Branding, brandstorming, marketing a legal", school: "UTB · FLKŘ · Řízení rizik ve veřejné správě", oblast: "Brand a produkt", vede: true },
-    lide: [{ who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", chranice: true, oblast: "Brand a produkt" }],
+    lide: [{ who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", chranice: true, oblast: "Dozor nad aplikací" }],
   },
 ];
 

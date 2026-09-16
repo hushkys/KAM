@@ -34,9 +34,24 @@ def _territory_row(t) -> dict:
 
 @router.get("/health")
 def health() -> dict:
-    with SessionLocal() as s:
-        n = s.scalar(select(func.count(Observation.id))) or 0
-    return {"ok": True, "observations": n, "time": datetime.now(UTC).isoformat()}
+    """Stav serveru. Rozlišuje „běžím a vidím na data" od „běžím, ale databáze
+    mlčí" — druhý stav se z venku pozná jinak jen tím, že se aplikace tváří
+    prázdně. Když se databáze mezitím vzpamatuje, pokus o schéma tady projde
+    a aplikace se sama vrátí do provozu bez nasazování."""
+    from .. import db as _db
+    if _db.posledni_chyba:
+        # Známý výpadek: odpovědět hned a o obnovu se pokusit na pozadí.
+        _db.zkus_obnovit()
+        return {"ok": False, "database": "nedostupná", "detail": _db.posledni_chyba,
+                "time": datetime.now(UTC).isoformat()}
+    try:
+        with SessionLocal() as s:
+            n = s.scalar(select(func.count(Observation.id))) or 0
+        return {"ok": True, "observations": n, "time": datetime.now(UTC).isoformat()}
+    except Exception as e:
+        _db.posledni_chyba = f"{type(e).__name__}: {str(e).splitlines()[0][:200]}"
+        return {"ok": False, "database": "nedostupná", "detail": _db.posledni_chyba,
+                "time": datetime.now(UTC).isoformat()}
 
 
 _counts_cache: dict = {}
