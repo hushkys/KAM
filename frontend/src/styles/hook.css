@@ -403,6 +403,97 @@
   .hp-pin-ukazatel { display: none; }
 }
 
+/* ---------------------------------------------------------------- odometr
+   Číslice je okénko s pásem 0–9 pod sebou; cíl je v druhé desítce pásu, tak
+   každá udělá napřed celou otočku. Cílovou polohu nese `--c`, pořadí zleva
+   `--i`, takže poslední číslice dojede jako poslední a je vidět, kde se to
+   zastavilo. Hýbe tím přechod, ne JavaScript — nestojí to ani snímek navíc.
+
+   Výška políčka je `--od-h`, ne `1em`: číslice sice nemají dolní dotažnici,
+   ale font je přetahuje přes účaří a v přesně jednom em se ořežou shora. */
+.od { --od-h: 1.08em; display: inline-flex; align-items: flex-start; }
+.od-znak, .od-cislice { display: block; height: var(--od-h); line-height: var(--od-h); }
+.od-cislice { overflow: hidden; }
+.od-pas {
+  /* Bez trvalého `will-change`: každá číslice by si držela vlastní vrstvu
+     a jen na úvodní stránce jich je přes dvacet. Přechod si vrstvu vyrobí
+     sám na tu vteřinu, kdy se opravdu hýbe. */
+  display: block;
+  transform: translate3d(0, 0, 0);
+  transition: transform 1600ms var(--ease-emph);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.od-pas > span { display: block; height: var(--od-h); line-height: var(--od-h); }
+.od.je-videt .od-pas { transform: translate3d(0, calc((var(--c) + 10) * var(--od-h) * -1), 0); }
+
+/* -------------------------------------------------- sklápění nadpisů
+   Nadpis se nepřisune zdola, ale sklopí se dopředu jako deska na pantu.
+   Perspektiva je na prvku, ne na rodiči: sekce se vozí paralaxou a vlastní
+   perspektiva rodiče by se s ní prala. Bez masky schválně — ořezový box by
+   nad verzálkami usekl háčky a pod nimi dolní dotažnice. */
+.hp-akt .hp-nadpis[data-vjezd] {
+  transform: perspective(1100px) rotateX(-28deg) translate3d(0, 38px, 0);
+  transform-origin: 50% 100%;
+}
+.hp-akt .hp-nadpis[data-vjezd].je-videt { transform: none; }
+
+/* --------------------------------------------- dlaždice přilétají z hloubky
+   Rozostření dělá hloubku spolehlivěji než samotný posun: dlaždice je napřed
+   „daleko" a doostří se, až dosedne. Na širokém okně přebíjí posun paralaxa
+   níž v souboru, takže tam zůstane hloubka jen v rozostření — a je to tak
+   správně, dvojí pohyb by se pral. */
+.hp-bento [data-vjezd] {
+  transform: translate3d(0, 34px, 0) scale(.94);
+  filter: blur(14px);
+  transition: opacity 760ms var(--ease-out), transform 900ms var(--ease-emph), filter 820ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.hp-bento [data-vjezd].je-videt { transform: none; filter: blur(0); }
+
+/* --------------------------------------------------- záře pod dějstvím
+   Parabola `4p(1-p)` má vrchol přesně v polovině průletu obrazovkou, takže
+   dějství se rozsvítí, když je uprostřed, a zhasne, když odchází. Žádný
+   práh, žádné přepínání třídy — jen jedna hodnota, kterou už smyčka počítá. */
+.hp-akt::before {
+  /* Okraje jsou na nule schválně: záře vytažená za sekci sice vypadala
+     měkčeji, ale rozšířila rolovací plochu o 181 px a stránkou šlo hýbat do
+     strany. Šířku teď dělá gradient, ne geometrie. */
+  content: ""; position: absolute; inset: -6% 0 auto 0; height: 72%;
+  background: radial-gradient(88% 100% at 50% 0%, color-mix(in oklab, var(--accent) 13%, transparent), transparent 74%);
+  opacity: calc(4 * var(--p, .5) * (1 - var(--p, .5)));
+  pointer-events: none; z-index: -1;
+}
+
+/* ------------------------------------------------------- clona nad mapou
+   Mapa se neobjeví, ale rozevře se od vodorovné osy. Je to jediný prvek na
+   stránce, který se odkrývá ořezem — proto to funguje jako gesto a ne jako
+   další fade. `clip-path` nechává kresbu ostrou, kdežto škálování by z ní
+   udělalo texturu a na hustém displeji by se rozmazala. */
+.hp-hero-vizual[data-vjezd] {
+  clip-path: inset(45% 0% 45% 0% round 26px);
+  transition: opacity 900ms var(--ease-out), clip-path 1200ms var(--ease-emph);
+}
+.hp-hero-vizual[data-vjezd].je-videt { clip-path: inset(0% 0% 0% 0% round 26px); }
+
+/* ------------------------------------------------- vrstevnice se kreslí
+   `pathLength="1"` dělá z délky každé cesty jednotku, takže se dá odkrývat
+   jedním podílem bez měření v JavaScriptu. Na začátku je nakreslená asi
+   třetina a zbytek doroste s postupem stránkou. */
+.hp-vrstevnice path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(.64 - min(1, var(--hp-cesta, 0) * 1.5) * .64);
+}
+
+/* ------------------------------------------ aktivní odkaz v liště
+   Smyčka píše na `.hp` jméno právě čteného dějství, takže lišta ukazuje,
+   kde člověk je, aniž by se cokoli počítalo dvakrát. */
+.hp[data-akt="cisla"] .hp-nav-odkaz[href="#cisla"],
+.hp[data-akt="cesta"] .hp-nav-odkaz[href="#cesta"],
+.hp[data-akt="vrstvy"] .hp-nav-odkaz[href="#vrstvy"],
+.hp[data-akt="tym"] .hp-nav-odkaz[href="#tym"] {
+  color: var(--text); background: color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
 /* --------------------------------------------------------- vypnutý pohyb */
 :root[data-motion="reduce"] .hp-skvrna,
 :root[data-motion="reduce"] .kv-sken,
@@ -416,7 +507,11 @@
 :root[data-motion="reduce"] .kv-krivka.je-budouci,
 :root[data-motion="reduce"] .kv-plocha { animation: none; opacity: 1; stroke-dashoffset: 0; }
 :root[data-motion="reduce"] .kv-krivka.je-budouci { stroke-dasharray: 7 8; }
-:root[data-motion="reduce"] [data-vjezd] { opacity: 1; transform: none; transition: none; }
+:root[data-motion="reduce"] [data-vjezd] { opacity: 1; transform: none; transition: none; filter: none; }
+:root[data-motion="reduce"] .hp-hero-vizual[data-vjezd] { clip-path: none; }
+:root[data-motion="reduce"] .hp-akt::before { opacity: .35; }
+:root[data-motion="reduce"] .hp-vrstevnice path { stroke-dasharray: none; stroke-dashoffset: 0; }
+:root[data-motion="reduce"] .od-pas { transition: none; }
 :root[data-motion="reduce"] .hp-aurora,
 :root[data-motion="reduce"] .hp-vrstevnice,
 :root[data-motion="reduce"] .hp-hero-vizual,

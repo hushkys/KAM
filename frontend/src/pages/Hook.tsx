@@ -56,6 +56,7 @@ function useScena(koren: RefObject<HTMLElement | null>) {
     if (!el) return;
     const prvky = Array.from(el.querySelectorAll<HTMLElement>("[data-p]"));
     const piny = Array.from(el.querySelectorAll<HTMLElement>("[data-pin]"));
+    const sekce = Array.from(el.querySelectorAll<HTMLElement>("section[id]"));
     if (tichy()) {
       prvky.forEach((p) => p.style.setProperty("--p", "1"));
       piny.forEach((p) => p.style.setProperty("--p", "0"));
@@ -73,6 +74,16 @@ function useScena(koren: RefObject<HTMLElement | null>) {
         const r = p.getBoundingClientRect();
         p.style.setProperty("--p", sevri((vh - r.top) / (vh + r.height)).toFixed(4));
       }
+      // Které dějství právě čteme. Rozhoduje čára ve 42 % výšky okna, ne
+      // střed: nadpis sekce je nahoře a člověk ji vnímá jako aktivní dřív,
+      // než se doroluje doprostřed.
+      const cara = vh * 0.42;
+      let akt = "";
+      for (const s of sekce) {
+        const r = s.getBoundingClientRect();
+        if (r.top <= cara && r.bottom > cara) akt = s.id;
+      }
+      if (el.dataset.akt !== akt) el.dataset.akt = akt;
       for (const p of piny) {
         const r = p.getBoundingClientRect();
         p.style.setProperty("--p", sevri(-r.top / Math.max(1, p.offsetHeight - vh)).toFixed(4));
@@ -135,32 +146,60 @@ function useVjezdy(koren: RefObject<HTMLElement | null>) {
   }, [koren]);
 }
 
-/** Číslo, které se natočí, až na něj člověk dojede. */
-function Pocitadlo({ hodnota, format }: { hodnota: number | null; format: (n: number) => string }) {
-  const [v, setV] = useState(0);
+/** Číslo jako odometr: každá číslice je svislý pás 0–9, který se při vjezdu
+ *  přetočí na svou hodnotu.
+ *
+ *  Proč ne obyčejné počítání nahoru: to tu bylo a bylo z toho jen rychle
+ *  blikající číslo, ze kterého se nedalo nic přečíst. Pás má fyzický pohyb —
+ *  oko ho sleduje, pozná, že se něco měří, a poslední číslice dojede jako
+ *  poslední, takže je vidět, kde se to zastavilo.
+ *
+ *  Pás má dvacet políček (0–9 dvakrát) a cíl je v druhé desítce, takže každá
+ *  číslice udělá napřed celou otočku. Nehýbe tím JavaScript — cílová poloha
+ *  je jedna CSS proměnná a zbytek je přechod, takže to nestojí ani snímek
+ *  navíc. Formátovaný text se rozpadá po znacích: číslice dostanou pás,
+ *  mezery a písmena („tis.") zůstanou stát.
+ */
+const PAS = Array.from({ length: 20 }, (_, n) => n % 10);
+
+function Odometr({ hodnota, format }: { hodnota: number | null; format: (n: number) => string }) {
   const ref = useRef<HTMLSpanElement>(null);
+  // Při vypnutém pohybu je číslo rovnou na místě, ne až po prvním překreslení:
+  // jinak by snímek pořízený v tu chvíli zachytil samé nuly.
+  const [videt, setVidet] = useState(tichy);
+
   useEffect(() => {
-    if (!hodnota) return;
-    if (tichy()) { setV(hodnota); return; }
     const el = ref.current;
-    if (!el) return;
-    let raf = 0;
+    if (!el || hodnota === null || videt) return;
     const io = new IntersectionObserver(([z]) => {
-      if (!z.isIntersecting) return;
-      io.disconnect();
-      const start = performance.now();
-      const krok = (t: number) => {
-        const p = sevri((t - start) / 1100);
-        // Doběh, ne lineární běh: číslo se má zastavit, ne useknout.
-        setV(Math.round(hodnota * (1 - (1 - p) ** 3)));
-        if (p < 1) raf = requestAnimationFrame(krok);
-      };
-      raf = requestAnimationFrame(krok);
+      if (z.isIntersecting) { setVidet(true); io.disconnect(); }
     }, { threshold: 0.5 });
     io.observe(el);
-    return () => { io.disconnect(); cancelAnimationFrame(raf); };
-  }, [hodnota]);
-  return <span ref={ref}>{hodnota === null ? "…" : format(v)}</span>;
+    return () => io.disconnect();
+  }, [hodnota, videt]);
+
+  if (hodnota === null) return <span ref={ref}>…</span>;
+  const text = format(hodnota);
+  let poradi = 0;
+  return (
+    <span ref={ref} className={`od${videt ? " je-videt" : ""}`}>
+      {/* Čtečka dostane hotové číslo; rozsypané číslice by přečetla po jedné. */}
+      <span className="visually-hidden">{text}</span>
+      {[...text].map((z, i) => {
+        if (!/[0-9]/.test(z)) {
+          return <span className="od-znak" key={i} aria-hidden="true">{z === " " ? "\u00a0" : z}</span>;
+        }
+        const styl = { "--c": Number(z), "--i": poradi++ } as CSSProperties;
+        return (
+          <span className="od-cislice" key={i} aria-hidden="true">
+            <span className="od-pas" style={styl}>
+              {PAS.map((n, j) => <span key={j}>{n}</span>)}
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
 }
 
 export function Hook() {
@@ -194,7 +233,7 @@ export function Hook() {
         <div className="hp-aurora" data-p><i className="hp-skvrna s1" /><i className="hp-skvrna s2" /><i className="hp-skvrna s3" /></div>
         <svg className="hp-vrstevnice" data-p viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
           {Array.from({ length: 16 }, (_, i) => (
-            <path key={i} fill="none" stroke="var(--grid-line)" strokeWidth="1.1"
+            <path key={i} fill="none" stroke="var(--grid-line)" strokeWidth="1.1" pathLength={1}
               d={`M-60 ${100 + i * 46} C 240 ${40 + i * 50}, 520 ${190 + i * 38}, 800 ${96 + i * 48} S 1160 ${170 + i * 42}, 1320 ${126 + i * 46}`} />
           ))}
         </svg>
@@ -259,7 +298,7 @@ export function Hook() {
         <div className="hp-bento" data-p data-drift="P">
           {cisla.map((c, i) => (
             <div className={`hp-dlazdice ${c.velky ? "je-velka" : ""}`} key={c.l} data-vjezd style={{ "--i": i } as CSSProperties}>
-              <span className="hp-dlazdice-cislo"><Pocitadlo hodnota={c.v} format={c.f} /></span>
+              <span className="hp-dlazdice-cislo"><Odometr hodnota={c.v} format={c.f} /></span>
               <span className="hp-dlazdice-popis">{c.l}</span>
               <span className="hp-dlazdice-sub">{c.s}</span>
             </div>
