@@ -526,7 +526,20 @@
 .sc-art .sc-scen { fill: none; stroke: var(--h1); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: sc-draw 1600ms var(--ease-out) 260ms forwards; }
 @keyframes sc-draw { to { stroke-dashoffset: 0; } }
-.sc-art .sc-pulse { fill: var(--h1); filter: drop-shadow(0 0 7px color-mix(in oklab, var(--h1) 70%, transparent)); }
+.sc-art .sc-plocha { stroke: none; }
+/* Příčky jsou rozdíl nakreslený přímo mezi cestami — jedna na rok. */
+.sc-art .sc-pricky line { stroke: var(--h1); stroke-width: 1.4; stroke-linecap: round; }
+.sc-art .sc-konec { stroke: var(--surface); stroke-width: 1.5; }
+.sc-art .sc-konec.je-base { fill: var(--text-mute); }
+.sc-art .sc-konec.je-scen { fill: var(--h1); }
+.sc-art .sc-delic { stroke: var(--border-strong); stroke-width: 1; }
+.sc-art .sc-nula { stroke: var(--text-mute); stroke-width: 1; opacity: .6; }
+.sc-art .sc-pruh-popis { fill: var(--text-mute); font-size: 9px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.sc-art .sc-pruh-konec { fill: var(--h1); font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sc-art .sc-kryje { fill: var(--text-mute); font-size: 10.5px; }
+.sc-art .sc-sloupce rect { fill: var(--h1); }
+.sc-art .sc-sloupce rect.je-minus { fill: var(--text-mute); opacity: .75; }
+.sc-art .sc-sloupce, .sc-art .sc-pricky { animation: hk-obal 620ms var(--ease-out) 560ms both; }
 .sc-art .sc-end circle { fill: var(--h1); stroke: var(--surface); stroke-width: 2.5; }
 .sc-art .sc-end text, .sc-art .sc-yr { fill: var(--text-mute); font-size: 12px; font-weight: 700; }
 /* Right-hand side, and never wide enough to reach the first-year label in the
@@ -541,8 +554,8 @@
 :root[data-motion="reduce"] .sc-blob,
 :root[data-motion="reduce"] .sc-sheen,
 :root[data-motion="reduce"] .sc-art .sc-scen { animation: none; }
-:root[data-motion="reduce"] .sc-art .sc-scen { stroke-dashoffset: 0; }
-:root[data-motion="reduce"] .sc-art .sc-pulse { display: none; }
+:root[data-motion="reduce"] .sc-art .sc-scen,
+:root[data-motion="reduce"] .ph-art .ph-cara { stroke-dashoffset: 0; }
 
 /* --------------------------------------------------- simulator steps */
 .step-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -781,21 +794,45 @@
 .ph-radky { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 7px; font-size: .8125rem; color: var(--text-dim); }
 .ph-radky li { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .ph-radky i { width: 15px; height: 3px; border-radius: 2px; background: var(--h1); flex: none; }
+.ph-radky .ph-jmeno { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ph-radky .mute { font-size: .75rem; margin-left: auto; padding-left: 10px; }
-.ph-art .ph-kryt { fill: var(--surface); opacity: .93; }
-.ph-art .ph-cara { fill: none; stroke: var(--h1); stroke-width: 2.3; stroke-linejoin: round; stroke-linecap: round; }
+.ph-radky .ph-zmena { font-variant-numeric: tabular-nums; font-weight: 750; color: var(--text-mute); min-width: 4.6em; text-align: right; }
+.ph-radky .ph-zmena.je-nahoru { color: var(--h1); }
+.ph-radky li.je-hlavni .ph-jmeno { color: var(--text); font-weight: 650; }
+
+/* Pásmo je rozestup mezi krajními řadami, ne součet: kreslí se jen tam, kde
+   měří aspoň dvě řady, jinak by se rozestup počítal sám se sebou. */
+.ph-art .ph-pasmo { stroke: none; }
+.ph-art .ph-sto { stroke: var(--text-mute); stroke-width: 1; stroke-dasharray: 3 4; opacity: .7; }
+.ph-art .ph-stovka { fill: var(--text-mute); font-size: 10px; font-weight: 750; }
+.ph-art .ph-cara { fill: none; stroke: var(--h1); stroke-width: 2.1; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: ph-kresli 1500ms var(--ease-out) both;
+  animation-delay: calc(240ms + var(--i, 0) * 130ms); }
+.ph-art .ph-krivka.je-hlavni .ph-cara { stroke-width: 3; }
+.ph-art .ph-start { fill: var(--text-mute); }
 .ph-art .ph-bod { fill: var(--h3); }
-.ph-art .ph-hreben { animation: ph-vstup 640ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 110ms); }
-@keyframes ph-vstup { from { opacity: 0; transform: translateY(16px); } }
+.ph-art .ph-popisek { fill: var(--h3); font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ph-art .ph-krivka .ph-start, .ph-art .ph-krivka .ph-bod { animation: ph-tecka 420ms var(--ease-out) both; animation-delay: calc(700ms + var(--i, 0) * 130ms); }
+.ph-art .ph-popisek { animation: ph-tecka 500ms var(--ease-out) 1200ms both; }
+@keyframes ph-kresli { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes ph-tecka { from { opacity: 0; } }
 
 /* --------------------------------------------------------- hook stránky mapy */
-.mp-art .mp-dilek { fill: var(--h1); opacity: .32; }
-.mp-art .mp-dilek.je-zde { fill: var(--h3); opacity: 1; }
-.mp-art .mp-trycht { fill: color-mix(in oklab, var(--h1) 15%, transparent); }
-.mp-art .mp-trycht.slaby { fill: color-mix(in oklab, var(--h1) 8%, transparent); }
-.mp-art .mp-pocet { fill: var(--text-mute); font-size: 9.5px; font-weight: 750; letter-spacing: .04em; }
-.mp-art .mp-patro { animation: mp-vstup 520ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 130ms); }
-@keyframes mp-vstup { from { opacity: 0; transform: translateY(-9px); } }
+/* Skutečné hranice ve třech přiblíženích. Obrysy drží svou tloušťku
+   (`non-scaling-stroke`), jinak by se v posledním panelu, kde je měřítko
+   několikanásobné, rozlily do sebe. */
+.mp-art .mp-tvar { fill: color-mix(in oklab, var(--h1) 15%, transparent); stroke: var(--h1); stroke-opacity: .3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.mp-art .mp-tvar.je-zde { fill: color-mix(in oklab, var(--h1) 88%, transparent); stroke-opacity: .9; }
+.mp-art .mp-tvar.je-obec { fill: color-mix(in oklab, var(--h3) 30%, transparent); stroke: var(--h3); stroke-opacity: .55; }
+.mp-art .mp-obrys { fill: none; stroke: var(--h1); stroke-width: 1.6; vector-effect: non-scaling-stroke; opacity: .85; }
+.mp-art .mp-kuzel-plocha { fill: color-mix(in oklab, var(--h1) 8%, transparent); }
+.mp-art .mp-kuzel-cara { fill: none; stroke: var(--h1); stroke-width: 1; stroke-dasharray: 3 3; opacity: .5; }
+.mp-art .mp-ramecek { fill: none; stroke: var(--h3); stroke-width: 1.3; opacity: .95; }
+.mp-art .mp-pocet { fill: var(--text-mute); font-size: 10px; font-weight: 750; letter-spacing: .03em; }
+.mp-art .mp-panel { animation: mp-vstup 620ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 150ms); }
+.mp-art .mp-kuzel { animation: mp-kuzel 620ms var(--ease-out) both; animation-delay: calc(320ms + var(--i, 0) * 150ms); }
+@keyframes mp-vstup { from { opacity: 0; transform: translateY(-8px) scale(.96); } }
+@keyframes mp-kuzel { from { opacity: 0; } }
 
 /* -------------------------------------------------- hook stránky hospodaření */
 .sc-hook-legend .sw.fi-kap { background: var(--text-mute); opacity: .85; }
@@ -815,8 +852,15 @@
   transform-box: fill-box; transform-origin: center; }
 @keyframes dt-rust { from { opacity: 0; transform: scale(.8); } }
 
-:root[data-motion="reduce"] .ph-art .ph-hreben,
-:root[data-motion="reduce"] .mp-art .mp-patro,
+:root[data-motion="reduce"] .ph-art .ph-krivka,
+:root[data-motion="reduce"] .ph-art .ph-cara,
+:root[data-motion="reduce"] .ph-art .ph-popisek,
+:root[data-motion="reduce"] .ph-art .ph-krivka .ph-start,
+:root[data-motion="reduce"] .ph-art .ph-krivka .ph-bod,
+:root[data-motion="reduce"] .sc-art .sc-sloupce,
+:root[data-motion="reduce"] .sc-art .sc-pricky,
+:root[data-motion="reduce"] .mp-art .mp-panel,
+:root[data-motion="reduce"] .mp-art .mp-kuzel,
 :root[data-motion="reduce"] .fi-art .fi-rok,
 :root[data-motion="reduce"] .dt-art .dt-kruh { animation: none; }
 
@@ -1005,6 +1049,51 @@
 .api-kod { margin: 0; padding: 14px 16px; border-radius: var(--r-md); background: var(--surface-2);
   border: 1px solid var(--border); overflow-x: auto; font-size: .8125rem; line-height: 1.7; }
 .api-kod code { background: none; padding: 0; color: var(--text-dim); white-space: pre; }
+
+/* ---------------------------------------------------------------- o nás
+   Stránka je dlouhá schválně: je to jediné místo, kde se vysvětluje, proč
+   se má někdo spolehnout na čísla, která jinde jen tiše ukazujeme. Čísla
+   v ní se tahají z `/api/v1`, ne z textu. */
+.ab-kroky { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.ab-kroky li { display: grid; gap: 3px; align-content: start; padding: 12px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
+.ab-krok-n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); font-size: .6875rem; font-weight: 800; }
+.ab-kroky strong { font-size: .875rem; }
+.ab-kroky .mute { font-size: .75rem; line-height: 1.45; }
+
+.ab-pro-koho { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.ab-komu { display: grid; gap: 5px; align-content: start; padding: 14px; border-radius: var(--r-md); border: 1px solid var(--border); }
+.ab-komu-ikona { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
+.ab-komu .mute { font-size: .8125rem; line-height: 1.5; }
+
+.ab-draha { display: grid; gap: 16px; }
+.ab-etapa { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.ab-rok { font-size: .6875rem; font-weight: 800; letter-spacing: .06em; padding: 4px 9px; border-radius: var(--r-pill);
+  background: var(--accent-soft); color: var(--accent-strong); white-space: nowrap; }
+.ab-etapa strong { font-size: .9375rem; }
+.ab-etapa p { margin: 3px 0 0; }
+
+.ab-cisla { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.ab-cislo { display: grid; gap: 2px; align-content: start; padding: 14px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
+.ab-cislo strong { font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ab-cislo span { font-size: .75rem; color: var(--text-mute); line-height: 1.4; }
+
+.ab-zavazky { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; }
+.ab-zavazek { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.ab-zavazek > svg { color: var(--accent); margin-top: 3px; }
+.ab-zavazek strong { display: block; font-size: .875rem; margin-bottom: 2px; }
+.ab-zavazek .mute { font-size: .8125rem; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .ab-kroky { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ab-cisla { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .ab-pro-koho, .ab-zavazky { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .ab-kroky { grid-template-columns: 1fr; }
+  .ab-cisla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 @media (pointer: coarse) {
   .icon-btn { width: 44px; height: 44px; }

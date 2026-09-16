@@ -9,8 +9,13 @@
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 
+/** Po téhle době se hlášení scvrkne na odznak. Celou větu je potřeba přečíst
+ *  jednou; dál už stačí, že je ten stav pořád vidět. */
+const DO_ODZNAKU = 6000;
+
 export function Offline() {
   const [venku, setVenku] = useState(() => typeof navigator !== "undefined" && navigator.onLine === false);
+  const [maly, setMaly] = useState(false);
 
   useEffect(() => {
     const pryc = () => setVenku(true);
@@ -33,11 +38,24 @@ export function Offline() {
     };
   }, []);
 
+  // Smrsknutí se počítá od chvíle, kdy spojení vypadlo, ne od načtení
+  // stránky: kdo přijde o signál po deseti minutách čtení, má nárok na celou
+  // větu stejně jako ten, komu vypadlo hned.
+  useEffect(() => {
+    if (!venku) { setMaly(false); return; }
+    const id = window.setTimeout(() => setMaly(true), DO_ODZNAKU);
+    return () => window.clearTimeout(id);
+  }, [venku]);
+
   if (!venku) return null;
   return (
-    <div className="offline-pruh" role="status">
-      <Icon name="alert" size={15} />
-      <span><strong>Bez spojení</strong> — čísla z poslední návštěvy.</span>
+    <div className={`offline-pruh glass ${maly ? "je-maly" : ""}`} role="status"
+      title="Aplikace čte poslední staženou odpověď. Čísla nemusí být aktuální."
+      onPointerEnter={() => setMaly(false)} onClick={() => setMaly((m) => !m)}>
+      <span className="off-sheen" aria-hidden="true" />
+      <Icon name="alert" size={13} />
+      <strong>Bez spojení</strong>
+      <span className="off-detail">čísla z poslední návštěvy</span>
     </div>
   );
 }

@@ -402,10 +402,24 @@ def methods() -> list[dict]:
 
 @router.get("/search")
 def global_search(q: str) -> dict:
+    """Jedno pole na všechno, co aplikace zná.
+
+    Hledá se i podle kódu, ne jen podle jména: kód RÚIAN je to, čím se území
+    klíčuje v API, v exportech i v cizích registrech, takže kdo ho má v ruce,
+    hledá jím. Bez toho se vlastní identifikátor aplikace nedal dohledat
+    v její vlastní vyhledávacím poli."""
     q = q.strip()
     if not q:
         return {"territories": [], "datasets": [], "methods": []}
-    terr = territories(q=q, limit=6)
-    hits = rag.search(q, k=12, types=("dataset", "method", "indicator"), use_vectors=False)
-    return {"territories": terr, "datasets": [h for h in hits if h["type"] == "dataset"][:6],
-            "methods": [h for h in hits if h["type"] in ("method", "indicator")][:5]}
+    terr = territories(q=q, limit=8)
+    if q.isdigit() and len(q) >= 3:
+        znam = {t["id"] for t in terr}
+        podle_kodu = [
+            _territory_row(t) for t in store.territories().values()
+            if str(t.code).startswith(q) and t.id not in znam
+        ]
+        podle_kodu.sort(key=lambda t: -(t["population"] or 0))
+        terr = (terr + podle_kodu)[:8]
+    hits = rag.search(q, k=20, types=("dataset", "method", "indicator"), use_vectors=False)
+    return {"territories": terr, "datasets": [h for h in hits if h["type"] == "dataset"][:8],
+            "methods": [h for h in hits if h["type"] in ("method", "indicator")][:6]}
