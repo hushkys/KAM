@@ -176,6 +176,58 @@ function useVjezdy(koren: RefObject<HTMLElement | null>) {
   }, [koren]);
 }
 
+/** Odlesk skla jde za kurzorem.
+ *
+ *  Jeden posluchač na celé stránce, ne na každém boxu: skleněných prvků je
+ *  tu přes třicet a třicet posluchačů pointeru je daň, kterou nic nevrátí.
+ *  Pozice se zapisuje do `--mx`/`--my` toho prvku, nad kterým kurzor je,
+ *  a jednou za snímek — `pointermove` chodí i stokrát za vteřinu a zapisovat
+ *  proměnnou při každé zprávě by překreslovalo víc, než kolik se stihne
+ *  zobrazit.
+ *
+ *  Na dotyku se nespouští vůbec: prst žádnou polohu „nad" prvkem nemá
+ *  a odlesk zůstane tam, kam ho posadil výchozí stav stylu. */
+function useOdlesk(koren: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = koren.current;
+    if (!el || tichy() || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let raf = 0;
+    let posledni: HTMLElement | null = null;
+    let cil: HTMLElement | null = null;
+    let x = 0, y = 0;
+
+    const zapis = () => {
+      raf = 0;
+      if (posledni && posledni !== cil) {
+        posledni.style.removeProperty("--mx");
+        posledni.style.removeProperty("--my");
+      }
+      posledni = cil;
+      if (!cil) return;
+      const r = cil.getBoundingClientRect();
+      cil.style.setProperty("--mx", `${(((x - r.left) / Math.max(1, r.width)) * 100).toFixed(1)}%`);
+      cil.style.setProperty("--my", `${(((y - r.top) / Math.max(1, r.height)) * 100).toFixed(1)}%`);
+    };
+
+    const pohyb = (e: PointerEvent) => {
+      x = e.clientX; y = e.clientY;
+      cil = (e.target as Element | null)?.closest?.<HTMLElement>(".sklo") ?? null;
+      if (!raf) raf = requestAnimationFrame(zapis);
+    };
+    const pryc = () => { cil = null; if (!raf) raf = requestAnimationFrame(zapis); };
+
+    el.addEventListener("pointermove", pohyb, { passive: true });
+    el.addEventListener("pointerleave", pryc, { passive: true });
+    return () => {
+      el.removeEventListener("pointermove", pohyb);
+      el.removeEventListener("pointerleave", pryc);
+      cancelAnimationFrame(raf);
+      posledni?.style.removeProperty("--mx");
+      posledni?.style.removeProperty("--my");
+    };
+  }, [koren]);
+}
+
 /** Číslo jako odometr: každá číslice je svislý pás 0–9, který se při vjezdu
  *  přetočí na svou hodnotu.
  *
@@ -238,6 +290,7 @@ export function Hook() {
   const src = useApi<Sources>("/sources");
   useScena(koren);
   useVjezdy(koren);
+  useOdlesk(koren);
 
   const d = ov.data;
   // Žebříček podle toho, kolik z kterého zdroje opravdu drží ověřených sad.
@@ -258,6 +311,18 @@ export function Hook() {
 
   return (
     <div className="hp" ref={koren}>
+      {/* Lom světla u hrany skla. `fractalNoise` je hladší než `turbulence` —
+          ten vypadá jako voda, tohle jako nerovnost ve skle. Rozmazání šumu
+          je tu proto, aby posun neskákal po pixelech; `scale` je malý
+          schválně, silnější lom už není sklo, ale rybí oko. */}
+      <svg className="goo-defs" aria-hidden="true" focusable="false">
+        <filter id="hp-lom" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves={2} seed={11} result="sum" />
+          <feGaussianBlur in="sum" stdDeviation="1.8" result="hladky" />
+          <feDisplacementMap in="SourceGraphic" in2="hladky" scale="16" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+
       {/* Pozadí: tři vrstvy, každá se veze jinou rychlostí. */}
       <div className="hp-pozadi" aria-hidden="true">
         <div className="hp-aurora" data-p><i className="hp-skvrna s1" /><i className="hp-skvrna s2" /><i className="hp-skvrna s3" /></div>
@@ -296,10 +361,10 @@ export function Hook() {
             {d ? ` Nad ${num(d.datasets.verified)} ověřenými otevřenými sadami a ${compact(d.model.observations)} měřenými hodnotami.` : ""}
           </p>
           <div className="hp-cta" data-vjezd>
-            <Link to="/prehled" className="hp-tlacitko je-hlavni">
+            <Link to="/prehled" className="hp-tlacitko je-hlavni sklo">
               <span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} />
             </Link>
-            <button className="hp-tlacitko" onClick={() => openAssistant()}>
+            <button className="hp-tlacitko sklo" onClick={() => openAssistant()}>
               <Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span>
             </button>
           </div>
@@ -327,7 +392,7 @@ export function Hook() {
         </div>
         <div className="hp-bento" data-p data-drift="P">
           {cisla.map((c, i) => (
-            <div className={`hp-dlazdice ${c.velky ? "je-velka" : ""}`} key={c.l} data-vjezd style={{ "--i": i } as CSSProperties}>
+            <div className={`hp-dlazdice sklo ${c.velky ? "je-velka" : ""}`} key={c.l} data-vjezd style={{ "--i": i } as CSSProperties}>
               <span className="hp-dlazdice-cislo"><Odometr hodnota={c.v} format={c.f} /></span>
               <span className="hp-dlazdice-popis">{c.l}</span>
               <span className="hp-dlazdice-sub">{c.s}</span>
@@ -373,7 +438,7 @@ export function Hook() {
           </div>
           <div className="hp-draha" data-draha>
             {VRSTVY.map((l, i) => (
-              <Link key={l.n} to={l.to} className="hp-vrstva" style={{ "--i": i } as CSSProperties}>
+              <Link key={l.n} to={l.to} className="hp-vrstva sklo" style={{ "--i": i } as CSSProperties}>
                 <span className="hp-vrstva-cislo">{l.n}</span>
                 <span className="hp-vrstva-ikona"><Icon name={l.ikona} size={22} /></span>
                 <h3>{l.title}</h3>
@@ -397,7 +462,7 @@ export function Hook() {
         </div>
         <div className="hp-zdroje-mrizka" data-vjezd>
           {zdroje.map((s) => (
-            <a key={s.id} href={s.portal_url || s.url} target="_blank" rel="noopener noreferrer" className="hp-zdroj">
+            <a key={s.id} href={s.portal_url || s.url} target="_blank" rel="noopener noreferrer" className="hp-zdroj sklo">
               <span className="hp-zdroj-pocet">{num(s.verified)}</span>
               <span className="hp-zdroj-jmeno">{s.name.replace("NKOD — ", "")}</span>
               <Icon name="arrow-up-right" size={15} />
@@ -424,13 +489,13 @@ export function Hook() {
 
       {/* ------------------------------------------------------------ 6 */}
       <section className="hp-akt hp-konec" data-p>
-        <div className="hp-konec-karta" data-vjezd>
+        <div className="hp-konec-karta sklo" data-vjezd>
           <span className="hp-konec-tecka" aria-hidden="true" />
           <h2 className="hp-nadpis">Tak kam to teda<br />směřuje?</h2>
           <p className="hp-podnadpis">Otevřete kraj na jedné obrazovce, nebo se rovnou zeptejte asistenta vlastními slovy.</p>
           <div className="hp-cta">
-            <Link to="/prehled" className="hp-tlacitko je-hlavni"><span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} /></Link>
-            <button className="hp-tlacitko" onClick={() => openAssistant()}><Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span></button>
+            <Link to="/prehled" className="hp-tlacitko je-hlavni sklo"><span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} /></Link>
+            <button className="hp-tlacitko sklo" onClick={() => openAssistant()}><Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span></button>
           </div>
         </div>
       </section>

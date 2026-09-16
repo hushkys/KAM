@@ -141,19 +141,16 @@
   position: relative;
   display: inline-flex; align-items: center; gap: 10px;
   height: 54px; padding: 0 26px; border-radius: var(--r-pill);
-  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 42%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--glass-hair);
   color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 700; letter-spacing: -.01em;
   cursor: pointer; text-decoration: none !important; white-space: nowrap;
-  transition: background-color var(--t-sm), border-color var(--t-sm), color var(--t-sm), transform var(--t-md) var(--ease-spring);
 }
-.hp-tlacitko:hover { background: color-mix(in oklab, var(--surface) 72%, transparent); border-color: var(--border-strong); }
-.hp-tlacitko:active { transform: scale(.975); }
-.hp-tlacitko svg { flex: none; }
-.hp-tlacitko.je-hlavni { background: var(--accent); border-color: transparent; color: var(--accent-fg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hp-tlacitko:hover { border-color: var(--border-strong); }
+.hp-tlacitko svg { flex: none; position: relative; z-index: 1; }
+.hp-tlacitko span { position: relative; z-index: 1; }
+.hp-tlacitko.je-hlavni { border-color: transparent; color: var(--accent-fg); }
 :root[data-theme="dark"] .hp-tlacitko.je-hlavni { color: #0b1410; }
 .hp-tlacitko.je-hlavni:hover { background: var(--accent-strong); border-color: transparent; }
-:root[data-transparency="off"] .hp-tlacitko { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-transparency="off"] .hp-tlacitko.je-hlavni { background: var(--accent); }
 
 /* ------------------------------------------------------------ vizuál kraje
@@ -221,13 +218,11 @@
 .hp-dlazdice {
   grid-column: span 2; display: grid; align-content: start; gap: 4px;
   padding: clamp(18px, 2vw, 26px); border-radius: var(--r-lg);
-  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 52%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--glass-hair);
   transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring);
 }
 .hp-dlazdice:hover { border-color: var(--accent-line); transform: translateY(-3px); }
 .hp-dlazdice.je-velka { grid-column: span 3; }
-:root[data-transparency="off"] .hp-dlazdice { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .hp-dlazdice-cislo { font-family: var(--font-nadpis); font-optical-sizing: auto; font-variant-numeric: tabular-nums;
   font-size: clamp(2rem, 1.3rem + 2.4vw, 3.2rem); font-weight: 700; line-height: 1; letter-spacing: -.04em; }
 .hp-dlazdice.je-velka .hp-dlazdice-cislo { font-size: clamp(2.6rem, 1.6rem + 3.4vw, 4.4rem); }
@@ -254,8 +249,7 @@
 .hp-vrstva {
   position: relative; flex: 0 0 clamp(260px, 30vw, 380px); display: grid; align-content: start; gap: 10px;
   padding: clamp(20px, 2.2vw, 30px); border-radius: var(--r-xl);
-  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 55%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--glass-hair);
   color: var(--text); text-decoration: none !important;
   transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring);
 }
@@ -321,12 +315,10 @@
 .hp-zdroj {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 14px;
   padding: 16px 18px; border-radius: var(--r-lg);
-  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 52%, transparent);
+  border: 1px solid var(--glass-hair);
   color: var(--text); text-decoration: none !important;
-  transition: border-color var(--t-sm), background var(--t-sm), transform var(--t-md) var(--ease-spring);
+  transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring);
 }
-:root[data-transparency="on"] .hp-zdroj { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
-:root[data-transparency="off"] .hp-zdroj { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .hp-zdroj:hover { border-color: var(--accent-line); transform: translateY(-2px); }
 .hp-zdroj-pocet { font-family: var(--font-nadpis); font-optical-sizing: auto; font-variant-numeric: tabular-nums;
   font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; color: var(--accent); min-width: 2.2ch; }
@@ -356,9 +348,7 @@
 .hp-konec { padding-bottom: clamp(40px, 8vh, 90px); }
 .hp-konec-karta { position: relative; overflow: hidden; text-align: center; display: grid; justify-items: center;
   padding: clamp(46px, 9vh, 100px) clamp(24px, 5vw, 70px); border-radius: var(--r-xl);
-  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 50%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); }
-:root[data-transparency="off"] .hp-konec-karta { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  border: 1px solid var(--glass-hair); }
 .hp-konec-tecka { position: absolute; width: 380px; height: 380px; border-radius: 50%; top: -180px; pointer-events: none;
   background: radial-gradient(circle, color-mix(in oklab, var(--lime) 34%, transparent), transparent 62%); filter: blur(24px); }
 .hp-konec .hp-nadpis { position: relative; font-size: clamp(2.1rem, 1.4rem + 3.4vw, 4.2rem); }
@@ -493,6 +483,116 @@
 .hp[data-akt="tym"] .hp-nav-odkaz[href="#tym"] {
   color: var(--text); background: color-mix(in oklab, var(--accent) 16%, transparent);
 }
+
+/* ========================================================== tekuté sklo
+   Boxy na úvodní stránce nejsou jen průhledné. Sklo se pozná podle tří věcí
+   a každou tu dělá jedna vrstva:
+
+   1. **Rozostření a sytost** (`backdrop-filter` na samotném prvku) — základ,
+      který umí každý prohlížeč.
+   2. **Lom u hrany** (`::before`). Skutečné sklo ohýbá světlo nejvíc tam, kde
+      je nejtlustší — u okraje. Dělá to `feDisplacementMap` nad šumem, který
+      posune pozadí o pár pixelů; maska z dvojice vrstev složených přes
+      `exclude` nechá z celého prvku jen prstenec podle jeho vlastního
+      zaoblení. Posun je **jedno čtení pixelu**, kdežto rozostření průměruje
+      okolí — proto je tahle vrstva levnější než blur, i když vypadá dražší.
+      Vlastní deklarace schválně: `backdrop-filter: url(…)` umí jen Chromium
+      a kdyby stála ve stejném řádku jako blur, zahodí Safari celý řádek
+      a sklo by zmizelo úplně.
+   3. **Odlesk** (`::after`), který jde za kurzorem. `soft-light` znamená, že
+      světlo prosvítá skrz, ne že leží navrchu.
+
+   Na okraji ještě sedí vlasový lem: nahoře světlý, dole tmavší. Bez něj je
+   to průhledný obdélník; s ním je to předmět, který někde začíná a končí. */
+.sklo {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, #fff 7%, transparent), transparent 46%),
+    color-mix(in oklab, var(--surface) 46%, transparent);
+  box-shadow:
+    0 18px 40px -26px rgba(0, 0, 0, .75),
+    inset 0 1px 0 color-mix(in oklab, #fff 34%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, #fff 7%, transparent),
+    inset 0 0 26px -14px color-mix(in oklab, #fff 40%, transparent);
+}
+:root[data-transparency="on"] .sklo {
+  -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.06);
+  backdrop-filter: blur(18px) saturate(190%) brightness(1.06);
+}
+
+/* Prstenec lomu. `padding` je jeho tloušťka; maska z dvou vrstev složených
+   přes `exclude` z něj udělá obrys, který sedí na `border-radius` prvku. */
+:root[data-transparency="on"] .sklo::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  padding: 14px; pointer-events: none; z-index: 0;
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+  mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+/* Lom je z celého skla jediná vrstva, která něco stojí: vlastní filtr nad
+   pozadím. Na dvaadvaceti prvcích naráz to bylo 20 ms na snímek navíc (54 ms
+   proti 34 ms), na hrstce se to ztratí v šumu měření. Drží ho proto jen to,
+   na co se člověk dívá — dlaždice s čísly a tlačítka — a pak cokoli, nad čím
+   je zrovna kurzor. To druhé je zároveň ta „tekutost": sklo na dotek ožije. */
+@supports (backdrop-filter: url(#x)) {
+  :root[data-transparency="on"][data-motion="full"] .hp-dlazdice.sklo::before,
+  :root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo::before,
+  :root[data-transparency="on"][data-motion="full"] .sklo:hover::before,
+  :root[data-transparency="on"][data-motion="full"] .sklo:focus-visible::before {
+    backdrop-filter: url(#hp-lom);
+  }
+}
+
+/* Odlesk. Bez kurzoru sedí nahoře uprostřed, takže sklo nasvícené vypadá
+   i na dotyku a ve snímcích, kde žádná myš není. */
+.sklo::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(
+    140% 120% at var(--mx, 50%) var(--my, -10%),
+    color-mix(in oklab, #fff 26%, transparent),
+    color-mix(in oklab, #fff 6%, transparent) 38%,
+    transparent 64%);
+  mix-blend-mode: soft-light;
+  transition: opacity var(--t-md) var(--ease-out);
+}
+/* Obsah musí zůstat nad oběma vrstvami; jinak by odlesk ležel přes text. */
+.sklo > * { position: relative; z-index: 1; }
+
+:root[data-transparency="off"] .sklo {
+  background: var(--surface);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, .55);
+}
+:root[data-transparency="off"] .sklo::before,
+:root[data-transparency="off"] .sklo::after { display: none; }
+
+/* Tekuté tlačítko: sklo se pod prstem nadechne a při stisku splaskne.
+   Odlesk jde za kurzorem, takže se pilulka tváří jako vypouklá čočka. */
+.hp-tlacitko.sklo { transition: transform var(--t-md) var(--ease-spring), box-shadow var(--t-md) var(--ease-out), background var(--t-sm); }
+.hp-tlacitko.sklo:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow:
+    0 22px 46px -24px rgba(0, 0, 0, .8),
+    inset 0 1px 0 color-mix(in oklab, #fff 52%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, #fff 12%, transparent),
+    inset 0 0 30px -12px color-mix(in oklab, #fff 55%, transparent);
+}
+.hp-tlacitko.sklo:active { transform: translateY(0) scale(.975); }
+.hp-tlacitko.sklo:hover::after { opacity: 1; }
+
+/* Hlavní tlačítko je plné, ne průhledné — lom by pod ním neměl co ohýbat.
+   Odlesk mu ale zůstane, aby se od skleněných sousedů neodtrhlo. */
+.hp-tlacitko.je-hlavni.sklo { background: var(--accent); }
+.hp-tlacitko.je-hlavni.sklo::before { display: none; }
+.hp-tlacitko.je-hlavni.sklo::after { mix-blend-mode: overlay; }
+
+:root[data-motion="reduce"] .sklo,
+:root[data-motion="reduce"] .sklo::after { transition: none; }
 
 /* --------------------------------------------------------- vypnutý pohyb */
 :root[data-motion="reduce"] .hp-skvrna,
