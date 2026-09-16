@@ -146,8 +146,9 @@ export function LineChart({ series, height = 260, unit = "", nowYear, refLine, f
         const rows = series.filter((s) => !s.faint).map((s) => ({ s, p: s.points.find((q) => q.year === hover) })).filter((r) => r.p && r.p.value !== null);
         if (!rows.length) return null;
         const minY = Math.min(...rows.map((r) => Y(r.p!.value!)));
+        const { styl } = umistiTip(X(hover), minY, width);
         return (
-          <div className="chart-tip glass" style={{ left: `${(X(hover) / width) * 100}%`, top: minY }}>
+          <div className="chart-tip glass" style={styl}>
             <div className="tip-year">{hover}</div>
             {rows.map(({ s, p }) => (
               <div className="tip-row" key={s.key}><span><i style={{ background: s.color }} /> {s.label}</span><strong className="num">{fmt(p!.value!)}{unit && unit !== "%" ? "" : unit}</strong></div>
@@ -328,6 +329,28 @@ export function BarList({ items, format, max, color }: { items: { label: ReactNo
   );
 }
 
+/** Kam posadit bublinu, aby zůstala v grafu.
+ *
+ *  Kreslila se natvrdo nad bodem a na střed. U vysoké hodnoty tím vyjela nad
+ *  horní hranu grafu — překryla popisky osy i nadpis karty a čísla, kvůli
+ *  kterým si člověk najel, zmizela pod ní. Rozhoduje se proto podle místa:
+ *  nahoře málo místa → bublina jde pod bod; blízko kraje → přisadí se k němu
+ *  místo centrování. Bez měření velikosti bubliny, aby to nestálo překreslení
+ *  navíc; prahy vycházejí z její největší rozumné velikosti (tři řádky). */
+const TIP_VYSKA = 92;
+const TIP_POLOVINA = 90;
+
+function umistiTip(x: number, y: number, sirka: number): { styl: React.CSSProperties; strana: string } {
+  const pod = y < TIP_VYSKA;
+  const strana = x < TIP_POLOVINA ? "vlevo" : x > sirka - TIP_POLOVINA ? "vpravo" : "stred";
+  const posunX = strana === "vlevo" ? "0" : strana === "vpravo" ? "-100%" : "-50%";
+  const posunY = pod ? "12px" : "calc(-100% - 12px)";
+  return {
+    styl: { left: `${(x / Math.max(1, sirka)) * 100}%`, top: y, transform: `translate(${posunX}, ${posunY})` },
+    strana,
+  };
+}
+
 /** Vertical bars by year (e.g. observations per year). */
 export function Columns({ items, height = 140, format, ariaLabel }: { items: { label: string; value: number }[]; height?: number; format?: (v: number) => string; ariaLabel: string }) {
   const [ref, width] = useWidth<HTMLDivElement>();
@@ -350,7 +373,7 @@ export function Columns({ items, height = 140, format, ariaLabel }: { items: { l
         })}
       </svg>
       {hover !== null && (
-        <div className="chart-tip glass" style={{ left: `${((hover * (bw + gap) + bw / 2) / width) * 100}%`, top: height - (items[hover].value / m) * height }}>
+        <div className="chart-tip glass" style={umistiTip(hover * (bw + gap) + bw / 2, height - (items[hover].value / m) * height, width).styl}>
           <div className="tip-year">{items[hover].label}</div>
           <strong className="num">{f(items[hover].value)}</strong>
         </div>

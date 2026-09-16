@@ -1,6 +1,7 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { AssistantDrawer } from "./components/Assistant";
 import { Offline } from "./components/Offline";
+import { SkloFiltry, useOdlesk } from "./components/Sklo";
 import { openAssistant } from "./components/assistantBus";
 import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
@@ -30,6 +31,7 @@ import { Stats } from "./pages/Stats";
 import { Territories } from "./pages/Territories";
 
 export function App() {
+  const shell = useRef<HTMLDivElement>(null);
   const loc = useLocation();
   const m = match(loc.path);
   const bare = m.name === "hook";
@@ -53,6 +55,8 @@ export function App() {
     };
     requestAnimationFrame(zkus);
   }, []);
+
+  useOdlesk(shell);
 
   useEffect(() => {
     const open = () => openAssistant();
@@ -83,7 +87,8 @@ export function App() {
   }
 
   return (
-    <div className="shell">
+    <div className="shell" ref={shell}>
+      <SkloFiltry />
       {!bare && <Navbar title={TITLES[m.name] ?? ""} />}
       <main id="main" tabIndex={-1} className={`page page-enter ${bare ? "is-bare" : ""}`} data-page={m.name} key={m.name === "profil" ? loc.path : m.name}>
         {page}

@@ -149,7 +149,7 @@ export const OBLASTI: { key: string; name: string; lead: Clovek; lide: Clovek[] 
     key: "brand",
     name: "Brand, produkt a veřejná komunikace",
     lead: { who: "josef", name: "Josef Efler", role: "Branding, brandstorming, marketing a legal", school: "UTB · FLKŘ · Řízení rizik ve veřejné správě", oblast: "Brand a produkt", vede: true },
-    lide: [{ who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", chranice: true, oblast: "Dozor nad aplikací" }],
+    lide: [{ who: "damian", name: "Damián Roháček", role: "Backend developer", school: "UHK · FIM · Informační a síťová bezpečnost", chranice: true, oblast: "Tester a feedback" }],
   },
 ];
 

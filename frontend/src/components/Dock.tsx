@@ -158,7 +158,7 @@ export function Dock() {
           <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" />
         </filter>
       </svg>
-      <nav className="dock glass" aria-label="Hlavní navigace" ref={ind.nav}>
+      <nav className="dock sklo" aria-label="Hlavní navigace" ref={ind.nav}>
         <span className="dock-morph" data-empty="true" aria-hidden="true">
           <span className="dock-pill dock-trail" ref={ind.trail} />
           <span className="dock-pill" ref={ind.pill} />
