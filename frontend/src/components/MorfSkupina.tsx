@@ -70,6 +70,9 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
     // Napnout se musí ve směru cesty. Na širokém okně jsou tlačítka vedle
     // sebe, na úzkém pod sebou — a vodorovné napnutí při svislé cestě je
     // přesně ta placatá elipsa, která tam nemá co dělat.
+    // Svisle = tlačítka jsou pod sebou (úzké okno). Tam se goo nezapíná:
+    // dvě pilulky přes celou šířku se slijí do jedné velké elipsy kolem obou,
+    // což není krk, ale kaňka. Podsvícení prostě dojede.
     const svisle = dy > dx;
     const tah = Math.min(1.28, 1 + (dx + dy) / 460);
     const napni = (v: number) => (svisle ? `scaleY(${v})` : `scaleX(${v})`);
@@ -78,7 +81,7 @@ export function MorfSkupina({ children, className = "" }: { children: ReactNode;
       { transform: `translate(${(prev.x + next.x) / 2}px, ${(prev.y + next.y) / 2}px) ${napni(roztah)}`, width: `${(prev.w + next.w) / 2}px`, offset: 0.46 },
       { transform: `translate(${next.x}px, ${next.y}px) ${napni(1)}`, width: `${next.w}px`, height: `${next.h}px` },
     ];
-    vrstva.dataset.hybe = "ano";
+    vrstva.dataset.hybe = svisle ? "ne" : "ano";
     // Vypnutí filtru visí na hodinách, ne na `finished`: na skryté záložce se
     // animace nehýbou, slib nikdy nedoběhne a rozmazání by po návratu zůstalo
     // viset. Čas doběhu je známý, tak ať to rozhodne on.

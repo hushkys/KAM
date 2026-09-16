@@ -303,11 +303,23 @@
    Je to paralaxa napříč, ne animace: řídí ji `--p`, takže to jde oběma směry
    a při zastavení to stojí. Jen na myši a jen na širokém okně — na telefonu
    by se to pralo s gestem pro přepínání stránek a stálo výkon. */
-@media (min-width: 1001px) and (pointer: fine) {
-  [data-drift] { transform: translate3d(calc((var(--p, .5) - .5) * var(--drift, 130px)), 0, 0); }
-  [data-drift="P"] { --drift: -130px; }
-  .hp-bento[data-drift] { --drift: -70px; }
-  .hp-tech[data-drift] { --drift: 90px; }
+[data-drift] { transform: translate3d(calc((var(--p, .5) - .5) * var(--drift, 130px)), 0, 0); }
+[data-drift="P"] { --drift: -130px; }
+.hp-bento[data-drift] { --drift: -70px; }
+.hp-tech[data-drift] { --drift: 90px; }
+/* Na telefonu se paralaxa obrátí do svislice. Do strany tam není kam uhnout —
+   blok přes celou šířku by se posunul za okraj a `overflow-x: clip` by ho
+   uřízl. Svisle je místa dost a hloubka z toho je stejná: každá vrstva se
+   veze jinou rychlostí, než jakou roluje stránka. */
+@media (max-width: 1000px) {
+  [data-drift] { transform: translate3d(0, calc((var(--p, .5) - .5) * var(--drift-y, -34px)), 0); }
+  [data-drift="P"] { --drift-y: 34px; }
+  .hp-bento[data-drift] { --drift-y: 22px; }
+  .hp-tech[data-drift] { --drift-y: -20px; }
+  /* Karty dějství se na dotyku posouvají prstem, ale panely a dlaždice se
+     vezou dál — bez toho by mobil vypadal jako plochý dokument. */
+  .hp-hero-vizual { transform: translate3d(0, calc((1 - var(--p, 1)) * 26px), 0); }
+  .hp-dlazdice { transform: translate3d(0, calc((.5 - var(--p, .5)) * 18px), 0); }
 }
 
 /* ---------------------------------------------------------------- zdroje
@@ -329,8 +341,22 @@
 .hp-tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
 .hp-tech-stitek { padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-dim); font-size: .8125rem; font-weight: 600; }
 
-/* ------------------------------------------------------------------ tým */
-.hp-tym .team { margin-top: 8px; }
+/* ------------------------------------------------------------------ tým
+   Řádky se vezou: sudé o kousek zleva, liché zprava, a portrét jde napřed
+   před textem. Je to táž paralaxa jako u ostatních bloků, jen po řádcích —
+   seznam díky tomu při rolování dýchá místo aby stál. */
+.hp-tym .tym { margin-top: 8px; }
+@media (min-width: 1001px) {
+  .hp-tym .tym-radek { transform: translate3d(calc((var(--p, .5) - .5) * var(--tym-drift, 54px)), 0, 0); }
+  .hp-tym .tym-radek:nth-child(even) { --tym-drift: -54px; }
+  .hp-tym .tym-portret { transform: translate3d(calc((var(--p, .5) - .5) * -26px), calc((var(--p, .5) - .5) * -14px), 0); }
+}
+/* Na telefonu svisle: do strany není kam uhnout. */
+@media (max-width: 1000px) {
+  .hp-tym .tym-radek { transform: translate3d(0, calc((var(--p, .5) - .5) * -22px), 0); }
+  .hp-tym .tym-radek:nth-child(even) { transform: translate3d(0, calc((var(--p, .5) - .5) * -10px), 0); }
+  .hp-tym .tym-portret { transform: translate3d(0, calc((var(--p, .5) - .5) * -14px), 0); }
+}
 
 /* ---------------------------------------------------------------- konec */
 .hp-konec { padding-bottom: clamp(40px, 8vh, 90px); }
@@ -402,6 +428,9 @@
 :root[data-motion="reduce"] .hp-aurora,
 :root[data-motion="reduce"] .hp-vrstevnice,
 :root[data-motion="reduce"] .hp-hero-vizual,
+:root[data-motion="reduce"] .hp-tym .tym-radek,
+:root[data-motion="reduce"] .hp-tym .tym-portret,
+:root[data-motion="reduce"] .hp-dlazdice,
 :root[data-motion="reduce"] [data-drift],
 :root[data-motion="reduce"] .hp-cesta,
 :root[data-motion="reduce"] .hp-draha { transform: none; }
@@ -411,12 +440,8 @@
 :root[data-motion="reduce"] .hp-cesta { overflow-x: auto; }
 :root[data-motion="reduce"] .hp-cesta-linka { display: none; }
 
-/* Tým na úvodní stránce je ze stejného materiálu jako zbytek scény. */
-.hp .person, .hp .lead-card {
-  border-color: var(--glass-hair);
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
-}
-.hp .lead-card { background: linear-gradient(135deg, var(--accent-soft), transparent 70%), color-mix(in oklab, var(--surface) 55%, transparent); }
-:root[data-transparency="off"] .hp .person,
-:root[data-transparency="off"] .hp .lead-card { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Seznam týmu na úvodní stránce: linky mezi řádky jsou nad barevným pozadím
+   moc tvrdé, tak povolí, a podsvícení řádku je zase o něco výraznější. */
+.hp-tym .tym-radek { border-color: var(--glass-hair); }
+.hp-tym .tym-radek::before { inset: 4px -18px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 13%, transparent), transparent 66%); }
+.hp-tym .tym-oblast { border-color: var(--glass-hair); background: color-mix(in oklab, var(--surface) 40%, transparent); }

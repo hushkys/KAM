@@ -225,31 +225,54 @@
 .picker-item[aria-selected="true"] strong { color: var(--accent); }
 
 /* --------------------------------------------------------------- tým
-   Používá ho úvodní stránka i stránka O nás; vlastní vzhled úvodní
-   stránky je v `hook.css`. */
-/* Dva sloupce = dvě oblasti. Pod 860 px se skládají pod sebe celé, aby
-   vedoucí nezůstal odtržený od lidí, které vede. */
-.team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
-.team-oblast { display: grid; gap: 14px; min-width: 0; }
-.oblast-head { display: grid; gap: 2px; min-width: 0; }
-.oblast-eyebrow { font-size: .6875rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--text-mute); }
-.oblast-head h3 { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
-@media (max-width: 860px) { .team { grid-template-columns: minmax(0, 1fr); } }
-.lead-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; padding: 22px 24px; border-radius: var(--r-xl); border: 1px solid var(--accent-line); background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--surface); min-width: 0; }
-.lead-card svg.avatar { width: 112px; height: 112px; }
-.lead-text { display: grid; gap: 4px; min-width: 0; }
-.lead-text strong { font-size: 1.375rem; letter-spacing: -.02em; }
-.lead-text .role { color: var(--text); font-weight: 650; }
-.lead-text .school { color: var(--text-mute); font-size: .875rem; }
-.lead-badge { justify-self: start; font-size: .6875rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
-@media (max-width: 520px) { .lead-card { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
-.person { position: relative; display: grid; gap: 4px; padding: 20px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); min-width: 0; }
-/* Odznak sedí v rohu karty, ne na portrétu — portréty drží jednotný tvar. */
-.person-odznak { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
-.person svg.avatar { width: 96px; height: 96px; margin-bottom: 10px; }
-.person strong { font-size: 1.0625rem; }
-.person .role { color: var(--accent); font-weight: 650; font-size: .875rem; }
-.person .school { color: var(--text-mute); font-size: .8125rem; }
+   Jeden seznam, ne mřížka karet. Portrét vlevo, jméno a čím se zabývá
+   uprostřed, oblast vpravo — a mezi řádky jen linka. Používá ho úvodní
+   stránka i stránka O nás; paralaxa řádků je v `hook.css`. */
+.tym { display: grid; }
+.tym-radek {
+  position: relative; display: grid; align-items: center; gap: 4px 22px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 18px 6px; border-top: 1px solid var(--border);
+}
+.tym-radek:first-child { border-top: 0; }
+/* Podsvícení řádku je vlastní vrstva, ne `background`: přes celou šířku by
+   se prala s linkou nad ním a nešla by zaoblit dovnitř. */
+.tym-radek::before {
+  content: ""; position: absolute; inset: 4px -14px; border-radius: var(--r-lg);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 9%, transparent), transparent 62%);
+  opacity: 0; transition: opacity var(--t-md) var(--ease-out); pointer-events: none;
+}
+.tym-radek:hover::before { opacity: 1; }
+.tym-portret { position: relative; display: block; flex: none; }
+.tym-portret .avatar {
+  display: block; width: clamp(72px, 9vw, 104px); height: auto; border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border-strong), 0 18px 34px -20px rgba(0, 0, 0, .8);
+  transition: transform var(--t-md) var(--ease-spring), box-shadow var(--t-md) var(--ease-out);
+}
+.tym-radek:hover .tym-portret .avatar {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 0 0 2px var(--accent-line), 0 22px 40px -20px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+.tym-odznak {
+  position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+}
+.tym-text { display: grid; gap: 2px; min-width: 0; }
+.tym-jmeno { font-family: var(--font-nadpis); font-optical-sizing: auto; font-size: clamp(1.15rem, 1rem + .7vw, 1.6rem); font-weight: 600; letter-spacing: -.02em; }
+.tym-role { color: var(--accent); font-weight: 650; font-size: .875rem; }
+.tym-skola { color: var(--text-mute); font-size: .8125rem; }
+.tym-oblast {
+  justify-self: end; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 7px 13px; border-radius: var(--r-pill); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: .75rem; font-weight: 650;
+}
+.tym-oblast i { font-style: normal; font-size: .625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent); }
+@media (max-width: 760px) {
+  .tym-radek { grid-template-columns: auto minmax(0, 1fr); gap: 3px 16px; padding: 16px 4px; }
+  .tym-oblast { grid-column: 2; justify-self: start; margin-top: 8px; }
+  .tym-radek::before { inset: 2px -10px; }
+}
 
 /* ------------------------------------------------------------- overview */
 .kpi { padding: 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); min-width: 0; display: grid; gap: 4px; }

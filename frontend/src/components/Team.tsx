@@ -1,42 +1,35 @@
-// Tým po oblastech: každý sloupec je jedna oblast, nahoře její vedoucí,
-// pod ním lidé, kteří v ní pracují. Sloupec je jedna oblast, ne jedna osoba —
-// proto se na úzké obrazovce celý přesune pod druhý a nerozpadne se.
+// Tým jako jeden seznam, ne čtyři krabice.
+//
+// Čtyři karty vedle sebe vypadaly jako ceník: každý ve svém rámečku, všichni
+// stejně daleko od sebe, žádné pořadí. Tým ale pořadí má — dvě oblasti a
+// v každé někdo, kdo ji vede — a to se v mřížce ztratí. Řádek pod řádkem to
+// řekne samo: portrét, jméno, čím se zabývá, a vpravo oblast.
+//
+// Řádky nesou `data-p`, takže se na úvodní stránce vezou s paralaxou (styl
+// v `hook.css`); jinde je to obyčejný seznam.
 
 import type { CSSProperties } from "react";
-import { Avatar, Chranice, OBLASTI, type Clovek } from "./Avatars";
-
-function Osoba({ p, i }: { p: Clovek; i: number }) {
-  return (
-    <article className="person reveal" style={{ "--i": i } as CSSProperties}>
-      {p.chranice && <span className="person-odznak" title="Chrániče na kolena — týmový vtip"><Chranice /></span>}
-      <Avatar who={p.who} title={p.name} />
-      <strong>{p.name}</strong>
-      <span className="role">{p.role}</span>
-      <span className="school">{p.school}</span>
-    </article>
-  );
-}
+import { Avatar, Chranice, TEAM } from "./Avatars";
 
 export function Team() {
   return (
-    <div className="team">
-      {OBLASTI.map((o, oi) => (
-        <section className="team-oblast" key={o.key}>
-          <header className="oblast-head">
-            <span className="oblast-eyebrow">Vedení oblasti</span>
-            <h3>{o.name}</h3>
-          </header>
-          <article className="lead-card reveal" style={{ "--i": oi } as CSSProperties}>
-            <Avatar who={o.lead.who} title={o.lead.name} size={112} />
-            <div className="lead-text">
-              <span className="lead-badge">Vedoucí · {o.name}</span>
-              <strong>{o.lead.name}</strong>
-              <span className="role">{o.lead.role}</span>
-              <span className="school">{o.lead.school}</span>
-            </div>
-          </article>
-          {o.lide.map((p, i) => <Osoba key={p.name} p={p} i={oi + i + 2} />)}
-        </section>
+    <div className="tym">
+      {TEAM.map((p, i) => (
+        <article className="tym-radek" key={p.name} data-p style={{ "--i": i } as CSSProperties}>
+          <span className="tym-portret">
+            <Avatar who={p.who} size={104} title={p.name} />
+            {p.chranice && <span className="tym-odznak" title="Chrániče na kolena — týmový vtip"><Chranice size={22} /></span>}
+          </span>
+          <div className="tym-text">
+            <strong className="tym-jmeno">{p.name}</strong>
+            <span className="tym-role">{p.role}</span>
+            <span className="tym-skola">{p.school}</span>
+          </div>
+          <span className="tym-oblast">
+            {p.vede && <i>vede</i>}
+            {p.oblast}
+          </span>
+        </article>
       ))}
     </div>
   );
