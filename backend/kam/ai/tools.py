@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from ..analytics import forecast, simulate, store
+from ..analytics import forecast, plany, simulate, store
 from ..analytics.profile import PROFILE_CODES, card, reference
 from ..analytics.risks import assess
 from ..indicators import PILLARS
@@ -105,6 +105,26 @@ def brief(tid: str, compact: bool = False) -> tuple[str, list[dict]]:
     if o.get("milestones"):
         ms = "; ".join(f"{m['year']}: {_fmt(m['population'], 0)} ({_fmt(m['lower'], 0)}–{_fmt(m['upper'], 0)}), podíl 65+ {_fmt(m['share_65'])} %" for m in o["milestones"])
         lines.append(f"MODEL (výhled, pravděpodobný scénář, 90% interval): {ms}.")
+    dok = plany.uzemi(tid)
+    if dok:
+        radky = []
+        for r in dok["dokumenty"]:
+            # Lokálnímu modelu se posílá jen to, co obec opravdu má: čtyři
+            # řádky, z nichž dva říkají „chybí", jsou v úsporném podkladu
+            # draho placená informace (prefill je na Gemmě to pomalé).
+            if compact and r["stav"] == "chybi":
+                continue
+            kdy = f", {r['od']}–{r['do']}" if r.get("od") and r.get("do") else (f", {_den(r.get('datum'))}" if r.get("datum") else "")
+            radky.append(f"{r['povinnost']}: {r['nazev']}{kdy} [{STAV_SLOVEM.get(r['stav'], r['stav'])}]")
+            if r.get("url"):
+                sources[r["url"]] = {"title": r["nazev"], "url": r["url"], "type": r["zdroj"]}
+        if radky:
+            lines.append("DOKUMENTY (co má obec zveřejněné): " + " | ".join(radky))
+            # Bez téhle věty by model z „období uplynulo ze 100 %" udělal
+            # „plán je splněný". Splnění nikdo strojově nezveřejňuje.
+            lines.append("POZOR: uplynulý čas období není splněný plán — kolik z plánu je "
+                         "hotové, nezveřejňuje strojově čitelně žádný registr a KAM to netvrdí.")
+
     facts = store.facts(tid)
     if facts.get("posta"):
         lines.append(f"FAKT: Pošta: {facts['posta']['value']} (Data KHK).")
@@ -112,6 +132,20 @@ def brief(tid: str, compact: bool = False) -> tuple[str, list[dict]]:
         lines.append(f"FAKT: Kanalizace — hodnota v datech kraje: {facts['kanalizace']['value']} (Data KHK).")
     return "\n".join(lines), list(sources.values())
 
+
+def _den(iso: str | None) -> str:
+    """`2025-10-24` → `24. 10. 2025`. Model dostává datum tak, jak ho napíše
+    do odpovědi; ISO tvar by z podkladu opsal doslova."""
+    if not iso or len(iso) < 10:
+        return iso or ""
+    r, m, d = iso[:4], iso[5:7], iso[8:10]
+    return f"{int(d)}. {int(m)}. {r}"
+
+
+#: Stavy dokumentů slovem — model dostává text, ne klíče aplikace.
+STAV_SLOVEM = {"plati": "platí", "konci": "poslední rok platnosti",
+               "prosly": "období doběhlo", "bez_obdobi": "bez uvedeného období",
+               "chybi": "chybí, není v registru"}
 
 NUM = r"(\d[\d\s]{0,6})"
 

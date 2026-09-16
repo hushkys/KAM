@@ -112,7 +112,7 @@ def prikaz_info(args) -> None:
     print(d["popis"] + "\n")
     print(f"  kraj        {r['kraj']}")
     print(f"  roky        {r['roky'][0]}–{r['roky'][1]}" if r.get("roky") else "")
-    for k in ("hodnoty", "ukazatele", "uzemi", "zarizeni", "fakta", "katalog"):
+    for k in ("hodnoty", "ukazatele", "uzemi", "zarizeni", "fakta", "katalog", "dokumenty"):
         print(f"  {k:<11} {r.get(k, 0):,}".replace(",", " "))
     print("\nCesty:")
     for jmeno, adresa in d["cesty"].items():
@@ -156,6 +156,12 @@ def prikaz_katalog(args) -> None:
     _vypis(d, ["nazev", "poskytovatel", "oblast", "formaty", "nacteno_do_modelu"], args)
 
 
+def prikaz_dokumenty(args) -> None:
+    d = _zavolej(args.server, "/dokumenty", {
+        "uzemi": args.uzemi, "druh": args.druh, "stav": args.stav, "od": args.od, "do": args.do})
+    _vypis(d, ["uzemi_nazev", "druh", "nazev", "od", "do", "stav", "odkaz"], args)
+
+
 def prikaz_zdroje(args) -> None:
     d = _zavolej(args.server, "/zdroje", {})
     _vypis(d, ["nazev", "druh", "sad", "funkcnich", "sklizeno"], args)
@@ -167,7 +173,8 @@ def prikaz_stahni(args) -> None:
     Nepoužívá `_zavolej`: odpověď může mít desítky megabajtů a načíst ji celou
     do paměti kvůli tomu, aby se hned zapsala na disk, je zbytečné."""
     cesty = {"hodnoty": "/hodnoty", "ukazatele": "/ukazatele", "uzemi": "/uzemi",
-             "katalog": "/katalog", "zarizeni": "/zarizeni", "fakta": "/fakta", "zdroje": "/zdroje"}
+             "katalog": "/katalog", "zarizeni": "/zarizeni", "fakta": "/fakta",
+             "dokumenty": "/dokumenty", "zdroje": "/zdroje"}
     if args.co not in cesty:
         _konec(f"Neznámá sada '{args.co}'. Na výběr je: {', '.join(cesty)}.")
     adresa = _url(args.server, cesty[args.co], {
@@ -237,10 +244,18 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--offset", type=int, default=0)
     a.set_defaults(fn=prikaz_katalog)
 
+    a = pod.add_parser("dokumenty", help="programy rozvoje a územní plány obcí")
+    a.add_argument("--uzemi", default="", help="obec:579432 (lze i více oddělených čárkou)")
+    a.add_argument("--druh", default="", help="pro | upd")
+    a.add_argument("--stav", default="", help="platny | archiv (jen u územních plánů)")
+    a.add_argument("--od", type=int, default=0, help="období platnosti od roku")
+    a.add_argument("--do", type=int, default=0, help="období platnosti do roku")
+    a.set_defaults(fn=prikaz_dokumenty)
+
     pod.add_parser("zdroje", help="odkud se sklízí").set_defaults(fn=prikaz_zdroje)
 
     a = pod.add_parser("stahni", help="stáhnout celou sadu do souboru")
-    a.add_argument("co", help="hodnoty | ukazatele | uzemi | katalog | zarizeni | fakta | zdroje")
+    a.add_argument("co", help="hodnoty | ukazatele | uzemi | katalog | zarizeni | fakta | dokumenty | zdroje")
     a.add_argument("--format", default="csv", choices=("csv", "ndjson", "json"))
     a.add_argument("--do-souboru", dest="do_souboru", default="")
     a.add_argument("--ukazatel", default="")

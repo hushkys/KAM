@@ -169,6 +169,58 @@ def test_prehled_kraje_scita_vsechny_obce():
     assert p["ma_celkem"]["uzemni_plan"] == 1  # jen Horní Testov má neachivovaný
 
 
+def test_verejne_api_vydava_dokumenty(client):
+    """`/api/v1` je jiná vrstva: vydává samotná data, ne hotové profily."""
+    index = client.get("/api/v1").json()
+    assert index["rozsah"]["dokumenty"] == 6
+    assert index["cesty"]["dokumenty"].endswith("/api/v1/dokumenty")
+
+    vse = client.get("/api/v1/dokumenty").json()
+    assert vse["celkem"] == 6
+    r = next(x for x in vse["polozky"] if x["druh"] == "pro" and x["uzemi"] == "obec:500001")
+    # Ke každému údaji patří cesta k originálu i k registru, ze kterého je.
+    assert r["odkaz"].startswith("https://") and r["zdroj_odkaz"].startswith("https://")
+    assert r["uzemi_nazev"] == "Horní Testov" and r["ico"] == "00268810"
+
+    assert client.get("/api/v1/dokumenty?druh=upd").json()["celkem"] == 3
+    assert client.get("/api/v1/dokumenty?stav=platny").json()["celkem"] == 1
+    assert client.get("/api/v1/dokumenty?uzemi=obec:500002").json()["celkem"] == 1
+
+
+def test_horni_mez_obdobi_nevyhodi_dokumenty_bez_obdobi(client):
+    """`do=0` znamená „období nemá", ne „platí do roku nula"."""
+    letos = datetime.now(UTC).year
+    vsechna = client.get(f"/api/v1/dokumenty?do={letos + 50}").json()["polozky"]
+    assert {x["druh"] for x in vsechna} == {"pro"}
+    assert all(x["do"] for x in vsechna)
+
+
+def test_api_ma_csv_s_bom_a_cors(client):
+    r = client.get("/api/v1/dokumenty?format=csv")
+    assert r.status_code == 200 and r.content.startswith(b"\xef\xbb\xbf")
+    assert "uzemi_nazev" in r.text.splitlines()[0]
+    assert client.get("/api/v1/dokumenty").headers["access-control-allow-origin"] == "*"
+
+
+def test_podklad_pro_asistenta_zminuje_dokumenty_i_jejich_meze():
+    from kam.ai.tools import brief
+    text, zdroje = brief("obec:500001")
+    radek = next(r for r in text.splitlines() if r.startswith("DOKUMENTY"))
+    assert "Program rozvoje obce" in radek and "Územní plán" in radek
+    # Model nesmí z uplynulého času udělat splněný plán — podklad ho varuje.
+    assert any(r.startswith("POZOR") and "není splněný plán" in r for r in text.splitlines())
+    assert any(z["url"].startswith("https://up.khk.cz/") for z in zdroje)
+
+
+def test_uspornyy_podklad_vynecha_co_obec_nema():
+    """Prefill je u lokálního modelu to pomalé, takže „chybí" se nevozí."""
+    from kam.ai.tools import brief
+    plny = next(r for r in brief("obec:500002")[0].splitlines() if r.startswith("DOKUMENTY"))
+    uspornyy = next(r for r in brief("obec:500002", compact=True)[0].splitlines() if r.startswith("DOKUMENTY"))
+    assert "chybí" in plny and "chybí" not in uspornyy
+    assert len(uspornyy) < len(plny)
+
+
 def test_api_vraci_prehled_i_detail(client):
     r = client.get("/api/plany")
     assert r.status_code == 200 and r.json()["seznam"]

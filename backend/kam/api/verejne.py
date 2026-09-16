@@ -37,7 +37,7 @@ from sqlalchemy import func, select
 from .. import __version__
 from ..db import SessionLocal
 from ..indicators import PILLARS
-from ..models import Dataset, Fact, Indicator, Observation, Poi, Territory
+from ..models import Dataset, Dokument, Fact, Indicator, Observation, Poi, Territory
 from ..territory import HOME_KRAJ
 
 router = APIRouter(prefix="/api/v1")
@@ -113,6 +113,7 @@ def index(request: Request) -> dict:
             "zarizeni": s.scalar(select(func.count(Poi.id))) or 0,
             "fakta": s.scalar(select(func.count(Fact.id))) or 0,
             "katalog": s.scalar(select(func.count(Dataset.id))) or 0,
+            "dokumenty": s.scalar(select(func.count(Dokument.id))) or 0,
         }
         roky = s.execute(select(func.min(Observation.year), func.max(Observation.year))).first()
     zaklad = str(request.base_url).rstrip("/")
@@ -131,6 +132,7 @@ def index(request: Request) -> dict:
             "hodnoty": f"{zaklad}/api/v1/hodnoty",
             "fakta": f"{zaklad}/api/v1/fakta",
             "zarizeni": f"{zaklad}/api/v1/zarizeni",
+            "dokumenty": f"{zaklad}/api/v1/dokumenty",
             "katalog": f"{zaklad}/api/v1/katalog",
             "zdroje": f"{zaklad}/api/v1/zdroje",
         },
@@ -139,6 +141,7 @@ def index(request: Request) -> dict:
             f"{zaklad}/api/v1/hodnoty?uzemi=obec:569810",
             f"{zaklad}/api/v1/uzemi?uroven=orp",
             f"{zaklad}/api/v1/katalog?hledat=doprava",
+            f"{zaklad}/api/v1/dokumenty?druh=pro&format=csv",
         ],
         "dokumentace": f"{zaklad}/api/docs",
     }
@@ -289,6 +292,49 @@ def zarizeni(druh: str = "", obec: str = "", format: str = "json") -> Any:
                    for p in s.scalars(q)]
     hlavicka = ["druh", "nazev", "obec_kod", "orp_kod", "lon", "lat", "odkaz"]
     return _odpoved(polozky, hlavicka, "kam-zarizeni", format, {"celkem": len(polozky)})
+
+
+# ---------------------------------------------------------------- dokumenty
+@router.get("/dokumenty")
+def dokumenty(uzemi: str = "", druh: str = "", stav: str = "", od: int = 0, do: int = 0,
+              format: str = "json") -> Any:
+    """Povinně zveřejňované dokumenty obcí — programy rozvoje a územně
+    plánovací dokumentace, každý s odkazem na originál.
+
+    `od`/`do` filtrují podle **období platnosti** dokumentu, ne podle data
+    zveřejnění: u programu rozvoje je to ta zajímavá věc a u ÚPD se rok
+    vydání ukládá do `od`, takže filtr funguje na obojí. `stav` je `platny`
+    nebo `archiv` a vyplňuje ho jen územně plánovací dokumentace — jinde
+    o platnosti nikdo strojově čitelně nic neříká a prázdno je poctivější
+    než dopočítaná domněnka.
+    """
+    format = _format(format)
+    with SessionLocal() as s:
+        q = (select(Dokument, Territory)
+             .join(Territory, Territory.id == Dokument.uzemi_id)
+             .order_by(Territory.name, Dokument.druh, Dokument.od.desc()))
+        if uzemi:
+            q = q.where(Dokument.uzemi_id.in_([u.strip() for u in uzemi.split(",") if u.strip()]))
+        if druh:
+            q = q.where(Dokument.druh == druh)
+        if stav:
+            q = q.where(Dokument.stav == stav)
+        if od:
+            q = q.where(Dokument.od >= od)
+        if do:
+            # `do == 0` znamená „dokument období nemá" (ÚPD), ne „platí do
+            # roku nula" — takový záznam by horní mez vyřadila neprávem.
+            q = q.where((Dokument.do <= do) & (Dokument.do > 0))
+        polozky = [{
+            "uzemi": d.uzemi_id, "uzemi_nazev": t.name, "uzemi_kod": t.code,
+            "ico": t.ico, "druh": d.druh, "nazev": d.nazev,
+            "od": d.od or None, "do": d.do or None, "stav": d.stav,
+            "publikovano": d.publikovano.date().isoformat() if d.publikovano else None,
+            "odkaz": d.url, "zdroj": d.zdroj_nazev, "zdroj_odkaz": d.zdroj_url,
+        } for d, t in s.execute(q)]
+    hlavicka = ["uzemi", "uzemi_nazev", "uzemi_kod", "ico", "druh", "nazev", "od", "do",
+                "stav", "publikovano", "odkaz", "zdroj", "zdroj_odkaz"]
+    return _odpoved(polozky, hlavicka, "kam-dokumenty", format, {"celkem": len(polozky)})
 
 
 # ------------------------------------------------------------------ katalog
