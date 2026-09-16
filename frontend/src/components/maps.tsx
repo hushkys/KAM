@@ -181,8 +181,11 @@ export function CzMap({ values, breaks, polarity = 1, selected, onSelect, format
   const colors = ramp(polarity, resolvedTheme(prefs));
   const { tip, setTip, wrap, place, placeEl } = useTip();
   if (!data) return <div className="map-wrap"><div className="skeleton" style={{ width: "100%", aspectRatio: "1000 / 583" }} /></div>;
+  // Nad mapou znamená tah do strany mapu, ne stránku: přiblížený kartogram se
+  // jím posouvá, a přepnutí stránky by nad ním bylo překvapení i v základním
+  // pohledu. Přejíždění mezi stránkami se mu proto vyhne (Gesta.tsx).
   return (
-    <div className="map-wrap" ref={wrap}>
+    <div className="map-wrap" ref={wrap} data-gesto="ne">
       <svg className="map-svg map-appear" viewBox={data.viewBox} role="group" aria-label={label}>
         {data.kraje.map((k, i) => {
           const v = values[k.code];
@@ -215,8 +218,11 @@ export function KhkMap({ level, values, breaks, polarity = 1, selected, onSelect
   const { akt, zoom, gesta, priblizit, zpet } = useZoom(data?.viewBox);
   if (!data || !akt) return <div className="map-wrap"><div className="skeleton" style={{ width: "100%", aspectRatio: "1000 / 760" }} /></div>;
   const shapes = level === "orp" ? data.orp : data.obce;
+  // Nad mapou znamená tah do strany mapu, ne stránku: přiblížený kartogram se
+  // jím posouvá, a přepnutí stránky by nad ním bylo překvapení i v základním
+  // pohledu. Přejíždění mezi stránkami se mu proto vyhne (Gesta.tsx).
   return (
-    <div className="map-wrap" ref={wrap}>
+    <div className="map-wrap" ref={wrap} data-gesto="ne">
       <div className="map-plocha" {...gesta}>
       <svg className="map-svg map-appear" viewBox={`${akt.x} ${akt.y} ${akt.w} ${akt.h}`} role="group" aria-label={label}
         style={{ touchAction: zoom > 1.01 ? "none" : "pan-y" }}>

@@ -372,6 +372,49 @@ kbd {
 a, button, [role="button"], input, select, textarea, label, summary { touch-action: manipulation; }
 * { -webkit-tap-highlight-color: transparent; }
 
+/* ------------------------------------------------- přejetí mezi stránkami
+   List zastupující přicházející stránku (components/Gesta.tsx). Leží pod
+   navbarem a dockem — ty na telefonu zůstávají stát, stejně jako v aplikacích,
+   odkud je tohle gesto známé — a nikdy nechytá dotyk. Barvy jsou barvy modulu,
+   takže cíl je poznat dřív, než se stihne přečíst jeho jméno. */
+.gesto-list {
+  --p: 0;
+  position: fixed; inset: 0; z-index: 55;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: calc(var(--nav-h) + 24px) 32px calc(var(--dock-h) + 24px);
+  background: var(--bg);
+  border-left: 1px solid color-mix(in oklab, var(--h1) 32%, transparent);
+  border-right: 1px solid color-mix(in oklab, var(--h1) 32%, transparent);
+  box-shadow: 0 0 64px -12px rgba(0, 0, 0, .6);
+  pointer-events: none; will-change: transform; overflow: hidden;
+}
+.gesto-list::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(120% 68% at 50% 38%, color-mix(in oklab, var(--h1) 15%, transparent), transparent 72%);
+  opacity: calc(.3 + var(--p) * .7);
+}
+.gl-zare {
+  position: absolute; width: 270px; height: 270px; border-radius: 50%; margin-top: -54px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--h1) 42%, transparent), transparent 66%);
+  filter: blur(14px);
+  opacity: calc(.18 + var(--p) * .5);
+  transform: scale(calc(.78 + var(--p) * .26));
+}
+:root[data-transparency="off"] .gl-zare { filter: none; }
+.gl-ikona { position: relative; display: block; transform: scale(calc(.84 + var(--p) * .16)); transition: transform 160ms var(--ease-out); }
+.gl-nazev {
+  position: relative; margin-top: 14px;
+  font-family: var(--font-nadpis); font-size: 1.8rem; font-weight: 600; letter-spacing: -.015em;
+  opacity: calc(.3 + var(--p) * .7); transition: color 160ms var(--ease-out);
+}
+.gl-popis { position: relative; max-width: 280px; text-align: center; font-size: .8125rem; line-height: 1.5; color: var(--text-mute); opacity: calc(.1 + var(--p) * .9); }
+/* Tah už stačí: cíl se rozsvítí dřív, než prst opustí sklo. */
+.gesto-list[data-blizko="ano"] .gl-nazev { color: color-mix(in oklab, var(--h1) 62%, var(--text)); }
+.gesto-list[data-blizko="ano"] .gl-ikona { transform: scale(1.06); }
+/* Posunutou stránku ořezává `overflow-x: hidden` na `body` (viz výše), takže
+   za ni nejde odjet ani při tahu přes celou šířku. */
+:root[data-gesto="tah"] #main { will-change: transform; }
+
 /* ------------------------------------------------------------- motion */
 /* Entrance motion only: opacity and a few pixels of rise, nothing that
    rescales content. Children stagger slightly after their page. */

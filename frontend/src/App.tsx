@@ -5,6 +5,7 @@ import { openAssistant } from "./components/assistantBus";
 import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
 import { Dock } from "./components/Dock";
+import { Gesta } from "./components/Gesta";
 import { Navbar } from "./components/Navbar";
 import { TITLES } from "./components/nav";
 import { Toasts } from "./components/Toasts";
@@ -71,6 +72,7 @@ export function App() {
         {page}
       </main>
       {!bare && <Dock />}
+      {!bare && <Gesta />}
       <CommandPalette />
       <ContextMenu />
       <AssistantDrawer />

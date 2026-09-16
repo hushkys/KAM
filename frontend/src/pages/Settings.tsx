@@ -21,6 +21,12 @@ const TABS = [
   { key: "aplikace", label: "O aplikaci", icon: "info" },
 ];
 
+/** Má omezený pohyb zapnutý rovnou systém? Pak je přepínač v aplikaci sice
+ *  vypnutý, ale animace stejně neběží — a tvrdit opak by bylo matoucí. */
+function systemBezPohybu(): boolean {
+  return typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return <div className="setting-row"><span className="sr-text"><span className="sr-label">{label}</span>{hint && <span className="sr-hint">{hint}</span>}</span>{children}</div>;
 }
@@ -41,6 +47,12 @@ function Appearance() {
       </Card>
       <Card i={1} title="Rozložení a efekty" icon="layers" className="setting-block">
         <Switch checked={p.transparency} onChange={(v) => setPrefs({ transparency: v })} label="Efekty průhlednosti" hint="Navigace a panely jako matné sklo. Vypnutím se zrychlí vykreslování na slabších zařízeních." />
+        {/* Tentýž přepínač jako v Přístupnosti, a schválně: tam je to otázka
+            přístupnosti, tady výkonu, a kdo hledá, proč aplikace na starším
+            telefonu drhne, dojde k průhlednosti — ne k záložce pro pohyb.
+            Dvě předvolby by znamenaly dvě pravdy o jedné věci. */}
+        <Switch checked={p.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} label="Vypnout animace"
+          hint={`Přechody mezi stránkami, najíždění karet i pohyb v ilustracích. Na slabším telefonu se tím vykreslování znatelně odlehčí.${systemBezPohybu() ? " Systém teď omezený pohyb vyžaduje, takže je pohyb vypnutý tak jako tak." : ""}`} />
         <Row label="Hustota" hint="Mezery mezi prvky.">
           <Segmented label="Hustota" value={p.density} onChange={(v) => setPrefs({ density: v })} options={[{ value: "comfortable", label: "Vzdušná" }, { value: "compact", label: "Kompaktní" }]} />
         </Row>
@@ -72,7 +84,7 @@ function Accessibility() {
         <Switch checked={p.focusRing} onChange={(v) => setPrefs({ focusRing: v })} label="Výrazný rámeček fokusu" hint="Pro ovládání klávesnicí." />
       </Card>
       <Card i={1} title="Pohyb" icon="motion" className="setting-block">
-        <Switch checked={p.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} label="Omezit animace" hint="Vypne přechody mezi stránkami a animace vstupu. Respektuje i nastavení systému." />
+        <Switch checked={p.reduceMotion} onChange={(v) => setPrefs({ reduceMotion: v })} label="Vypnout animace" hint="Vypne přechody mezi stránkami i animace vstupu. Respektuje nastavení systému a je to tentýž přepínač jako ve Vzhledu." />
       </Card>
       <Card i={2} title="Klávesové zkratky" icon="keyboard" className="setting-block">
         {[["Hledat", "Ctrl + K nebo /"], ["Asistent", "Ctrl + J"], ["Zavřít okno / menu", "Esc"], ["Kontextové menu prohlížeče", "Shift + pravé tlačítko"], ["Pohyb v nabídkách", "↑ ↓ Enter"]].map(([a, k]) => (
