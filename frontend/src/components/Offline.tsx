@@ -47,8 +47,9 @@ export function Offline() {
     return () => window.clearTimeout(id);
   }, [venku]);
 
-  // Stav se hlásí i do dokumentu: asistentův šuplík se pod pruhem posune,
-  // aby mu nestál v rohu. Vrstvy o sobě jinak nemají jak vědět.
+  // Stav se hlásí i do dokumentu: hlášení (`.toasts`) se vozí ve stejné
+  // výšce a na telefonu by přes pruh přeteklo, tak o něj vystoupají.
+  // Vrstvy o sobě jinak nemají jak vědět.
   useEffect(() => {
     const r = document.documentElement;
     if (venku) r.dataset.spojeni = "pryc";

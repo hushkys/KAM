@@ -661,14 +661,16 @@ a.list-row:hover .list-title { color: var(--accent); }
 .wordmark.hop .ms-smich { fill: none; stroke: #0a120c; stroke-width: 2; stroke-linecap: round; }
 
 /* ------------------------------------------------- offline
-   Pod navbarem, ne nad dockem: u spodní hrany překrýval na telefonu tlačítka
-   v hlavičce stránky. Nahoře je to hlášení o stavu spojení tam, kde ho člověk
-   čeká, a zakrývá jen okraj obsahu. */
+   Levý dolní roh. Zkoušelo se to nahoře pod navbarem a bylo to špatně na
+   obou koncích: na úvodní stránce má lišta vlastní geometrii (`.hp-nav` je
+   plovoucí pilulka, ne `--nav-h`), takže pruh ležel přes ni, a na vnitřních
+   stránkách zakrýval hlavičku. Dole vlevo nemá co překrýt — pravý okraj
+   patří šuplíku asistenta, spodní střed docku a hlášením. */
 .offline-pruh {
-  /* Nad šuplíkem asistenta i nad dockem: hlášení o stavu spojení, které je
-     zpola schované pod jinou vrstvou, vypadá jako chyba vykreslení. */
-  position: fixed; z-index: 90; left: 50%; transform: translateX(-50%);
-  top: calc(var(--nav-h) + 10px + env(safe-area-inset-top));
+  /* Nad dockem i nad obsahem: hlášení o stavu spojení, které je zpola
+     schované pod jinou vrstvou, vypadá jako chyba vykreslení. */
+  position: fixed; z-index: 90; left: 12px;
+  bottom: calc(var(--dock-h) + 18px + env(safe-area-inset-bottom));
   display: flex; align-items: center; gap: 6px;
   /* Bez `width: max-content` se pruh smrskne na polovinu obrazovky: u prvku
      s `left: 50%` je dostupná šířka jen to, co zbývá vpravo od té poloviny,
@@ -696,7 +698,15 @@ a.list-row:hover .list-title { color: var(--accent); }
   background: linear-gradient(74deg, transparent 40%, color-mix(in oklab, #fff 22%, transparent) 50%, transparent 60%);
   animation: sc-sheen 11s var(--ease-out) infinite;
 }
-@keyframes offline-vstup { from { opacity: 0; transform: translate(-50%, -12px); } }
+/* Dock na boku zabírá levý sloupec, tak pruh uhne za něj. Platí jen nad
+   900 px, protože jinde se dock na bok nepřepíná. */
+@media (min-width: 900px) {
+  :root[data-dock="side"] .offline-pruh { left: calc(var(--side-w) + 26px); }
+}
+/* Hlášení se vozí ve stejné výšce a na telefonu by přes pruh přeteklo.
+   Ví o sobě přes `data-spojeni`, který `Offline` píše na dokument. */
+:root[data-spojeni="pryc"] .toasts { bottom: calc(var(--dock-h) + 76px + env(safe-area-inset-bottom)); }
+@keyframes offline-vstup { from { opacity: 0; transform: translateY(12px); } }
 :root[data-motion="reduce"] .offline-pruh { animation: none; }
 :root[data-motion="reduce"] .off-sheen { animation: none; opacity: 0; }
 

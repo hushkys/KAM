@@ -185,11 +185,10 @@
   .chat-disclaimer { display: none; }
 }
 
-/* Pruh „bez spojení" sedí nahoře uprostřed a na užším okně by zajel pod roh
-   šuplíku. Když spojení chybí, šuplík o kousek povolí a pruh je nad ním. */
-@media (min-width: 721px) {
-  :root[data-spojeni="pryc"] .assistant-drawer { top: calc(var(--nav-h) + 52px + env(safe-area-inset-top)); }
-}
+/* Pruh „bez spojení" tu měl kdysi odstup pro šuplík, protože sedával nahoře
+   uprostřed a na užším okně zajížděl pod jeho roh. Od té doby je v levém
+   dolním rohu a do dráhy šuplíku nesahá. Kdyby se někdy vracel nahoru, musí
+   se s ním vrátit i ten odstup. */
 
 /* Vypnutá průhlednost: jedním blokem zpátky na neprůhledný povrch. */
 :root[data-transparency="off"] .assistant-drawer,
@@ -1198,6 +1197,11 @@
 .pl-filtr:hover { background: var(--surface-3); color: var(--text); }
 .pl-filtr.is-on { background: color-mix(in oklab, var(--accent) 18%, transparent); color: var(--text); font-weight: 650; }
 .pl-pocet { margin-left: auto; padding-right: 8px; font-size: .75rem; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+/* Druhý řádek ovládání: filtr vybírá, řazení pořádá. Kdyby byly v jednom
+   řádku, splynou v patnáct pilulek, ve kterých se nepozná, co s čím souvisí. */
+.pl-razeni { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.pl-razeni-popis { padding: 0 8px 0 2px; font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); }
+.pl-razeni .pl-filtr { height: 28px; font-size: .75rem; }
 
 /* — řádky ---------------------------------------------------------------- */
 .pl-radky { list-style: none; margin: 0; padding: 0; }

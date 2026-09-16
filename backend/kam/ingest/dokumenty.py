@@ -203,6 +203,13 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
     kraj_nazev = KRAJ_BY_CODE[kraj].name.replace(" kraj", "")
     job("dokumenty", "running", f"Programy rozvoje obcí — {kraj_nazev}")
     obce = _obce_kraje(kraj)
+    # Mazací rozsah je **celý kraj**, ne jmenný slovník. Ten vyhazuje
+    # stejnojmenné obce, kdežto ukládat do nich umíme (ÚPD se páruje na kód
+    # RÚIAN) — a co se uloží, ale nesmaže, se při druhém běhu zdvojí.
+    with session_scope() as s:
+        podle_kodu = {str(t.code): t.id for t in s.scalars(select(Territory).where(
+            Territory.level == "obec", Territory.kraj_code == kraj))}
+    vsechny = list(podle_kodu.values())
     nalezeno, upd_nalezeno, neprirazeno, ico_novych, ds_novych = 0, 0, 0, 0, 0
 
     with client(60) as c:
@@ -233,8 +240,7 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
             nalezeno += 1
 
         with session_scope() as s:
-            ids = [t.id for t in obce.values()]
-            s.execute(delete(Dokument).where(Dokument.druh == "pro", Dokument.uzemi_id.in_(ids)))
+            s.execute(delete(Dokument).where(Dokument.druh == "pro", Dokument.uzemi_id.in_(vsechny)))
             s.add_all(zaznamy)
 
         # --- územně plánovací dokumentace kraje ---------------------------
@@ -248,10 +254,6 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
             job("dokumenty", "running", f"ÚPD {strana}/{strany}", strana / max(1, strany))
             strana += 1
             time.sleep(0.2)
-
-        with session_scope() as s:
-            podle_kodu = {str(t.code): t.id for t in s.scalars(select(Territory).where(
-                Territory.level == "obec", Territory.kraj_code == kraj))}
 
         upd: list[Dokument] = []
         for r in upd_radky:
@@ -278,7 +280,7 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
             upd_nalezeno += 1
 
         with session_scope() as s:
-            s.execute(delete(Dokument).where(Dokument.druh == "upd", Dokument.uzemi_id.in_(ids)))
+            s.execute(delete(Dokument).where(Dokument.druh == "upd", Dokument.uzemi_id.in_(vsechny)))
             s.add_all(upd)
 
         if s_ares:

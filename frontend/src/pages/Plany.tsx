@@ -80,6 +80,16 @@ const DRUHY: { klic: keyof Ma; popis: string }[] = [
   { klic: "otevrena_data", popis: "Otevřená data obce" },
 ];
 
+/** Řazení je fakt, ne soud: „od nejstaršího územního plánu" neříká, že je
+ *  starý plán špatný — územní plán nemá platnost, která by vypršela. Říká
+ *  jen, kde se dokument nejdéle nepřepisoval, což je to, na co se úřad ptá. */
+const RAZENI: { key: string; label: string }[] = [
+  { key: "lidi", label: "Podle velikosti" },
+  { key: "abeceda", label: "Abecedně" },
+  { key: "up", label: "Od nejstaršího územního plánu" },
+  { key: "dokumentu", label: "Nejvíc dokumentů" },
+];
+
 const FILTRY: { key: string; label: string }[] = [
   { key: "", label: "Všechny obce" },
   { key: "pro", label: "Mají program rozvoje" },
@@ -213,6 +223,7 @@ export function Plany() {
   const { data, error, reload } = useApi<Prehled>("/plany");
   const [hledat, setHledat] = useState("");
   const [filtr, setFiltr] = useState("");
+  const [razeni, setRazeni] = useState("lidi");
   const [otevreno, setOtevreno] = useState(zQuery);
   const [limit, setLimit] = useState(60);
   const box = useRef<HTMLDivElement>(null);
@@ -229,14 +240,27 @@ export function Plany() {
   const seznam = data?.seznam ?? [];
   const videt = useMemo(() => {
     const q = fold(hledat.trim());
-    return seznam.filter((r) => {
+    const vybrane = seznam.filter((r) => {
       if (filtr === "pro" && !r.ma.pro) return false;
       if (filtr === "prosly" && r.stav !== "prosly") return false;
       if (filtr === "bez_up" && r.ma.uzemni_plan) return false;
       if (filtr === "otevrena_data" && !r.ma.otevrena_data) return false;
       return !q || fold(r.name).includes(q) || r.ico.includes(q);
     });
-  }, [seznam, hledat, filtr]);
+    // Kopie, ne `sort` na místě: `seznam` drží cache API a přeházet ho
+    // znamená přeházet ho i všem ostatním, kdo si ho vezmou po nás.
+    const set = [...vybrane];
+    // I výchozí řazení se dělá tady, ne se nechává na pořadí ze serveru:
+    // to staví obce s programem rozvoje dopředu, takže popisek „podle
+    // velikosti" by neseděl a seznam by vypadal jako náhodný.
+    if (razeni === "lidi") set.sort((a, b) => b.population - a.population);
+    else if (razeni === "abeceda") set.sort((a, b) => a.name.localeCompare(b.name, "cs"));
+    // Obec bez územního plánu nemá rok — patří na konec, ne na začátek jako
+    // „nejstarší". Nula by ji tam poslala a vypadalo by to jako údaj.
+    else if (razeni === "up") set.sort((a, b) => (a.upd_od ?? 9999) - (b.upd_od ?? 9999) || b.population - a.population);
+    else if (razeni === "dokumentu") set.sort((a, b) => b.upd_celkem - a.upd_celkem || b.population - a.population);
+    return set;
+  }, [seznam, hledat, filtr, razeni]);
 
   const prepni = (id: string) => {
     setOtevreno((s) => (s === id ? "" : id));
@@ -312,6 +336,16 @@ export function Plany() {
                 <span className="pl-pocet">{num(videt.length)} {plural(videt.length, "obec", "obce", "obcí")}</span>
               </div>
 
+              <div className="pl-razeni">
+                <span className="pl-razeni-popis">Řadit</span>
+                {RAZENI.map((r) => (
+                  <button key={r.key} type="button" className={`pl-filtr${razeni === r.key ? " is-on" : ""}`}
+                    aria-pressed={razeni === r.key} onClick={() => { setRazeni(r.key); setLimit(60); }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
               {videt.length === 0 ? (
                 <Empty icon="search" title="Nic neodpovídá">Zkuste jiné hledání nebo jiný filtr.</Empty>
               ) : (
@@ -326,7 +360,7 @@ export function Plany() {
                           <span className="pl-r-lidi">{num(r.population)}</span>
                           <span className="pl-r-upd">
                             {r.upd_celkem > 0
-                              ? <>{r.upd_celkem} <span className="mute">ÚPD</span></>
+                              ? <>{r.upd_celkem} <span className="mute">ÚPD{r.upd_od ? ` · ${r.upd_od}` : ""}</span></>
                               : <span className="mute">bez ÚPD</span>}
                           </span>
                           <span className="pl-r-plan">
