@@ -140,9 +140,39 @@ function useVjezdy(koren: RefObject<HTMLElement | null>) {
       for (const z of zaznamy) {
         if (z.isIntersecting) { z.target.classList.add("je-videt"); io.unobserve(z.target); }
       }
-    }, { threshold: 0.18, rootMargin: "0px 0px -8% 0px" });
+      // Prah je na nule a spodní okraj jen lehce stažený schválně. Původní
+      // „18 % prvku" počítalo z výšky **prvku**, takže vysoký blok naskočil
+      // až hluboko za svou horní hranou: mapa v hero měří 366 px a na
+      // telefonu se musela vysunout o 131 px, než se vůbec objevila. Do té
+      // doby na jejím místě zelo prázdno a vypadalo to jako obrovská mezera
+      // pod tlačítky. Takhle se prvek ukáže, jakmile jeho horní hrana projde
+      // spodkem obrazovky — stejné pravidlo pro nadpis i pro celý panel.
+    }, { threshold: 0, rootMargin: "0px 0px -4% 0px" });
     prvky.forEach((p) => io.observe(p));
-    return () => io.disconnect();
+
+    // Pojistka na první vykreslení. Pozorovatel hlásí *změnu* protnutí, a
+    // rozvržení se tu ustaluje ještě po něm: dotečou data z API, doběhne
+    // písmo, mapa si dopočítá výšku. Prvek, který je přitom celou dobu na
+    // obrazovce, se tak nemusí dočkat ani jedné zprávy a zůstane průhledný —
+    // na telefonu z toho byla obrovská mezera pod tlačítky, kde měla být
+    // mapa. Dorovnání proto po každém ustálení projde, co je vidět, a dodá
+    // třídu samo.
+    const dorovnej = () => {
+      const mez = window.innerHeight * 0.96;
+      for (const p of prvky) {
+        if (p.classList.contains("je-videt") || p.getBoundingClientRect().top >= mez) continue;
+        p.classList.add("je-videt");
+        io.unobserve(p);
+      }
+    };
+    dorovnej();
+    const id = window.setTimeout(dorovnej, 400);
+    window.addEventListener("load", dorovnej);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(id);
+      window.removeEventListener("load", dorovnej);
+    };
   }, [koren]);
 }
 
