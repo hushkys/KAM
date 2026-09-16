@@ -296,10 +296,26 @@ a.list-row:hover .list-title { color: var(--accent); }
    už jen ztlumená stránka a text zůstává čitelný. Bez clony by bylo sklo nad
    světlým obsahem nečitelné — to není vlastnost průhlednosti, ale toho, co je
    za ní. Při vypnutých efektech se `.glass` sám vrátí k neprůhlednému povrchu. */
-.palette-layer { position: fixed; inset: 0; z-index: 320; background: color-mix(in oklab, var(--scrim) 100%, #000 34%); display: flex; justify-content: center; align-items: flex-start; padding: calc(9vh + env(safe-area-inset-top)) 12px 12px; animation: fade-in var(--t-sm) both; }
+/* Clona je průsvitná schválně. Byla skoro neprůhledná a sklo panelu tím
+   ztratilo smysl: rozostřovat se dala jen černá plocha, takže vyhledávání
+   vypadalo ploše, zatímco šuplík asistenta — který clonu nemá vůbec —
+   prosvítal stránkou. Clona tu je kvůli soustředění, ne kvůli zatemnění;
+   čitelnost drží vlastní tón panelu, ne tma pod ním. */
+.palette-layer { position: fixed; inset: 0; z-index: 320; background: color-mix(in oklab, var(--scrim) 58%, transparent); display: flex; justify-content: center; align-items: flex-start; padding: calc(9vh + env(safe-area-inset-top)) 12px 12px; animation: fade-in var(--t-sm) both; }
+:root[data-transparency="on"] .palette-layer { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 .palette { width: min(660px, 100%); border-radius: var(--r-xl); overflow: hidden; display: flex; flex-direction: column;
-  max-height: min(76dvh, 680px); animation: modal-in var(--t-md) var(--ease-emph) both; position: relative; }
-:root[data-transparency="on"] .palette { -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
+  max-height: min(76dvh, 680px); animation: modal-in var(--t-md) var(--ease-emph) both; position: relative;
+  /* Vlastní vrstvicí kontext: nasvícení pod obsahem má `z-index: -1` a bez
+     izolace by při vypnuté průhlednosti (kdy `backdrop-filter` mizí a s ním
+     i kontext) propadlo za clonu. */
+  isolation: isolate; }
+:root[data-transparency="on"] .palette { -webkit-backdrop-filter: blur(34px) saturate(185%); backdrop-filter: blur(34px) saturate(185%); }
+/* Nasvícení shora, aby panel žil i nad tmavou stránkou, kde není co prosvítat. */
+.palette::after {
+  content: ""; position: absolute; inset: 0 0 auto; height: 62%; z-index: -1; pointer-events: none;
+  background: radial-gradient(78% 100% at 50% 0%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 72%);
+}
+:root[data-transparency="off"] .palette::after { display: none; }
 .palette-input { display: flex; align-items: center; gap: 10px; padding: 13px 14px 13px 16px; border-bottom: 1px solid var(--glass-hair); }
 .palette-input input { flex: 1; min-width: 0; border: 0; background: none; font-size: 1.0625rem; outline: none; color: var(--text); }
 .palette-input > svg:first-child { color: var(--text-mute); flex: none; }

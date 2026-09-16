@@ -56,6 +56,39 @@ DOCS: tuple[dict, ...] = (
     {"id": "stranka-obce", "title": "Stránka Obce a živý profil", "url": "/obce", "text": "Vyhledání kterékoli ze 448 obcí, 15 ORP nebo kraje. Profil ukazuje všechny sledované oblasti, u každého ukazatele poslední hodnotu, rok, trend nebo výkyv, srovnání s krajem a zdroj."},
     {"id": "stranka-vyhled", "title": "Stránka Výhled", "url": "/vyhled", "text": "Výhled obyvatel a věkové struktury 2026–2040 ve třech scénářích s pásmem nejistoty, předpoklady a zpětným testem modelu."},
     {"id": "stranka-scenare", "title": "Stránka Scénáře", "url": "/scenare", "text": "Simulátor zásahů: vyberte území, přidejte zásah, porovnejte BEZ ZÁSAHU a SE ZÁSAHEM, sledujte varování kapacit a řetězec dopadů. Scénáře lze uložit."},
+    {"id": "metoda-plany", "title": "Jak KAM zjišťuje, co má obec zveřejněné", "url": "/plany",
+     "text": "Povinně zveřejňované dokumenty obcí se sklízejí ze tří státních registrů. Programy rozvoje obce z obcepro.cz "
+             "(Ministerstvo pro místní rozvoj) — období platnosti je v názvu dokumentu, takže z něj jde spočítat, jestli ještě "
+             "platí a kolik z něj uplynulo. Územní plány a všechny jejich změny z evidence ÚPD Královéhradeckého kraje "
+             "(up.khk.cz) — každý s datem vydání a vlastní stránkou; sloupec Archivováno je jediná strojová informace o tom, "
+             "že dokument nahradil jiný, takže platný je nejnovější nearchivovaný záznam. IČO úřadu z ARESu se páruje na kód "
+             "obce z RÚIAN, ne na jméno, protože stejnojmenných obcí jsou v Česku desítky; z IČO se pak skládají přesné odkazy "
+             "do MONITORu státní pokladny, registru smluv a ARESu. Datová schránka je z registru orgánů veřejné moci. "
+             "KOLIK Z PLÁNU JE HOTOVÉ, KAM NETVRDÍ: registr, kde by u jednotlivého záměru stálo „realizováno\u201c, v Česku "
+             "neexistuje a obce plnění vyhodnocují vlastními zprávami v PDF. „Stav plnění\u201c proto znamená jen platnost "
+             "dokumentu a podíl období, který uplynul. Vedle toho stojí kapitálové výdaje obce za tytéž roky z rozpočtu — "
+             "jsou to dvě věci ze dvou zdrojů, ne příčina a následek; rozpočtová skladba neříká, co za ty peníze obec pořídila. "
+             "Územní plán navíc nemá platnost, která by vypršela: rok u něj je datum vydání, ne konec účinnosti."},
+    {"id": "stranka-plany", "title": "Stránka Plány", "url": "/plany",
+     "text": "Rejstřík všech 448 obcí kraje a jejich povinně zveřejňovaných dokumentů. U každé obce čtyři povinnosti — program "
+             "rozvoje obce, územní plán i s každou změnou, rozpočet a jeho plnění, otevřená data obce — a u každé buď dokument "
+             "s datem a odkazem na originál, nebo věta, že chybí. Řádek se rozbalí na místě a ukáže odkazy do MONITORu státní "
+             "pokladny, registru smluv a ARESu složené z IČO té obce. Seznam jde filtrovat (mají program rozvoje, program "
+             "doběhl, bez územního plánu, vydávají otevřená data) a řadit podle velikosti, abecedně, od nejstaršího územního "
+             "plánu nebo podle počtu dokumentů. Data vydává i veřejné API na /api/v1/dokumenty."},
+    {"id": "stranka-hospodareni", "title": "Stránka Hospodaření", "url": "/hospodareni",
+     "text": "Rozpočet obce z výkazu FIN 2-12 M (ČSÚ MOS přebírá z MONITORu státní pokladny): provozní přebytek (příjmy po "
+             "konsolidaci minus běžné výdaje), kapitálové výdaje, krytí investic z vlastního přebytku a kumulované saldo. "
+             "Hodnocení je pravidlo s vypsanými prahy, ne odhad. Rozpočet neumí říct, co obec za peníze pořídila, takže se "
+             "nikde nepočítá žádná návratnost investice."},
+    {"id": "stranka-dotace", "title": "Stránka Dotace", "url": "/dotace",
+     "text": "Tři vrstvy s různou jistotou: kolik dotací obec doopravdy přijala (roční řada z rozpočtu, ČSÚ MOS), kolik kraj "
+             "poslal do jejího ORP (Data KHK, souhrn 2021–2025) a rozcestník vyhlašovatelů podle oblastí, ve kterých má území "
+             "podle modelu problém. Strojově čitelný registr otevřených výzev pro obce v Česku neexistuje, takže KAM neříká "
+             "„máte nárok\u201c — to posuzuje jen vyhlašovatel."},
+    {"id": "stranka-statistiky", "title": "Stránka Statistiky", "url": "/statistiky",
+     "text": "Čísla o samotné aplikaci: kolik datových sad je v katalogu a kolik z nich má ověřený odkaz, kolik hodnot drží "
+             "model po letech a oblastech, počty zařízení, formáty dat, provoz asistenta a stav sklízecích úloh."},
     {"id": "stranka-data", "title": "Stránka Data", "url": "/data", "text": "Přesný seznam využívaných datových sad s odkazy, počty podle zdrojů a oblastí, způsob využití každé sady, sledování datových potřeb a metodika."},
     {"id": "stranka-nastaveni", "title": "Nastavení", "url": "/nastaveni", "text": "Vzhled (motiv, průhlednost, hustota, umístění navigace), přístupnost (kontrast, velikost písma, omezení animací, podtržené odkazy), modely AI (přidání, úprava, test lokálních i cloudových modelů), data a soukromí (kam se posílají dotazy a podněty, historie konverzací)."},
     {"id": "pravni-ai", "title": "Omezení AI a právní informace", "url": "/pravni",
