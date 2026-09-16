@@ -485,77 +485,100 @@
 }
 
 /* ========================================================== tekuté sklo
-   Boxy na úvodní stránce nejsou jen průhledné. Sklo se pozná podle tří věcí
-   a každou tu dělá jedna vrstva:
+   Sklo se nepozná podle toho, že je průhledné, ale podle toho, že **ohýbá**
+   to, co je za ním. Dřív tu stálo jen silné rozostření a pár odlesků a
+   vypadalo to jako mléčný plast. Teď to dělá skutečná čočka:
 
-   1. **Rozostření a sytost** (`backdrop-filter` na samotném prvku) — základ,
-      který umí každý prohlížeč.
-   2. **Lom u hrany** (`::before`). Skutečné sklo ohýbá světlo nejvíc tam, kde
-      je nejtlustší — u okraje. Dělá to `feDisplacementMap` nad šumem, který
-      posune pozadí o pár pixelů; maska z dvojice vrstev složených přes
-      `exclude` nechá z celého prvku jen prstenec podle jeho vlastního
-      zaoblení. Posun je **jedno čtení pixelu**, kdežto rozostření průměruje
-      okolí — proto je tahle vrstva levnější než blur, i když vypadá dražší.
-      Vlastní deklarace schválně: `backdrop-filter: url(…)` umí jen Chromium
-      a kdyby stála ve stejném řádku jako blur, zahodí Safari celý řádek
-      a sklo by zmizelo úplně.
-   3. **Odlesk** (`::after`), který jde za kurzorem. `soft-light` znamená, že
-      světlo prosvítá skrz, ne že leží navrchu.
+   **Mapa posunu.** `feDisplacementMap` posouvá každý bod pozadí podle barvy
+   v druhém obrázku: 128 znamená nulový posun, 0 plný doleva, 255 plný
+   doprava. Mapa (`mapaPosunu` v `Hook.tsx`) je proto uvnitř neutrálně šedá
+   a u hrany přechází do krajních hodnot — uprostřed se tedy neděje nic a
+   u okraje se pozadí stlačí, přesně jako u tlustého skla. Obě osy se složí
+   do jednoho obrázku (druhý přechod na půl krytí), takže stačí jediný
+   průchod filtrem.
 
-   Na okraji ještě sedí vlasový lem: nahoře světlý, dole tmavší. Bez něj je
-   to průhledný obdélník; s ním je to předmět, který někde začíná a končí. */
+   **Rozostření je malé, ne velké.** Sklo, přes které není nic vidět, není
+   sklo. Dvě nebo tři pixely stačí, aby se kresba za ním uklidnila, a lom
+   zůstane čitelný.
+
+   **Rozptyl na hraně** (`::before`) je náznak barvy tam, kde se světlo láme
+   nejvíc — skutečné sklo na hraně rozkládá bílou. Dělá se jedním kuželovým
+   přechodem v `screen`, ne třemi průchody filtru pro R, G a B: ty by stály
+   trojnásobek a rozdíl by nikdo nepoznal.
+
+   **Odlesk** (`::after`) jde za kurzorem a míchá se přes `soft-light`, takže
+   světlo prosvítá skrz, ne leží navrchu. */
 .sklo {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(180deg, color-mix(in oklab, #fff 7%, transparent), transparent 46%),
-    color-mix(in oklab, var(--surface) 46%, transparent);
+    linear-gradient(180deg, color-mix(in oklab, #fff 9%, transparent), color-mix(in oklab, #fff 2%, transparent) 46%),
+    color-mix(in oklab, var(--surface) 14%, transparent);
   box-shadow:
-    0 18px 40px -26px rgba(0, 0, 0, .75),
-    inset 0 1px 0 color-mix(in oklab, #fff 34%, transparent),
-    inset 0 -1px 0 color-mix(in oklab, #fff 7%, transparent),
-    inset 0 0 26px -14px color-mix(in oklab, #fff 40%, transparent);
+    0 22px 54px -26px rgba(0, 0, 0, .85),
+    inset 0 1.2px 1px color-mix(in oklab, #fff 62%, transparent),
+    inset 0 -1.2px 1px color-mix(in oklab, #fff 22%, transparent),
+    inset 1.2px 0 1px color-mix(in oklab, #fff 26%, transparent),
+    inset -1.2px 0 1px color-mix(in oklab, #fff 26%, transparent),
+    inset 0 0 46px -18px color-mix(in oklab, #fff 55%, transparent);
 }
-:root[data-transparency="on"] .sklo {
-  -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.06);
-  backdrop-filter: blur(18px) saturate(190%) brightness(1.06);
+/* Záloha pro prohlížeče, které SVG filtr na pozadí neumí (Safari, Firefox):
+   zůstane čiré sklo s lemem, jen bez lomu. Musí stát **před** pravidlem
+   s `url()`, aby ho tam, kde lom funguje, přebilo to druhé. */
+:root[data-transparency="on"] .sklo:not(.je-hlavni) {
+  -webkit-backdrop-filter: blur(12px) saturate(175%) brightness(1.06);
+  backdrop-filter: blur(12px) saturate(175%) brightness(1.06);
+}
+/* Čočku nedostane všech sedmadvacet boxů. Rozostření kleslo z osmnácti
+   pixelů na dva a půl, takže je dnes sklo samo o sobě levnější než dřív, ale
+   posun je pořád průchod filtrem navíc. Dřívější měření na téhle stránce
+   dalo 34 ms na snímek bez posunu a 54 ms s posunem na dvaadvaceti prvcích;
+   na deseti se rozdíl ztratil v šumu. Čočku proto nesou dlaždice, vrstvy,
+   závěrečná karta a tlačítka — a pak cokoli, nad čím je kurzor, což je
+   zároveň ta „tekutost". Karty zdrojů je dvanáct a jsou malé, takže jim
+   do doteku stačí matné sklo. */
+:root[data-transparency="on"][data-motion="full"] .hp-dlazdice.sklo,
+:root[data-transparency="on"][data-motion="full"] .hp-vrstva.sklo,
+:root[data-transparency="on"][data-motion="full"] .hp-konec-karta.sklo,
+:root[data-transparency="on"][data-motion="full"] .sklo:hover,
+:root[data-transparency="on"][data-motion="full"] .sklo:focus-visible {
+  backdrop-filter: blur(2.5px) url(#hp-cocka) saturate(168%) brightness(1.08);
+}
+/* `:not(.je-hlavni)` je tu místo dřívějšího přebíjení přes `backdrop-filter:
+   none`: tu deklaraci minifikátor zahodil jako zbytečnou a plné tlačítko si
+   pak platilo průchod filtrem, pod kterým stejně nic není vidět. Nežádat
+   o filtr je spolehlivější než ho potom rušit. */
+:root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo:not(.je-hlavni),
+:root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo:not(.je-hlavni):hover {
+  backdrop-filter: blur(2.5px) url(#hp-cocka-pilulka) saturate(168%) brightness(1.08);
 }
 
-/* Prstenec lomu. `padding` je jeho tloušťka; maska z dvou vrstev složených
-   přes `exclude` z něj udělá obrys, který sedí na `border-radius` prvku. */
-:root[data-transparency="on"] .sklo::before {
+/* Rozptyl na hraně. Maska ze dvou vrstev složených přes `exclude` nechá
+   z prvku jen obrys podle jeho vlastního zaoblení. */
+.sklo::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  padding: 14px; pointer-events: none; z-index: 0;
+  padding: 7px; pointer-events: none; z-index: 0;
+  background: conic-gradient(from 215deg,
+    color-mix(in oklab, #ff8080 50%, transparent),
+    color-mix(in oklab, #8caeff 45%, transparent) 22%,
+    transparent 48%, transparent 58%,
+    color-mix(in oklab, #a0ffdc 40%, transparent) 80%,
+    color-mix(in oklab, #ff8080 50%, transparent));
   -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   -webkit-mask-clip: content-box, border-box;
   mask-clip: content-box, border-box;
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-}
-/* Lom je z celého skla jediná vrstva, která něco stojí: vlastní filtr nad
-   pozadím. Na dvaadvaceti prvcích naráz to bylo 20 ms na snímek navíc (54 ms
-   proti 34 ms), na hrstce se to ztratí v šumu měření. Drží ho proto jen to,
-   na co se člověk dívá — dlaždice s čísly a tlačítka — a pak cokoli, nad čím
-   je zrovna kurzor. To druhé je zároveň ta „tekutost": sklo na dotek ožije. */
-@supports (backdrop-filter: url(#x)) {
-  :root[data-transparency="on"][data-motion="full"] .hp-dlazdice.sklo::before,
-  :root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo::before,
-  :root[data-transparency="on"][data-motion="full"] .sklo:hover::before,
-  :root[data-transparency="on"][data-motion="full"] .sklo:focus-visible::before {
-    backdrop-filter: url(#hp-lom);
-  }
+  mix-blend-mode: screen; opacity: .4;
 }
 
-/* Odlesk. Bez kurzoru sedí nahoře uprostřed, takže sklo nasvícené vypadá
-   i na dotyku a ve snímcích, kde žádná myš není. */
 .sklo::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   pointer-events: none; z-index: 0;
-  background: radial-gradient(
-    140% 120% at var(--mx, 50%) var(--my, -10%),
-    color-mix(in oklab, #fff 26%, transparent),
-    color-mix(in oklab, #fff 6%, transparent) 38%,
+  background: radial-gradient(130% 110% at var(--mx, 28%) var(--my, -14%),
+    color-mix(in oklab, #fff 55%, transparent),
+    color-mix(in oklab, #fff 10%, transparent) 38%,
     transparent 64%);
   mix-blend-mode: soft-light;
   transition: opacity var(--t-md) var(--ease-out);
@@ -571,23 +594,22 @@
 :root[data-transparency="off"] .sklo::before,
 :root[data-transparency="off"] .sklo::after { display: none; }
 
-/* Tekuté tlačítko: sklo se pod prstem nadechne a při stisku splaskne.
-   Odlesk jde za kurzorem, takže se pilulka tváří jako vypouklá čočka. */
+/* Tekuté tlačítko: sklo se pod prstem nadechne a při stisku splaskne. */
 .hp-tlacitko.sklo { transition: transform var(--t-md) var(--ease-spring), box-shadow var(--t-md) var(--ease-out), background var(--t-sm); }
 .hp-tlacitko.sklo:hover {
   transform: translateY(-2px) scale(1.015);
   box-shadow:
-    0 22px 46px -24px rgba(0, 0, 0, .8),
-    inset 0 1px 0 color-mix(in oklab, #fff 52%, transparent),
-    inset 0 -1px 0 color-mix(in oklab, #fff 12%, transparent),
-    inset 0 0 30px -12px color-mix(in oklab, #fff 55%, transparent);
+    0 26px 58px -24px rgba(0, 0, 0, .9),
+    inset 0 1.4px 1px color-mix(in oklab, #fff 82%, transparent),
+    inset 0 -1.4px 1px color-mix(in oklab, #fff 30%, transparent),
+    inset 0 0 40px -14px color-mix(in oklab, #fff 70%, transparent);
 }
 .hp-tlacitko.sklo:active { transform: translateY(0) scale(.975); }
-.hp-tlacitko.sklo:hover::after { opacity: 1; }
 
-/* Hlavní tlačítko je plné, ne průhledné — lom by pod ním neměl co ohýbat.
+/* Hlavní tlačítko je plné, ne průhledné — čočka by pod ním neměla co ohýbat.
    Odlesk mu ale zůstane, aby se od skleněných sousedů neodtrhlo. */
-.hp-tlacitko.je-hlavni.sklo { background: var(--accent); }
+.hp-tlacitko.je-hlavni.sklo,
+:root[data-transparency="on"] .hp-tlacitko.je-hlavni.sklo { background: var(--accent); }
 .hp-tlacitko.je-hlavni.sklo::before { display: none; }
 .hp-tlacitko.je-hlavni.sklo::after { mix-blend-mode: overlay; }
 

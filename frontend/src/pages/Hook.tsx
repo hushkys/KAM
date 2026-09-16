@@ -176,6 +176,41 @@ function useVjezdy(koren: RefObject<HTMLElement | null>) {
   }, [koren]);
 }
 
+/** Mapa posunu pro čočku skla.
+ *
+ *  `feDisplacementMap` čte z téhle mapy, o kolik posunout který bod pozadí:
+ *  128 je klid, 0 plný posun doleva (nahoru), 255 doprava (dolů). Uvnitř je
+ *  proto neutrální šedá a teprve u hrany přechází do krajů — skutečné sklo
+ *  taky ohýbá nejvíc tam, kde je nejtlustší.
+ *
+ *  Vodorovnou osu nese červený kanál, svislou zelený, a druhý přechod se
+ *  kreslí na poloviční krytí, takže se obě osy vejdou do jednoho obrázku
+ *  a filtru stačí **jeden** průchod místo dvou.
+ *
+ *  Rozměry jsou jen referenční: `preserveAspectRatio="none"` mapu roztáhne
+ *  na skutečnou velikost prvku, takže jedna mapa obslouží různě velké karty.
+ *  Okraj i rozmazání se počítají z kratší strany, aby prstenec zůstal
+ *  přiměřený i po roztažení. */
+function mapaPosunu(w: number, h: number, r: number, okrajPodil = 0.16, rozostreniPodil = 0.07): string {
+  const okraj = Math.round(Math.min(w, h) * okrajPodil);
+  const b = Math.max(2, Math.round(Math.min(w, h) * rozostreniPodil));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
+    + `<defs>`
+    + `<linearGradient id="gx" x1="0" x2="1"><stop offset="0" stop-color="rgb(0,128,128)"/><stop offset="1" stop-color="rgb(255,128,128)"/></linearGradient>`
+    + `<linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(128,0,128)"/><stop offset="1" stop-color="rgb(128,255,128)"/></linearGradient>`
+    + `<filter id="b"><feGaussianBlur stdDeviation="${b}"/></filter>`
+    + `<mask id="p"><rect width="${w}" height="${h}" fill="#fff"/>`
+    + `<rect x="${okraj}" y="${okraj}" width="${w - 2 * okraj}" height="${h - 2 * okraj}" rx="${Math.max(0, r - okraj)}" fill="#000" filter="url(#b)"/></mask>`
+    + `</defs>`
+    + `<rect width="${w}" height="${h}" fill="rgb(128,128,128)"/>`
+    + `<g mask="url(#p)"><rect width="${w}" height="${h}" fill="url(#gx)"/>`
+    + `<rect width="${w}" height="${h}" fill="url(#gy)" opacity="0.5"/></g></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+const MAPA_KARTA = mapaPosunu(300, 170, 26);
+const MAPA_PILULKA = mapaPosunu(260, 54, 27, 0.3, 0.16);
+
 /** Odlesk skla jde za kurzorem.
  *
  *  Jeden posluchač na celé stránce, ne na každém boxu: skleněných prvků je
@@ -311,15 +346,17 @@ export function Hook() {
 
   return (
     <div className="hp" ref={koren}>
-      {/* Lom světla u hrany skla. `fractalNoise` je hladší než `turbulence` —
-          ten vypadá jako voda, tohle jako nerovnost ve skle. Rozmazání šumu
-          je tu proto, aby posun neskákal po pixelech; `scale` je malý
-          schválně, silnější lom už není sklo, ale rybí oko. */}
+      {/* Čočky pro sklo. `preserveAspectRatio="none"` mapu roztáhne na prvek,
+          takže jedna vystačí všem kartám a druhá všem pilulkám — ty mají
+          tak nízký poměr stran, že by se jim mapa karty zdeformovala. */}
       <svg className="goo-defs" aria-hidden="true" focusable="false">
-        <filter id="hp-lom" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves={2} seed={11} result="sum" />
-          <feGaussianBlur in="sum" stdDeviation="1.8" result="hladky" />
-          <feDisplacementMap in="SourceGraphic" in2="hladky" scale="16" xChannelSelector="R" yChannelSelector="G" />
+        <filter id="hp-cocka" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feImage href={MAPA_KARTA} preserveAspectRatio="none" result="mapa" />
+          <feDisplacementMap in="SourceGraphic" in2="mapa" scale="64" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="hp-cocka-pilulka" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feImage href={MAPA_PILULKA} preserveAspectRatio="none" result="mapa" />
+          <feDisplacementMap in="SourceGraphic" in2="mapa" scale="30" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
