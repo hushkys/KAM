@@ -70,9 +70,6 @@
 .chat-uvod { flex: 1; min-height: 0; overflow: hidden; display: grid; align-content: safe end; justify-items: center; text-align: center;
   gap: 12px; padding: 20px 22px 14px; animation: chat-uvod-in 720ms var(--ease-emph) both; }
 @keyframes chat-uvod-in { from { opacity: 0; transform: translateY(14px); } }
-.chat-jiskra { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #fff;
-  background: linear-gradient(135deg, var(--lime), var(--accent) 52%, #5b8cff);
-  box-shadow: 0 14px 34px -14px color-mix(in oklab, var(--accent) 80%, transparent); }
 .chat-pozdrav {
   font-family: var(--font-nadpis); font-optical-sizing: auto;
   font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.5rem); font-weight: 600; line-height: 1.08; letter-spacing: -.03em;
@@ -187,7 +184,6 @@
 .chat { container-type: size; }
 @container (max-height: 520px) { .chat-uvod-text { display: none; } }
 @container (max-height: 430px) {
-  .chat-jiskra { display: none; }
   .chat-navrhy .navrh:nth-child(n+3) { display: none; }
   .chat-history { display: none; }
 }

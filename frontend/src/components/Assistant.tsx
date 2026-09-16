@@ -283,7 +283,6 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
 
       {uvod ? (
         <div className="chat-uvod">
-          <span className="chat-jiskra" aria-hidden="true"><Icon name="sparkle" size={22} /></span>
           <h2 className="chat-pozdrav">Na co se podíváme?</h2>
           <p className="chat-uvod-text">
             Odpovídám z dat KAM — profilů území, výhledů a scénářů — a umím aplikaci i ovládat.

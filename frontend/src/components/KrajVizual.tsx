@@ -1,16 +1,20 @@
 // Kraj a jeho budoucnost v jednom obrázku.
 //
-// Tři vrstvy nad sebou, každá ve vlastní rovině: vystřižený kraj po ORP, nad
-// ním hřeben vývoje obyvatel 2005–2040 a nad tím popisky. Vrstvy se pod
-// kurzorem naklánějí, takže mezi nimi je vidět hloubka — je to jediný způsob,
-// jak z ploché mapy udělat předmět, aniž by se musela kreslit perspektivně.
+// Tři vrstvy nad sebou: vystřižený kraj po ORP, nad ním hřeben vývoje obyvatel
+// 2005–2040 a nad tím popisky. Pod kurzorem se každá posouvá jinou rychlostí,
+// takže mezi nimi je vidět hloubka.
 //
-// Proč tři samostatná SVG a ne jedno: 3D transformace se uvnitř SVG
-// nekompozitují, takže vrstvy musí být HTML prvky. Sdílejí stejný `viewBox`,
-// takže souřadnice sedí na pixel.
+// Posun **v rovině**, ne otáčení. Skutečné 3D (perspective + preserve-3d)
+// udělá z celé scény jednu texturu, kterou prohlížeč rasterizuje v jednom
+// měřítku a pak škáluje — na displeji s vyšší hustotou pixelů z toho byla
+// rozmazaná mapa. Různá rychlost vrstev udělá hloubku skoro stejně dobře
+// a kresba zůstane ostrá.
 //
-// Naklánění je jen ozdoba, a proto celé odpadá pod `data-motion="reduce"`
-// i na dotykovém displeji, kde není kurzor, který by ho řídil.
+// Proč tři samostatná SVG a ne jedno: vrstvy se musí hýbat samostatně, a to
+// jde jen u HTML prvků. Sdílejí stejný `viewBox`, takže souřadnice sedí.
+//
+// Posun je ozdoba, a proto celý odpadá pod `data-motion="reduce"` i na
+// dotykovém displeji, kde není kurzor, který by ho řídil.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useApi } from "../lib/api";
@@ -88,10 +92,8 @@ export function KrajVizual({ className = "" }: { className?: string }) {
   }, [geo.data, fc.data]);
 
   const styl = {
-    "--rx": `${(-naklon.y * 3.4).toFixed(2)}deg`,
-    "--ry": `${(naklon.x * 4.6).toFixed(2)}deg`,
-    "--px": `${(naklon.x * 10).toFixed(1)}px`,
-    "--py": `${(naklon.y * 8).toFixed(1)}px`,
+    "--px": `${(naklon.x * 14).toFixed(1)}px`,
+    "--py": `${(naklon.y * 11).toFixed(1)}px`,
   } as CSSProperties;
 
   if (!geo.data || !art) {

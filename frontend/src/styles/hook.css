@@ -115,6 +115,9 @@
 .hp-claim span:nth-child(4) { animation-delay: 310ms; }
 @keyframes hp-slovo { from { opacity: 0; transform: translate3d(0, 46%, 0) rotate(2deg); } }
 .hp-lead { margin-top: 20px; max-width: 52ch; color: var(--text-dim); font-size: clamp(.95rem, .92rem + .2vw, 1.0625rem); line-height: 1.65; }
+/* Tlačítka potřebují vlastní vzduch: text nad nimi končí účaří, ale pilulka
+   začíná svým okrajem, takže opticky sedí blíž, než je ve skutečnosti. */
+.hp-cta-obal { margin-top: clamp(26px, 3.4vh, 38px); }
 
 .hp-hero-vizual { min-width: 0; transform: translate3d(0, calc((1 - var(--p, 1)) * 40px), 0); }
 
@@ -161,29 +164,32 @@
 .hp-tlacitko svg { flex: none; }
 :root[data-transparency="off"] .hp-tlacitko { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
-/* ------------------------------------------------------------ vizuál kraje */
-.kv { position: relative; perspective: 1400px; }
+/* ------------------------------------------------------------ vizuál kraje
+   Vrstvy se pod kurzorem posouvají, ale **neotáčejí**. Skutečné 3D (perspective
+   + preserve-3d + rotate) udělá z celé scény jednu texturu, kterou prohlížeč
+   rasterizuje v jednom měřítku a pak škáluje — na displeji s vyšší hustotou
+   pixelů z toho byla rozmazaná mapa. Posun v rovině žádnou texturu nevyrábí
+   a hloubku udělá skoro stejně dobře, protože vrstvy jedou různě rychle. */
+.kv { position: relative; }
 .kv-scena {
   position: relative; border-radius: var(--r-xl); padding: clamp(14px, 2vw, 26px);
   border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 46%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge);
-  transform-style: preserve-3d; overflow: hidden;
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 420ms var(--ease-out);
+  overflow: hidden;
   aspect-ratio: 1000 / 820;
 }
 :root[data-transparency="off"] .kv-scena { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .kv-kostra { width: 100%; height: 100%; border-radius: var(--r-lg); }
 .kv-zare { position: absolute; inset: -30% -20% auto; height: 80%; pointer-events: none;
-  background: radial-gradient(60% 60% at 50% 40%, color-mix(in oklab, var(--accent) 26%, transparent), transparent 70%); filter: blur(30px); }
+  background: radial-gradient(60% 60% at 50% 40%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 70%); filter: blur(30px); }
 .kv-vrstva { position: absolute; inset: clamp(14px, 2vw, 26px); width: auto; height: auto; overflow: visible; }
 .kv-vrstva.je-mapa { transform: translate3d(calc(var(--px, 0px) * .3), calc(var(--py, 0px) * .3), 0); transition: transform 420ms var(--ease-out);
   mask-image: linear-gradient(180deg, #000 58%, color-mix(in oklab, #000 35%, transparent) 84%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, #000 58%, color-mix(in oklab, #000 35%, transparent) 84%, transparent 100%); }
-.kv-vrstva.je-graf { transform: translate3d(var(--px, 0px), var(--py, 0px), 40px); transition: transform 420ms var(--ease-out); }
+.kv-vrstva.je-graf { transform: translate3d(var(--px, 0px), var(--py, 0px), 0); transition: transform 420ms var(--ease-out); }
 .kv-stitky { position: absolute; inset: clamp(14px, 2vw, 26px); pointer-events: none;
-  transform: translate3d(calc(var(--px, 0px) * 1.3), calc(var(--py, 0px) * 1.3), 70px); transition: transform 420ms var(--ease-out); }
+  transform: translate3d(calc(var(--px, 0px) * 1.3), calc(var(--py, 0px) * 1.3), 0); transition: transform 420ms var(--ease-out); }
 
 .kv-stin path { fill: color-mix(in oklab, #000 42%, transparent); transform: translate(0, 4px); }
 :root[data-theme="light"] .kv-stin path { fill: color-mix(in oklab, var(--accent) 16%, transparent); }
@@ -191,11 +197,11 @@
   animation: kv-tvar 900ms var(--ease-out) both; animation-delay: calc(240ms + var(--i, 0) * 45ms); transition: fill var(--t-md); }
 .kv-orp:hover { fill: color-mix(in oklab, var(--accent) 38%, transparent); }
 @keyframes kv-tvar { from { opacity: 0; transform: translateY(8px); } }
-.kv-obrys { fill: none; stroke: url(#kv-obrys); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round;
-  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--accent) 45%, transparent)); }
+.kv-obrys { fill: none; stroke: url(#kv-obrys); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--accent) 38%, transparent)); }
 .kv-plocha { fill: url(#kv-plocha); animation: fade-in 900ms var(--ease-out) 900ms both; }
-.kv-krivka { fill: none; stroke: url(#kv-cara); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--lime) 55%, transparent));
+.kv-krivka { fill: none; stroke: url(#kv-cara); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--lime) 45%, transparent));
   stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: kv-kresli 1700ms var(--ease-out) 420ms forwards; }
 .kv-krivka.je-budouci { stroke-dasharray: 7 8; stroke-dashoffset: 0; opacity: 0; animation: fade-in 700ms var(--ease-out) 1700ms forwards; }
 @keyframes kv-kresli { to { stroke-dashoffset: 0; } }
@@ -209,7 +215,7 @@
 .kv-stitek.je-konec { color: var(--lime); font-size: .75rem; }
 /* Sken: pomalý pruh světla přes celou scénu. */
 .kv-sken { position: absolute; inset: -20% -40%; pointer-events: none;
-  background: linear-gradient(74deg, transparent 42%, color-mix(in oklab, #fff 16%, transparent) 50%, transparent 58%);
+  background: linear-gradient(74deg, transparent 44%, color-mix(in oklab, #fff 9%, transparent) 50%, transparent 56%);
   animation: sc-sheen 12s var(--ease-out) infinite; }
 .kv-noha { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding: 0 6px; }
 .kv-popis { font-size: .6875rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-mute); }
