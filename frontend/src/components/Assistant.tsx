@@ -16,22 +16,6 @@ export interface Source { n: number; title: string; url: string; type: string }
 interface Meta { route?: { intent: string; tier: string; reason: string; complexity?: string }; model?: string | null; territory?: { id: string; name: string } | null; sources?: Source[]; simulation?: { territory: string; interventions: unknown[] } | null }
 export interface Msg { id: number; role: "user" | "assistant"; text: string; meta?: Meta; ms?: number; done?: boolean; note?: string; fallback?: boolean; error?: boolean }
 
-const SUGGESTIONS = [
-  "Jaká jsou největší rizika Královéhradeckého kraje?",
-  "Co se stane, když v Jaroměři postavíme 300 bytů?",
-  "Kam směřuje počet obyvatel na Broumovsku do roku 2035?",
-  "Vyhledej data, která se používají pro dopravu",
-  "Zapni tmavý režim a otevři mapu",
-  "Jak KAM pozná jednorázový výkyv od trendu?",
-];
-
-/** Do šuplíku se vejdou tři a musí být krátké — je to nabídka, ne čtení. */
-const NAVRHY_KRATKE = [
-  "Největší rizika kraje?",
-  "Co udělá 300 bytů v Jaroměři?",
-  "Najdi data o dopravě",
-];
-
 const SESSION_KEY = "kam.chat.session";
 let seq = 0;
 
@@ -212,11 +196,10 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
 
 export type ChatState = ReturnType<typeof useChat>;
 
-export function Chat({ territory, compact = false, onClose, header, chat, hideHistory = false }: {
-  territory: string | null; compact?: boolean; onClose?: () => void; header?: ReactNode; chat?: ChatState; hideHistory?: boolean;
-}) {
+export function Chat({ territory, compact = false, onClose, header, chat }: {
+  territory: string | null; compact?: boolean; onClose?: () => void; header?: ReactNode; chat?: ChatState }) {
   const own = useChat(territory);
-  const { msgs, busy, send, stop, reset, load } = chat ?? own;
+  const { msgs, busy, send, stop, reset } = chat ?? own;
   const [text, setText] = useState("");
   const log = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
@@ -265,12 +248,6 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
     send(text);
     setText("");
   };
-  const zeptejSe = (q: string) => {
-    if (uvod && pole.current) odkud.current = pole.current.getBoundingClientRect();
-    send(q);
-  };
-  // Čtyři stačí: nabídka, kterou je potřeba číst na tři řádky, je zadání.
-  const navrhy = compact ? NAVRHY_KRATKE : SUGGESTIONS.slice(0, 4);
 
   return (
     <div className={`chat ${compact ? "is-compact" : ""}`} data-stav={uvod ? "uvod" : "chat"}>
@@ -281,6 +258,7 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
         {onClose && <button className="icon-btn sm" onClick={onClose} aria-label="Zavřít asistenta"><Icon name="close" size={17} /></button>}
       </div>
 
+      {uvod && <span className="chat-vzduch-horni" aria-hidden="true" />}
       {uvod ? (
         <div className="chat-uvod">
           <h2 className="chat-pozdrav">Na co se podíváme?</h2>
@@ -304,33 +282,9 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
           : <button type="submit" className="icon-btn send" disabled={!text.trim()} aria-label="Odeslat"><Icon name="send" /></button>}
       </form>
 
-      {uvod && (
-        <>
-          <div className="chat-navrhy">
-            {navrhy.map((s) => <button key={s} className="navrh" onClick={() => zeptejSe(s)}>{s}</button>)}
-          </div>
-          {!compact && !hideHistory && <History onPick={load} />}
-          <span className="chat-vzduch" aria-hidden="true" />
-        </>
-      )}
+      {uvod && <span className="chat-vzduch" aria-hidden="true" />}
 
       <div className="disclaimer chat-disclaimer"><Icon name="info" size={13} /><span>Odpovědi generuje AI a mohou být chybné. Čísla ověřte v uvedených zdrojích.</span></div>
-    </div>
-  );
-}
-
-function History({ onPick }: { onPick: (id: string) => void }) {
-  const [rows, setRows] = useState<{ id: string; title: string; updated_at: string }[]>([]);
-  useEffect(() => { api<typeof rows>("/chat/sessions").then(setRows).catch(() => {}); }, []);
-  if (!rows.length) return null;
-  return (
-    <div className="chat-history">
-      <div className="chat-history-nadpis">Předchozí konverzace</div>
-      <div className="chat-history-radky">
-        {rows.slice(0, 4).map((r) => (
-          <button key={r.id} className="navrh je-historie" onClick={() => onPick(r.id)}><Icon name="history" size={14} /> {r.title}</button>
-        ))}
-      </div>
     </div>
   );
 }

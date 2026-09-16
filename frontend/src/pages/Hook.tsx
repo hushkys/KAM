@@ -19,7 +19,6 @@ import { openAssistant } from "../components/assistantBus";
 import { Icon } from "../components/Icon";
 import { KrajVizual } from "../components/KrajVizual";
 import { Wordmark } from "../components/Logo";
-import { MorfSkupina } from "../components/MorfSkupina";
 import { Team } from "../components/Team";
 import { WordmarkHop } from "../components/WordmarkHop";
 import { useApi } from "../lib/api";
@@ -221,15 +220,13 @@ export function Hook() {
             Co se v kraji děje, proč, kam to vede a co se změní, když zasáhneme — nebo nezasáhneme.
             {d ? ` Nad ${num(d.datasets.verified)} ověřenými otevřenými sadami a ${compact(d.model.observations)} měřenými hodnotami.` : ""}
           </p>
-          <div className="hp-cta-obal" data-vjezd>
-            <MorfSkupina className="hp-cta">
-            <Link to="/prehled" className="hp-tlacitko je-hlavni" data-morf>
+          <div className="hp-cta" data-vjezd>
+            <Link to="/prehled" className="hp-tlacitko je-hlavni">
               <span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} />
             </Link>
-            <button className="hp-tlacitko" data-morf onClick={() => openAssistant()}>
+            <button className="hp-tlacitko" onClick={() => openAssistant()}>
               <Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span>
             </button>
-            </MorfSkupina>
           </div>
         </div>
 
@@ -361,10 +358,10 @@ export function Hook() {
           <span className="hp-konec-tecka" aria-hidden="true" />
           <h2 className="hp-nadpis">Tak kam to teda<br />směřuje?</h2>
           <p className="hp-podnadpis">Otevřete kraj na jedné obrazovce, nebo se rovnou zeptejte asistenta vlastními slovy.</p>
-          <MorfSkupina className="hp-cta">
-            <Link to="/prehled" className="hp-tlacitko je-hlavni" data-morf><span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} /></Link>
-            <button className="hp-tlacitko" data-morf onClick={() => openAssistant()}><Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span></button>
-          </MorfSkupina>
+          <div className="hp-cta">
+            <Link to="/prehled" className="hp-tlacitko je-hlavni"><span>Vstoupit do aplikace</span><Icon name="arrow-right" size={18} /></Link>
+            <button className="hp-tlacitko" onClick={() => openAssistant()}><Icon name="sparkle" size={18} /><span>Zeptat se asistenta</span></button>
+          </div>
         </div>
       </section>
 

@@ -65,7 +65,7 @@ export function AssistantPage() {
         <div className="ai-side-foot">{status}<p className="xsmall mute">Ctrl+J otevře asistenta na kterékoli stránce.</p></div>
       </aside>
       <section className="ai-main">
-        <Chat territory={st.territory} chat={chat} hideHistory header={
+        <Chat territory={st.territory} chat={chat} header={
           <div className="row" style={{ gap: 8, minWidth: 0, flexWrap: "nowrap" }}>
             <button className="icon-btn sm ai-hist-btn" onClick={() => setSheet(true)} aria-label="Historie konverzací"><Icon name="history" size={17} /></button>
             <strong className="ellipsis">Asistent KAM</strong>

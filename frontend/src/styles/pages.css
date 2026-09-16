@@ -67,8 +67,15 @@
 /* `safe end`, ne `end`: v nízkém okně se obsah nevejde a obyčejné `end` ho
    vystrčí nahoru ven z boxu — text pak leží přes hlavičku. `safe` se v ten
    okamžik chová jako `start` a `overflow: hidden` dořeší zbytek. */
-.chat-uvod { flex: 1; min-height: 0; overflow: hidden; display: grid; align-content: safe end; justify-items: center; text-align: center;
+/* `safe end`: v nízkém okně se obsah nevejde a obyčejné `end` ho vystrčí
+   nahoru ven z boxu, kde leží přes hlavičku. `overflow-y: auto` je pojistka —
+   uříznutý pozdrav bez možnosti se k němu dostat je horší než rolování. */
+.chat-uvod { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: grid; align-content: safe end; justify-items: center; text-align: center;
   gap: 12px; padding: 20px 22px 14px; animation: chat-uvod-in 720ms var(--ease-emph) both; }
+.chat[data-stav="uvod"] .chat-head { flex: none; }
+/* Horní vzduch: s dolním se dělí o zbytek, takže pozdrav s polem sedí
+   uprostřed, ale nikdy si neukousnou z jeho vlastní výšky. */
+.chat-vzduch-horni { flex: 1; min-height: 0; }
 @keyframes chat-uvod-in { from { opacity: 0; transform: translateY(14px); } }
 .chat-pozdrav {
   font-family: var(--font-nadpis); font-optical-sizing: auto;
@@ -95,20 +102,8 @@
 .chat-pole .send { background: var(--accent); color: var(--accent-fg); width: 38px; height: 38px; flex: none; }
 .chat-pole .send:disabled { background: color-mix(in oklab, var(--text) 10%, transparent); color: var(--text-mute); cursor: default; }
 
-.chat-navrhy { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 2px 20px 0;
-  animation: chat-uvod-in 720ms var(--ease-emph) 90ms both; }
-.navrh { padding: 8px 14px; border-radius: var(--r-pill); border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 55%, transparent);
-  color: var(--text-dim); font-size: .8125rem; font-weight: 600; cursor: pointer; text-align: left;
-  transition: color var(--t-xs), border-color var(--t-xs), background var(--t-xs), transform var(--t-md) var(--ease-spring); }
-.navrh:hover { color: var(--text); border-color: var(--accent-line); transform: translateY(-2px); }
-.navrh.je-historie { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; }
-.navrh.je-historie span, .navrh.je-historie { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Vzduch pod nabídkou: drží uvítání i s polem uprostřed okna. */
+/* Vzduch pod polem: drží uvítání i s polem uprostřed okna. */
 .chat-vzduch { flex: 1; min-height: 0; }
-.chat-history { padding: 14px 20px 0; display: grid; gap: 8px; justify-items: center;
-  animation: chat-uvod-in 720ms var(--ease-emph) 160ms both; }
-.chat-history-nadpis { font-size: .6875rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); }
-.chat-history-radky { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; }
 
 .msg { display: flex; flex-direction: column; max-width: 100%; animation: msg-in var(--t-md) var(--ease-out) both; }
 @keyframes msg-in { from { opacity: 0; transform: translateY(8px); } }
@@ -170,26 +165,23 @@
   .ai-hist-btn { display: grid; }
 }
 
-/* Na stránce je místa víc, tak se vejde víc návrhů; v šuplíku jsou tři krátké.
-   Pole i nabídka drží stejnou šířku — přes celou kartu by bylo pole na
-   širokém okně půl metru dlouhé a text v něm ztracený. */
-.ai-main .chat-navrhy { max-width: 760px; margin: 0 auto; }
+/* Pole drží rozumnou šířku — přes celou kartu by bylo na širokém okně půl
+   metru dlouhé a text v něm ztracený. */
 .ai-main .chat[data-stav="uvod"] .chat-pole { width: 100%; max-width: 760px; margin-inline: auto; }
 .assistant-drawer .chat-uvod { padding: 16px 18px 10px; }
 .assistant-drawer .chat-pozdrav { font-size: 1.5rem; }
-@media (max-width: 720px) { .assistant-drawer { height: min(88dvh, calc(var(--vvh, 100dvh) - 12px)); } }
+@media (max-width: 720px) {
+  .assistant-drawer { height: min(88dvh, calc(var(--vvh, 100dvh) - 12px)); }
+  /* Dock plave nad šuplíkem, takže spodek obsahu musí začít nad ním. */
+  :root:not([data-kb="open"]) .assistant-drawer { padding-bottom: calc(var(--dock-h) + 18px + env(safe-area-inset-bottom)); }
+}
 
 /* Nízké okno: uvítání se svléká odshora, ať zůstane pole a aspoň jeden návrh.
    Řídí se výškou samotného chatu, ne obrazovky — šuplík i stránka mají svoje. */
 .chat { container-type: size; }
-@container (max-height: 520px) { .chat-uvod-text { display: none; } }
-@container (max-height: 430px) {
-  .chat-navrhy .navrh:nth-child(n+3) { display: none; }
-  .chat-history { display: none; }
-}
-@container (max-height: 340px) {
+@container (max-height: 460px) { .chat-uvod-text { display: none; } }
+@container (max-height: 330px) {
   .chat-pozdrav { font-size: 1.25rem; }
-  .chat-navrhy { display: none; }
   .chat-disclaimer { display: none; }
 }
 
@@ -204,12 +196,9 @@
 :root[data-transparency="off"] .ai-side,
 :root[data-transparency="off"] .ai-main .chat,
 :root[data-transparency="off"] .chat-pole,
-:root[data-transparency="off"] .navrh,
 :root[data-transparency="off"] .msg-ai .msg-bubble { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
 :root[data-motion="reduce"] .chat-uvod,
-:root[data-motion="reduce"] .chat-navrhy,
-:root[data-motion="reduce"] .chat-history,
 :root[data-motion="reduce"] .chat-log,
 :root[data-motion="reduce"] .ai-side,
 :root[data-motion="reduce"] .ai-main { animation: none; }
