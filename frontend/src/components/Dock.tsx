@@ -53,7 +53,13 @@ function useTravellingHighlight(path: string) {
     const active = box.querySelector<HTMLElement>('.dock-item[aria-current="page"]');
     if (!active) { layer.dataset.empty = "true"; last.current = null; return; }
 
-    const cr = box.getBoundingClientRect();
+    // Měří se proti **vrstvě**, ve které pilulka bydlí, ne proti docku.
+    // Vrstva je `position: absolute; inset: 0`, takže její počátek leží na
+    // vnitřní hraně docku — o jeho odsazení dovnitř. Proti docku vycházelo
+    // zvýraznění o těch šest pixelů vedle a za ikonou sedělo nakřivo.
+    // Vrstva se navíc v postranním docku posouvá s obsahem, takže z výpočtu
+    // vypadl i `scrollLeft`/`scrollTop`, který by se jinak započítal dvakrát.
+    const cr = layer.getBoundingClientRect();
     const ar = active.getBoundingClientRect();
     // Zero-size happens while a webfont has not swapped in or the bar is still
     // hidden. Retrying next frame is the difference between "not yet" and
@@ -63,7 +69,7 @@ function useTravellingHighlight(path: string) {
       return;
     }
     retry.current = 0;
-    const next: Box = { x: ar.left - cr.left + box.scrollLeft, y: ar.top - cr.top + box.scrollTop, w: ar.width, h: ar.height };
+    const next: Box = { x: ar.left - cr.left, y: ar.top - cr.top, w: ar.width, h: ar.height };
     const prev = last.current;
 
     // A re-measure with nothing to correct must not restart anything, or a

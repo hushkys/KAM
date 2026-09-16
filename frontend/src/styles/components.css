@@ -710,21 +710,21 @@ a.list-row:hover .list-title { color: var(--accent); }
      sklo má být vidět proti pozadí, ne místo něj. */
   background:
     linear-gradient(180deg, color-mix(in oklab, #fff 5%, transparent), color-mix(in oklab, #fff 1%, transparent) 46%),
-    color-mix(in oklab, var(--surface) 34%, transparent);
+    color-mix(in oklab, var(--surface) 12%, transparent);
+  /* Lem je vlasový. Silný rám udělá z prvku rámeček s výplní; sklo má mít
+     jen tenkou světlou hranu, kde se láme světlo. */
   box-shadow:
     0 22px 54px -26px rgba(0, 0, 0, .85),
-    inset 0 1.2px 1px color-mix(in oklab, #fff 40%, transparent),
-    inset 0 -1.2px 1px color-mix(in oklab, #fff 14%, transparent),
-    inset 1.2px 0 1px color-mix(in oklab, #fff 16%, transparent),
-    inset -1.2px 0 1px color-mix(in oklab, #fff 16%, transparent),
-    inset 0 0 46px -20px color-mix(in oklab, #fff 30%, transparent);
+    inset 0 1px 0 color-mix(in oklab, #fff 46%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, #fff 16%, transparent),
+    inset 0 0 22px -16px color-mix(in oklab, #fff 34%, transparent);
 }
 /* Záloha pro prohlížeče, které SVG filtr na pozadí neumí (Safari, Firefox):
    zůstane čiré sklo s lemem, jen bez lomu. Musí stát **před** pravidlem
    s `url()`, aby ho tam, kde lom funguje, přebilo to druhé. */
 :root[data-transparency="on"] .sklo:not(.je-hlavni) {
-  -webkit-backdrop-filter: blur(12px) saturate(165%) brightness(1);
-  backdrop-filter: blur(12px) saturate(165%) brightness(1);
+  -webkit-backdrop-filter: blur(10px) saturate(155%);
+  backdrop-filter: blur(10px) saturate(155%);
 }
 /* Čočku nedostane všech sedmadvacet boxů. Rozostření kleslo z osmnácti
    pixelů na dva a půl, takže je dnes sklo samo o sobě levnější než dřív, ale
@@ -739,7 +739,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 :root[data-transparency="on"][data-motion="full"] .hp-konec-karta.sklo,
 :root[data-transparency="on"][data-motion="full"] .sklo:hover,
 :root[data-transparency="on"][data-motion="full"] .sklo:focus-visible {
-  backdrop-filter: blur(2.5px) url(#sklo-cocka) saturate(160%) brightness(1.01);
+  backdrop-filter: blur(1.5px) url(#sklo-cocka) saturate(150%);
 }
 /* `:not(.je-hlavni)` je tu místo dřívějšího přebíjení přes `backdrop-filter:
    none`: tu deklaraci minifikátor zahodil jako zbytečnou a plné tlačítko si
@@ -747,27 +747,28 @@ a.list-row:hover .list-title { color: var(--accent); }
    o filtr je spolehlivější než ho potom rušit. */
 :root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo:not(.je-hlavni),
 :root[data-transparency="on"][data-motion="full"] .hp-tlacitko.sklo:not(.je-hlavni):hover {
-  backdrop-filter: blur(2.5px) url(#sklo-cocka-pilulka) saturate(160%) brightness(1.01);
+  backdrop-filter: blur(1.5px) url(#sklo-cocka-pilulka) saturate(150%);
 }
 
 /* Rozptyl na hraně. Maska ze dvou vrstev složených přes `exclude` nechá
    z prvku jen obrys podle jeho vlastního zaoblení. */
 .sklo::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  padding: 7px; pointer-events: none; z-index: 0;
+  padding: 1.5px; pointer-events: none; z-index: 0;
   background: conic-gradient(from 215deg,
-    color-mix(in oklab, #ff8080 50%, transparent),
-    color-mix(in oklab, #8caeff 45%, transparent) 22%,
-    transparent 48%, transparent 58%,
-    color-mix(in oklab, #a0ffdc 40%, transparent) 80%,
-    color-mix(in oklab, #ff8080 50%, transparent));
+    color-mix(in oklab, #ff8c8c 72%, transparent),
+    color-mix(in oklab, #96beff 68%, transparent) 22%,
+    color-mix(in oklab, #fff 86%, transparent) 46%,
+    color-mix(in oklab, #fff 86%, transparent) 56%,
+    color-mix(in oklab, #b4ffe6 66%, transparent) 80%,
+    color-mix(in oklab, #ff8c8c 72%, transparent));
   -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   -webkit-mask-clip: content-box, border-box;
   mask-clip: content-box, border-box;
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  mix-blend-mode: screen; opacity: .3;
+  mix-blend-mode: screen; opacity: .5;
 }
 
 .sklo::after {
@@ -780,8 +781,12 @@ a.list-row:hover .list-title { color: var(--accent); }
   mix-blend-mode: soft-light;
   transition: opacity var(--t-md) var(--ease-out);
 }
-/* Obsah musí zůstat nad oběma vrstvami; jinak by odlesk ležel přes text. */
-.sklo > * { position: relative; z-index: 1; }
+/* Obsah musí zůstat nad oběma vrstvami; jinak by odlesk ležel přes text.
+   `:where()` sráží specifičnost na nulu schválně: bez toho tohle pravidlo
+   přebilo docku `position: absolute` na vrstvě s putujícím zvýrazněním,
+   z vrstvy se stal nulově široký prvek v toku a zvýraznění sedělo o šest
+   pixelů vedle ikony. Prvek, který si pozici řeší sám, ji tu musí ubránit. */
+:where(.sklo) > * { position: relative; z-index: 1; }
 
 :root[data-transparency="off"] .sklo {
   background: var(--surface);
@@ -813,11 +818,6 @@ a.list-row:hover .list-title { color: var(--accent); }
 :root[data-motion="reduce"] .sklo,
 :root[data-motion="reduce"] .sklo::after { transition: none; }
 
-/* Dock je sklo jako boxy, jen placatější: pilulková mapa mu sedí líp než
-   mapa karty a stín pod ním je slabší, aby se neodlepil od spodní hrany. */
-:root[data-transparency="on"][data-motion="full"] .dock.sklo {
-  backdrop-filter: blur(2.5px) url(#sklo-cocka-pilulka) saturate(160%) brightness(1.01);
-}
 /* `position` se musí vrátit: `.sklo` nastavuje `relative` kvůli svým dvěma
    vrstvám a v pořadí souborů přebíjí `fixed` z `base.css` — dock pak spadl
    z dolní hrany do toku stránky a ze stránky úplně zmizel. Umístění docku
@@ -828,12 +828,12 @@ a.list-row:hover .list-title { color: var(--accent); }
 .dock.sklo {
   background:
     linear-gradient(180deg, color-mix(in oklab, #fff 6%, transparent), transparent 46%),
-    color-mix(in oklab, var(--surface) 78%, transparent);
+    color-mix(in oklab, var(--surface) 62%, transparent);
 }
 :root[data-transparency="on"][data-motion="full"] .dock.sklo {
-  backdrop-filter: blur(9px) url(#sklo-cocka-pilulka) saturate(160%) brightness(1.01);
+  backdrop-filter: blur(7px) url(#sklo-cocka-pilulka) saturate(150%);
 }
-.dock.sklo { position: fixed; box-shadow: 0 16px 38px -22px rgba(0, 0, 0, .8), inset 0 1.2px 1px color-mix(in oklab, #fff 34%, transparent), inset 0 -1.2px 1px color-mix(in oklab, #fff 12%, transparent); }
+.dock.sklo { position: fixed; box-shadow: 0 16px 38px -22px rgba(0, 0, 0, .8), inset 0 1px 0 color-mix(in oklab, #fff 40%, transparent), inset 0 -1px 0 color-mix(in oklab, #fff 14%, transparent); }
 
 /* ------------------------------------------------- offline
    Levý dolní roh. Zkoušelo se to nahoře pod navbarem a bylo to špatně na

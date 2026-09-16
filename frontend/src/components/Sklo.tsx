@@ -11,39 +11,40 @@
 
 import { useEffect, type RefObject } from "react";
 
-/** Mapa posunu pro čočku.
+/** Mapa posunu pro vodní čočku.
  *
  *  `feDisplacementMap` z ní čte, o kolik posunout který bod pozadí: 128 je
- *  klid, 0 plný posun doleva (nahoru), 255 doprava (dolů). Uvnitř je proto
- *  neutrální šedá a teprve u hrany přechází do krajů — skutečné sklo taky
- *  ohýbá nejvíc tam, kde je nejtlustší.
+ *  klid, 0 plný posun doleva (nahoru), 255 doprava (dolů).
+ *
+ *  Zastávky přechodu jsou schválně **nerovnoměrné**. Rovnoměrný přechod
+ *  obraz jen zvětší — vypadá to jako lupa, ne jako voda. Tenhle drží střed
+ *  skoro v klidu a k okraji prudce sílí, takže se kresba u hrany stlačí
+ *  přesně tak, jak se ohýbá pohled přes okraj kapky. Předchozí verze měla
+ *  posun jen v prstenci u hrany a zbytek plochy nedělal nic; z toho byl
+ *  tlustý šedý rám, ne sklo.
  *
  *  Vodorovnou osu nese červený kanál, svislou zelený, a druhý přechod se
  *  kreslí na **poloviční krytí**, takže se obě osy vejdou do jednoho obrázku
  *  a filtru stačí jeden průchod místo dvou.
  *
  *  Rozměry jsou jen referenční: `preserveAspectRatio="none"` mapu roztáhne na
- *  skutečnou velikost prvku, takže jedna obslouží různě velké karty. Okraj
- *  i rozmazání se počítají z kratší strany, aby prstenec zůstal přiměřený. */
-function mapaPosunu(w: number, h: number, r: number, okrajPodil = 0.16, rozostreniPodil = 0.07): string {
-  const okraj = Math.round(Math.min(w, h) * okrajPodil);
-  const b = Math.max(2, Math.round(Math.min(w, h) * rozostreniPodil));
+ *  skutečnou velikost prvku, takže jedna obslouží různě velké karty. */
+const ZASTAVKY: [number, number][] = [[0, 0], [0.18, 58], [0.34, 104], [0.5, 128], [0.66, 152], [0.82, 198], [1, 255]];
+
+function mapaPosunu(w: number, h: number): string {
+  const prechod = (osa: "x" | "y") => ZASTAVKY
+    .map(([o, v]) => `<stop offset="${o}" stop-color="${osa === "x" ? `rgb(${v},128,128)` : `rgb(128,${v},128)`}"/>`)
+    .join("");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
-    + `<defs>`
-    + `<linearGradient id="gx" x1="0" x2="1"><stop offset="0" stop-color="rgb(0,128,128)"/><stop offset="1" stop-color="rgb(255,128,128)"/></linearGradient>`
-    + `<linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(128,0,128)"/><stop offset="1" stop-color="rgb(128,255,128)"/></linearGradient>`
-    + `<filter id="b"><feGaussianBlur stdDeviation="${b}"/></filter>`
-    + `<mask id="p"><rect width="${w}" height="${h}" fill="#fff"/>`
-    + `<rect x="${okraj}" y="${okraj}" width="${w - 2 * okraj}" height="${h - 2 * okraj}" rx="${Math.max(0, r - okraj)}" fill="#000" filter="url(#b)"/></mask>`
-    + `</defs>`
-    + `<rect width="${w}" height="${h}" fill="rgb(128,128,128)"/>`
-    + `<g mask="url(#p)"><rect width="${w}" height="${h}" fill="url(#gx)"/>`
-    + `<rect width="${w}" height="${h}" fill="url(#gy)" opacity="0.5"/></g></svg>`;
+    + `<defs><linearGradient id="gx" x1="0" x2="1">${prechod("x")}</linearGradient>`
+    + `<linearGradient id="gy" x1="0" y1="0" x2="0" y2="1">${prechod("y")}</linearGradient></defs>`
+    + `<rect width="${w}" height="${h}" fill="url(#gx)"/>`
+    + `<rect width="${w}" height="${h}" fill="url(#gy)" opacity="0.5"/></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-const MAPA_KARTA = mapaPosunu(300, 170, 26);
-const MAPA_PILULKA = mapaPosunu(260, 54, 27, 0.3, 0.16);
+const MAPA_KARTA = mapaPosunu(290, 165);
+const MAPA_PILULKA = mapaPosunu(260, 54);
 
 /** Čočky pro sklo. Dvě, protože pilulka má tak nízký poměr stran, že by se
  *  jí mapa karty po roztažení zdeformovala. */
@@ -52,11 +53,11 @@ export function SkloFiltry() {
     <svg className="goo-defs" aria-hidden="true" focusable="false">
       <filter id="sklo-cocka" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
         <feImage href={MAPA_KARTA} preserveAspectRatio="none" result="mapa" />
-        <feDisplacementMap in="SourceGraphic" in2="mapa" scale="64" xChannelSelector="R" yChannelSelector="G" />
+        <feDisplacementMap in="SourceGraphic" in2="mapa" scale="120" xChannelSelector="R" yChannelSelector="G" />
       </filter>
       <filter id="sklo-cocka-pilulka" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
         <feImage href={MAPA_PILULKA} preserveAspectRatio="none" result="mapa" />
-        <feDisplacementMap in="SourceGraphic" in2="mapa" scale="30" xChannelSelector="R" yChannelSelector="G" />
+        <feDisplacementMap in="SourceGraphic" in2="mapa" scale="46" xChannelSelector="R" yChannelSelector="G" />
       </filter>
     </svg>
   );
