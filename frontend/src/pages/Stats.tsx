@@ -8,6 +8,7 @@ import type { Sources } from "../lib/types";
 interface StatsT {
   datasets: Sources; observations_per_year: { year: number; count: number }[]; indicators_per_pillar: { key: string; label: string; count: number }[];
   pois: { kind: string; label: string; count: number }[]; formats: { format: string; count: number }[];
+  dokumenty: { druh: string; label: string; count: number }[];
   ai: { questions: number; blocked: number; rag: { docs: number; vector_coverage: number; terms: number; vectors: number } };
   simulation: { cache: { size: number; capacity: number }; popular: { key: string; territory: string; hits: number; interventions: { type: string }[]; cached: boolean }[] };
   crowd: { reports: number; clusters: number; by_status: Record<string, number> };
@@ -20,6 +21,7 @@ export function Stats() {
   const { data } = useApi<StatsT>("/stats");
   const obs = data?.observations_per_year.reduce((a, r) => a + r.count, 0) ?? 0;
   const f = data?.datasets.by_freshness ?? {};
+  const dok = data?.dokumenty.reduce((a, d) => a + d.count, 0) ?? null;
   return (
     <>
       <StatistikyHook roky={data?.observations_per_year ?? []} />
@@ -27,8 +29,9 @@ export function Stats() {
         <Stat i={0} label="Funkčních datových sad" value={num(data?.datasets.verified ?? null)} sub={data ? `${num(data.datasets.total)} v katalogu` : ""} />
         <Stat i={1} label="Měřených hodnot" value={compact(obs)} />
         <Stat i={2} label="Zařízení a zastávek" value={num(data?.pois.reduce((a, p) => a + p.count, 0) ?? null)} />
-        <Stat i={3} label="Dokumentů v indexu" value={num(data?.ai.rag.docs ?? null)} sub={data ? `${Math.round(100 * data.ai.rag.vector_coverage)} % s vektory` : ""} />
-        <Stat i={4} label="Dotazů na asistenta" value={num(data?.ai.questions ?? null)} sub={data ? `${num(data.ai.blocked)} zablokováno ochranou` : ""} />
+        <Stat i={3} label="Dokumentů obcí" value={num(dok)} sub="programy rozvoje a územní plány" />
+        <Stat i={4} label="Dokumentů v indexu" value={num(data?.ai.rag.docs ?? null)} sub={data ? `${Math.round(100 * data.ai.rag.vector_coverage)} % s vektory` : ""} />
+        <Stat i={5} label="Dotazů na asistenta" value={num(data?.ai.questions ?? null)} sub={data ? `${num(data.ai.blocked)} zablokováno ochranou` : ""} />
       </div>
       <div className="grid">
         <Card span={6} i={1} title="Datové sady podle zdroje" icon="layers">

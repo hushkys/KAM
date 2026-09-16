@@ -21,7 +21,7 @@ from ..db import SessionLocal
 from ..indicators import DERIVED, PILLARS
 from ..ingest.common import norm
 from ..ingest.geo import load as load_geo
-from ..models import AuditLog, ChatMessage, Dataset, Event, Indicator, JobState, Observation, Poi, RagChunk, Source
+from ..models import AuditLog, ChatMessage, Dataset, Dokument, Event, Indicator, JobState, Observation, Poi, RagChunk, Source
 from ..territory import HOME_KRAJ, KRAJ_BY_CODE, KRAJE, LEVEL_LABEL
 
 router = APIRouter(prefix="/api")
@@ -407,6 +407,7 @@ def stats() -> dict:
         blocked = s.scalar(select(func.count(AuditLog.id)).where(AuditLog.action == "ai_blocked")) or 0
         jobs = [{"name": j.name, "status": j.status, "detail": j.detail[:300], "progress": j.progress, "updated_at": j.updated_at.isoformat()} for j in s.scalars(select(JobState))]
         vectors = s.scalar(select(func.count(RagChunk.id)).where(RagChunk.vector.is_not(None))) or 0
+        dokumenty = s.execute(select(Dokument.druh, func.count()).group_by(Dokument.druh)).all()
     fmt_counter: dict[str, int] = {}
     for f, n in formats:
         for part in (f or "").split(","):
@@ -419,6 +420,11 @@ def stats() -> dict:
         "indicators_per_pillar": [{"key": p, "label": PILLARS.get(p, p), "count": n} for p, n in per_pillar],
         "pois": [{"kind": k, "label": kind_label.get(k, k), "count": n} for k, n in sorted(pois, key=lambda x: -x[1])],
         "formats": sorted(({"format": k, "count": v} for k, v in fmt_counter.items()), key=lambda x: -x["count"])[:14],
+        # Druh je klíč aplikace; popisek k němu patří sem, ne do stránky —
+        # jinde by se rozešel s tím, co říká `analytics/plany.POVINNOSTI`.
+        "dokumenty": [{"druh": d, "label": {"pro": "Programy rozvoje obcí",
+                                            "upd": "Územní plány a jejich změny"}.get(d, d), "count": n}
+                      for d, n in sorted(dokumenty, key=lambda x: -x[1])],
         "ai": {"questions": chats, "blocked": blocked, "rag": {**rag.stats(), "vectors": vectors}},
         "simulation": {"cache": simulate.cache_info(), "popular": simulate.popular(8)},
         "crowd": crowd.stats(), "jobs": jobs,

@@ -262,6 +262,18 @@ export function Plany() {
     return set;
   }, [seznam, hledat, filtr, razeni]);
 
+  // Stáří územních plánů po desetiletích. Je to popis, ne hodnocení: územní
+  // plán nemá platnost, která by vypršela, takže rok říká jen to, kdy se
+  // dokument naposledy přepisoval. Pruh ale ukáže, co v řazení není vidět —
+  // že polovina kraje staví podle dokumentu z minulého desetiletí.
+  const dekady = useMemo(() => {
+    const k = new Map<number, number>();
+    for (const r of seznam) if (r.upd_od) k.set(Math.floor(r.upd_od / 10) * 10, (k.get(Math.floor(r.upd_od / 10) * 10) ?? 0) + 1);
+    const vse = [...k.entries()].sort((a, b) => a[0] - b[0]);
+    const nej = Math.max(1, ...vse.map(([, n]) => n));
+    return vse.map(([d, n]) => ({ d, n, podil: n / nej }));
+  }, [seznam]);
+
   const prepni = (id: string) => {
     setOtevreno((s) => (s === id ? "" : id));
     setQuery({ t: null });
@@ -317,6 +329,25 @@ export function Plany() {
                   </div>
                 );
               })}
+              {dekady.length > 1 && (
+                <div className="pl-dekady">
+                  <h3 className="pl-rail-nadpis">Z kterého desetiletí je územní plán</h3>
+                  <ul>
+                    {dekady.map((x) => (
+                      <li key={x.d}>
+                        <span className="pl-dekada-rok">{x.d}.</span>
+                        <span className="pl-dekada-drah"><i style={{ width: `${Math.round(x.podil * 100)}%` }} /></span>
+                        <span className="pl-dekada-pocet">{num(x.n)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="pl-pov-zdroj">
+                    Ze {num(dekady.reduce((a, x) => a + x.n, 0))} obcí, u kterých evidence uvádí datum
+                    vydání. Rok je datum vydání nejnovějšího nearchivovaného dokumentu, ne konec
+                    platnosti — ten územní plán nemá.
+                  </p>
+                </div>
+              )}
               <p className="pl-rail-pozn">{data.poznamka}</p>
               <p className="pl-rail-pozn">
                 Co z plánu je hotové, se tu netvrdí. Registr, kde by u jednotlivého záměru stálo

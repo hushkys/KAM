@@ -129,7 +129,7 @@ def prikaz_ukazatele(args) -> None:
 
 def prikaz_uzemi(args) -> None:
     d = _zavolej(args.server, "/uzemi", {"uroven": args.uroven, "hledat": args.hledat})
-    _vypis(d, ["id", "nazev", "uroven", "kod_ruian", "obyvatel"], args)
+    _vypis(d, ["id", "nazev", "uroven", "kod_ruian", "obyvatel", "ico"], args)
 
 
 def prikaz_data(args) -> None:

@@ -239,6 +239,26 @@ def test_krajsky_podklad_odpovi_na_otazku_pres_cely_kraj():
     assert "/plany" in t
 
 
+def test_verejne_uzemi_nese_ico_a_datovou_schranku(client):
+    """IČO je druhý klíč: přes něj jdou naše řádky spojit s cizími registry."""
+    d = client.get("/api/v1/uzemi?uroven=obec").json()
+    radek = next(x for x in d["polozky"] if x["id"] == "obec:500001")
+    assert radek["ico"] == "00268810"
+    # Obec, kterou se spárovat nepodařilo, má prázdno — ne hádané IČO.
+    assert next(x for x in d["polozky"] if x["id"] == "obec:500003")["ico"] == ""
+    # Do CSV se sloupce musí dostat taky, jinak je export jiná datová sada.
+    csv = client.get("/api/v1/uzemi?uroven=obec&format=csv").text.splitlines()[0]
+    assert "ico" in csv and "datova_schranka" in csv
+
+
+def test_statistiky_pocitaji_dokumenty_podle_druhu(client):
+    d = client.get("/api/stats").json()["dokumenty"]
+    assert {x["druh"] for x in d} == {"pro", "upd"}
+    assert sum(x["count"] for x in d) == 6
+    # Popisek je u druhu, ne ve stránce — jinak se rozejde s analytikou.
+    assert all(x["label"] and x["label"] != x["druh"] for x in d)
+
+
 def test_api_vraci_prehled_i_detail(client):
     r = client.get("/api/plany")
     assert r.status_code == 200 and r.json()["seznam"]

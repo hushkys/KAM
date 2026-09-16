@@ -1183,6 +1183,13 @@
 .pl-pov-popis { margin: 2px 0 0; font-size: .75rem; line-height: 1.5; color: var(--text-dim); }
 .pl-pov-zdroj { margin: 0; font-size: .6875rem; color: var(--text-mute); }
 .pl-pov-zdroj span { color: var(--text-dim); }
+.pl-dekady { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.pl-dekady ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pl-dekady li { display: grid; grid-template-columns: 4.5ch minmax(0, 1fr) 3.5ch; align-items: center; gap: 8px; }
+.pl-dekada-rok { font-size: .6875rem; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+.pl-dekada-drah { height: 8px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.pl-dekada-drah i { display: block; height: 100%; border-radius: 3px; background: color-mix(in oklab, var(--accent) 72%, transparent); }
+.pl-dekada-pocet { font-size: .6875rem; color: var(--text-dim); font-variant-numeric: tabular-nums; text-align: right; }
 .pl-rail-pozn { margin: 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: .6875rem; line-height: 1.6; color: var(--text-mute); }
 .pl-rail-pozn + .pl-rail-pozn { padding-top: 0; border-top: 0; }
 

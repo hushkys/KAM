@@ -31,7 +31,7 @@ začít pracovat, aniž byste četli zbytek tohoto souboru.
 | `/api/v1` | Rozcestník s počty a příklady | — |
 | `/api/v1/hodnoty` | **Naměřené hodnoty** | `ukazatel`, `uzemi`, `uroven`, `od`, `do`, `limit`, `offset`, `format` |
 | `/api/v1/ukazatele` | Registr ukazatelů | `oblast`, `hledat`, `format` |
-| `/api/v1/uzemi` | Obce, ORP, okresy, kraj | `uroven`, `hledat`, `format` |
+| `/api/v1/uzemi` | Obce, ORP, okresy, kraj — i s IČO a datovou schránkou | `uroven`, `hledat`, `format` |
 | `/api/v1/fakta` | Nečíselné údaje o území | `uzemi`, `klic`, `format` |
 | `/api/v1/zarizeni` | Zastávky, školy, ordinace | `druh`, `obec`, `format` |
 | `/api/v1/dokumenty` | Programy rozvoje a územní plány obcí | `uzemi`, `druh`, `stav`, `od`, `do`, `format` |

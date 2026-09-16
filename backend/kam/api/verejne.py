@@ -180,7 +180,13 @@ def ukazatele(oblast: str = "", hledat: str = "", format: str = "json") -> Any:
 @router.get("/uzemi")
 def uzemi(uroven: str = "", hledat: str = "", format: str = "json") -> Any:
     """Území i s kódy RÚIAN — tedy s identifikátory, na které se dá napojit
-    jiný registr. `id` je to, čím se ptáte na hodnoty."""
+    jiný registr. `id` je to, čím se ptáte na hodnoty.
+
+    `ico` a `datova_schranka` jsou u obcí druhý takový klíč: přes IČO vedou
+    adresy do MONITORu státní pokladny, registru smluv i ARESu, takže si
+    kdokoli dokáže naše řádky spojit s tím, co o obci vedou jiné registry.
+    Prázdné tam, kde se obec s ARESem spárovat nepodařilo — hádané IČO by
+    ukázalo na cizí úřad."""
     format = _format(format)
     with SessionLocal() as s:
         q = select(Territory).order_by(Territory.level, Territory.name)
@@ -194,9 +200,11 @@ def uzemi(uroven: str = "", hledat: str = "", format: str = "json") -> Any:
         "id": t.id, "uroven": t.level, "kod_ruian": t.code, "nazev": t.name,
         "nadrazene": t.parent_id, "orp": t.orp_id, "okres": t.okres_id,
         "kraj": t.kraj_code, "obyvatel": t.population,
+        "ico": t.ico or "", "datova_schranka": t.ds or "",
         "lon": round(t.lon, 6) if t.lon else None, "lat": round(t.lat, 6) if t.lat else None,
     } for t in rows]
-    hlavicka = ["id", "uroven", "kod_ruian", "nazev", "nadrazene", "orp", "okres", "kraj", "obyvatel", "lon", "lat"]
+    hlavicka = ["id", "uroven", "kod_ruian", "nazev", "nadrazene", "orp", "okres", "kraj", "obyvatel",
+                "ico", "datova_schranka", "lon", "lat"]
     return _odpoved(polozky, hlavicka, "kam-uzemi", format, {"celkem": len(polozky)})
 
 
