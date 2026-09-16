@@ -7,7 +7,7 @@
 
 import { Icon } from "../components/Icon";
 import { Card, PageHeader } from "../components/ui";
-import { Team } from "../components/Team";
+import { Team, WEB_TYMU } from "../components/Team";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
 import { Link } from "../lib/router";
@@ -48,7 +48,12 @@ export function About() {
   return (
     <>
       <PageHeader eyebrow="Tým Popojedem." title="Kdo stojí za KAM"
-        lead="Loni jsme postavili KompaZ — průvodce krizovými situacemi v kraji — a vyhráli s ním stejnou soutěž. Letos jsme popojeli dál: od toho, co dělat, když problém nastane, k tomu, jak ho vidět dřív." />
+        lead="Loni jsme postavili KompaZ — průvodce krizovými situacemi v kraji — a vyhráli s ním stejnou soutěž. Letos jsme popojeli dál: od toho, co dělat, když problém nastane, k tomu, jak ho vidět dřív."
+        actions={
+          <a className="btn btn-primary" href={WEB_TYMU} target="_blank" rel="noopener noreferrer">
+            <Icon name="external" size={16} /> Web týmu Popojedem.
+          </a>
+        } />
       <div className="stack-y">
         <Team />
 

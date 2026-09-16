@@ -19,7 +19,7 @@ import { openAssistant } from "../components/assistantBus";
 import { Icon } from "../components/Icon";
 import { KrajVizual } from "../components/KrajVizual";
 import { Wordmark } from "../components/Logo";
-import { Team } from "../components/Team";
+import { Team, WEB_TYMU } from "../components/Team";
 import { WordmarkHop } from "../components/WordmarkHop";
 import { useApi } from "../lib/api";
 import { compact, num } from "../lib/format";
@@ -370,6 +370,7 @@ export function Hook() {
         <span>© 2026 tým Popojedem. · KAM je prototyp pro Hackathon Královéhradeckého kraje.</span>
         <nav>
           <Link to="/o-nas">O nás</Link>
+          <a href={WEB_TYMU} target="_blank" rel="noopener noreferrer">Web týmu</a>
           <Link to="/pravni">Právní informace</Link>
           <Link to="/data">Data a metodika</Link>
           <Link to="/data?tab=api">API</Link>
