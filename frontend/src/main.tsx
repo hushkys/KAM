@@ -6,6 +6,9 @@ import "@fontsource-variable/manrope";
 import "@fontsource-variable/fraunces/wonk.css";
 import "./styles/base.css";
 import "./styles/components.css";
+// Úvodní stránka má vlastní soubor a načítá se před `pages.css`, aby dotykový
+// blok na jeho konci zůstal opravdu poslední.
+import "./styles/hook.css";
 import "./styles/pages.css";
 import { initKeyboard } from "./lib/keyboard";
 import { apply } from "./lib/prefs";

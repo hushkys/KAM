@@ -34,36 +34,89 @@
 .more-label { font-weight: 700; font-size: .9375rem; }
 .more-desc { font-size: .8125rem; color: var(--text-dim); line-height: 1.35; }
 
-/* ------------------------------------------------------------- assistant */
+/* -------------------------------------------------------------- asistent
+   Nejdřív jen pole, chat až s odpovědí.
+
+   Prázdný chat, do kterého se hned otevře historie zpráv, je nabídka bez
+   obsahu. Tady je ve výchozím stavu uprostřed jen pozdrav, pole a tři návrhy;
+   jakmile přijde první zpráva, pole sjede dolů (FLIP v komponentě) a nad ním
+   se rozbalí rozhovor. Je to tentýž prvek, takže rozepsaný text nikam nezmizí.
+
+   Celý asistent je ze skla — šuplík, pole i stránka — protože je to vrstva
+   nad aplikací, ne další stránka v ní. Při vypnuté průhlednosti se všechno
+   vrací k neprůhlednému povrchu jedním blokem na konci. */
 .assistant-drawer {
   position: fixed; z-index: 70; top: calc(var(--nav-h) + 22px + env(safe-area-inset-top)); right: 12px; bottom: calc(var(--dock-h) + 30px + env(safe-area-inset-bottom));
-  width: min(440px, calc(100vw - 24px)); border-radius: var(--r-xl); overflow: hidden; display: flex;
+  width: min(460px, calc(100vw - 24px)); border-radius: var(--r-xl); overflow: hidden; display: flex;
   animation: drawer-in var(--t-lg) var(--ease-emph) both;
 }
+:root[data-transparency="on"] .assistant-drawer { -webkit-backdrop-filter: blur(30px) saturate(175%); backdrop-filter: blur(30px) saturate(175%); }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(24px) scale(.985); } }
 @media (min-width: 900px) { :root[data-dock="side"] .assistant-drawer { bottom: 16px; } }
 @media (max-width: 720px) {
   .assistant-drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; height: 88dvh; border-radius: var(--r-xl) var(--r-xl) 0 0; animation-name: sheet-up; padding-bottom: env(safe-area-inset-bottom); z-index: 80; }
   @keyframes sheet-up { from { transform: translateY(100%); } }
 }
+
 .chat { display: flex; flex-direction: column; min-height: 0; width: 100%; height: 100%; position: relative; }
-.chat-head { display: flex; align-items: center; gap: 6px; padding: 12px 10px 10px 18px; border-bottom: 1px solid var(--border); }
-.chat-log { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 14px; overscroll-behavior: contain; }
-.chat-empty { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 12px 4px; margin: auto 0; }
-.chat-empty-mark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #a88bff, #5b5fe0); margin-bottom: 4px; }
-.suggestions { display: grid; gap: 6px; width: 100%; margin-top: 8px; }
-.suggestion { display: flex; align-items: center; gap: 8px; text-align: left; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); font-size: .8438rem; cursor: pointer; transition: all var(--t-xs); }
-.suggestion:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-2); }
-.chat-history { width: 100%; display: grid; gap: 6px; margin-top: 10px; text-align: left; }
+.chat-head { display: flex; align-items: center; gap: 6px; padding: 12px 10px 10px 18px; }
+.chat[data-stav="chat"] .chat-head { border-bottom: 1px solid var(--glass-hair); }
+
+/* Uvítání. Sedí dole svého prostoru, takže s polem pod sebou tvoří jeden blok
+   uprostřed okna a ne dvě věci daleko od sebe. */
+.chat-uvod { flex: 1; min-height: 0; display: grid; align-content: end; justify-items: center; text-align: center;
+  gap: 12px; padding: 20px 22px 14px; animation: chat-uvod-in 720ms var(--ease-emph) both; }
+@keyframes chat-uvod-in { from { opacity: 0; transform: translateY(14px); } }
+.chat-jiskra { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--lime), var(--accent) 52%, #5b8cff);
+  box-shadow: 0 14px 34px -14px color-mix(in oklab, var(--accent) 80%, transparent); }
+.chat-pozdrav {
+  font-family: var(--font-nadpis); font-optical-sizing: auto;
+  font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.5rem); font-weight: 600; line-height: 1.08; letter-spacing: -.03em;
+  background: linear-gradient(100deg, var(--text) 8%, var(--accent) 52%, var(--lime) 88%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.chat-uvod-text { max-width: 46ch; color: var(--text-mute); font-size: .875rem; line-height: 1.6; }
+
+.chat-log { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 14px; overscroll-behavior: contain;
+  animation: fade-in var(--t-md) var(--ease-out) both; }
+
+/* Pole. Jeden prvek pro oba stavy — proto se dá mezi nimi přelétnout. */
+.chat-pole {
+  display: flex; align-items: flex-end; gap: 8px; margin: 10px 14px; padding: 7px 7px 7px 17px;
+  border-radius: 27px; border: 1px solid var(--glass-hair);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  transition: border-color var(--t-xs), box-shadow var(--t-sm);
+}
+:root[data-transparency="on"] .chat-pole { -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%); }
+.chat[data-stav="uvod"] .chat-pole { margin: 4px 22px 10px; box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .6); }
+.chat-pole:focus-within { border-color: var(--accent-line); box-shadow: 0 0 0 4px var(--accent-soft); }
+.chat-pole textarea { flex: 1; min-width: 0; resize: none; border: 0; outline: none; background: none; padding: 9px 0; line-height: 1.45; max-height: 160px; font-size: .9375rem; color: var(--text); font-family: inherit; }
+.chat-pole .send { background: var(--accent); color: var(--accent-fg); width: 38px; height: 38px; flex: none; }
+.chat-pole .send:disabled { background: color-mix(in oklab, var(--text) 10%, transparent); color: var(--text-mute); cursor: default; }
+
+.chat-navrhy { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 2px 20px 0;
+  animation: chat-uvod-in 720ms var(--ease-emph) 90ms both; }
+.navrh { padding: 8px 14px; border-radius: var(--r-pill); border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 55%, transparent);
+  color: var(--text-dim); font-size: .8125rem; font-weight: 600; cursor: pointer; text-align: left;
+  transition: color var(--t-xs), border-color var(--t-xs), background var(--t-xs), transform var(--t-md) var(--ease-spring); }
+.navrh:hover { color: var(--text); border-color: var(--accent-line); transform: translateY(-2px); }
+.navrh.je-historie { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; }
+.navrh.je-historie span, .navrh.je-historie { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Vzduch pod nabídkou: drží uvítání i s polem uprostřed okna. */
+.chat-vzduch { flex: 1; min-height: 0; }
+.chat-history { padding: 14px 20px 0; display: grid; gap: 8px; justify-items: center;
+  animation: chat-uvod-in 720ms var(--ease-emph) 160ms both; }
+.chat-history-nadpis { font-size: .6875rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); }
+.chat-history-radky { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; }
+
 .msg { display: flex; flex-direction: column; max-width: 100%; animation: msg-in var(--t-md) var(--ease-out) both; }
-@keyframes msg-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes msg-in { from { opacity: 0; transform: translateY(8px); } }
 .msg-user { align-items: flex-end; }
 .msg-user .msg-bubble { background: var(--accent); color: var(--accent-fg); border-radius: 18px 18px 6px 18px; padding: 10px 14px; max-width: 88%; white-space: pre-wrap; font-weight: 550; }
-.msg-ai .msg-bubble { background: var(--surface); border: 1px solid var(--border); border-radius: 18px 18px 18px 6px; padding: 12px 15px; max-width: 100%; min-width: 60px; }
-.md { display: grid; gap: 8px; font-size: .9063rem; line-height: 1.55; }
-.md ul { padding-left: 18px; display: grid; gap: 5px; }
-.md h4 { font-size: .9375rem; margin-top: 4px; }
-.md .kind { vertical-align: 1px; margin-right: 2px; }
+.msg-ai .msg-bubble { background: color-mix(in oklab, var(--surface) 70%, transparent); border: 1px solid var(--glass-hair); border-radius: 18px 18px 18px 6px; padding: 12px 15px; max-width: 100%; min-width: 60px; }
+.msg-bubble .md > :first-child { margin-top: 0; }
+.msg-bubble .md > :last-child { margin-bottom: 0; }
 .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 5px; font-size: .6563rem; font-weight: 800; background: var(--accent-soft); color: var(--accent); vertical-align: 2px; margin: 0 1px; text-decoration: none !important; }
 .cite.is-dead { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text-mute); }
 .msg-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -75,59 +128,71 @@
 .typing { display: inline-flex; gap: 4px; padding: 6px 2px; }
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-mute); animation: typing 1.1s infinite ease-in-out; }
 .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
-@keyframes typing { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
-.chat-input { display: flex; align-items: flex-end; gap: 8px; margin: 8px 12px 6px; padding: 6px 6px 6px 14px; border-radius: 22px; border: 1px solid var(--border-strong); background: var(--surface); transition: border-color var(--t-xs), box-shadow var(--t-xs); }
-.chat-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.chat-input textarea { flex: 1; min-width: 0; resize: none; border: 0; outline: none; background: none; padding: 8px 0; line-height: 1.45; max-height: 160px; font-size: .9375rem; }
-.chat-input .send { background: var(--accent); color: var(--accent-fg); width: 38px; height: 38px; }
-.chat-input .send:disabled { background: color-mix(in oklab, var(--text) 10%, transparent); color: var(--text-mute); cursor: default; }
-.chat-disclaimer { padding: 0 16px 12px; }
+@keyframes typing { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+.chat-disclaimer { padding: 6px 18px 12px; }
 
-/* Asistent page: fills the viewport between navbar and dock, no page scroll. */
+/* --------------------------------------------------------- stránka asistenta
+   Vyplní okno mezi navbarem a dockem; roluje jen rozhovor. */
 .page[data-page="asistent"] { padding-bottom: calc(var(--dock-h) + 30px + env(safe-area-inset-bottom)); }
 .ai-page {
-  display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: var(--gap);
+  display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: var(--gap);
   height: calc(var(--vvh, 100dvh) - var(--nav-h) - var(--dock-h) - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   min-height: 440px;
 }
 @media (min-width: 900px) { :root[data-dock="side"] .ai-page { height: calc(var(--vvh, 100dvh) - var(--nav-h) - 84px); } }
-.ai-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px; border-radius: var(--r-xl); border: 1px solid var(--border); background: var(--surface); }
-.ai-side-label { font-size: .6875rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); margin-top: 8px; }
+.ai-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px; border-radius: var(--r-xl);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 58%, transparent);
+  animation: ai-vjezd 620ms var(--ease-emph) both; }
+.ai-main { min-width: 0; min-height: 0; display: flex; animation: ai-vjezd 620ms var(--ease-emph) 90ms both; }
+.ai-main .chat { border: 1px solid var(--glass-hair); border-radius: var(--r-xl); overflow: hidden;
+  background: color-mix(in oklab, var(--surface) 52%, transparent); }
+@keyframes ai-vjezd { from { opacity: 0; transform: translateY(16px); } }
+:root[data-transparency="on"] .ai-side,
+:root[data-transparency="on"] .ai-main .chat { -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%); }
+.ai-side-label { font-size: .6875rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); margin-top: 8px; }
 .ai-sessions { display: grid; gap: 2px; overflow-y: auto; min-height: 0; flex: 1; align-content: start; }
-.ai-session { display: flex; align-items: center; gap: 2px; border-radius: var(--r-sm); }
-.ai-session:hover, .ai-session.is-on { background: color-mix(in oklab, var(--text) 7%, transparent); }
+.ai-session { display: flex; align-items: center; gap: 2px; border-radius: var(--r-md); }
+.ai-session:hover, .ai-session.is-on { background: color-mix(in oklab, var(--text) 8%, transparent); }
+.ai-session.is-on .ai-session-title { color: var(--accent); }
 .ai-session .icon-btn { opacity: 0; }
 .ai-session:hover .icon-btn, .ai-session.is-on .icon-btn { opacity: 1; }
-.ai-session-main { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 8px 10px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.ai-session-main { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 9px 10px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
 .ai-session-title { font-size: .8438rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-session-date { font-size: .6875rem; color: var(--text-mute); }
 .ai-empty-hist { padding: 4px 2px; flex: 1; }
-.ai-side-foot { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.ai-side-foot { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--glass-hair); }
 .ai-status { display: grid; gap: 6px; }
 .ai-status-row { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--text-dim); min-width: 0; }
-.ai-main { min-width: 0; min-height: 0; display: flex; }
-.ai-main .chat { border: 1px solid var(--border); border-radius: var(--r-xl); background: var(--surface); overflow: hidden; }
 .ai-hist-btn { display: none; }
 @media (max-width: 900px) {
   .ai-page { grid-template-columns: minmax(0, 1fr); }
   .ai-side { display: none; }
   .ai-hist-btn { display: grid; }
 }
-.chat-empty { gap: 6px; }
-.chat-empty-mark { width: 44px; height: 44px; border-radius: 14px; }
-.chat-empty h3 { font-size: 1.0625rem; }
-.suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-width: 720px; margin-top: 12px; }
-.chat.is-compact .suggestions, .assistant-drawer .suggestions { grid-template-columns: minmax(0, 1fr); }
-@media (max-width: 560px) { .suggestions { grid-template-columns: minmax(0, 1fr); } }
-.suggestion { padding: 9px 12px; font-size: .8125rem; line-height: 1.35; }
-.assistant-drawer { height: auto; }
-/* The empty state must fit the chat without scrolling: the log is a size
-   container and sheds suggestions (then the intro) as its height shrinks. */
-.chat-log { container-type: size; }
-@container (max-height: 560px) { .suggestion:nth-child(n+5) { display: none; } }
-@container (max-height: 430px) { .suggestion:nth-child(n+4) { display: none; } .chat-empty > p { display: none; } }
-@container (max-height: 340px) { .chat-empty-mark { display: none; } .suggestion:nth-child(n+3) { display: none; } }
+
+/* Na stránce je místa víc, tak se vejde víc návrhů; v šuplíku jsou tři krátké.
+   Pole i nabídka drží stejnou šířku — přes celou kartu by bylo pole na
+   širokém okně půl metru dlouhé a text v něm ztracený. */
+.ai-main .chat-navrhy { max-width: 760px; margin: 0 auto; }
+.ai-main .chat[data-stav="uvod"] .chat-pole { width: 100%; max-width: 760px; margin-inline: auto; }
+.assistant-drawer .chat-uvod { padding: 16px 18px 10px; }
+.assistant-drawer .chat-pozdrav { font-size: 1.5rem; }
 @media (max-width: 720px) { .assistant-drawer { height: min(88dvh, calc(var(--vvh, 100dvh) - 12px)); } }
+
+/* Vypnutá průhlednost: jedním blokem zpátky na neprůhledný povrch. */
+:root[data-transparency="off"] .assistant-drawer,
+:root[data-transparency="off"] .ai-side,
+:root[data-transparency="off"] .ai-main .chat,
+:root[data-transparency="off"] .chat-pole,
+:root[data-transparency="off"] .navrh,
+:root[data-transparency="off"] .msg-ai .msg-bubble { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+:root[data-motion="reduce"] .chat-uvod,
+:root[data-motion="reduce"] .chat-navrhy,
+:root[data-motion="reduce"] .chat-history,
+:root[data-motion="reduce"] .chat-log,
+:root[data-motion="reduce"] .ai-side,
+:root[data-motion="reduce"] .ai-main { animation: none; }
 
 /* ------------------------------------------------------------- picker */
 .picker { position: relative; display: grid; gap: 6px; min-width: 0; }
@@ -139,104 +204,9 @@
 .picker-item.is-active, .picker-item:hover { background: color-mix(in oklab, var(--text) 8%, transparent); }
 .picker-item[aria-selected="true"] strong { color: var(--accent); }
 
-/* ------------------------------------------------------------- hook */
-.hook { position: relative; overflow: hidden; }
-.hook-top { position: relative; z-index: 3; max-width: calc(var(--maxw) + 2 * var(--pad)); margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) var(--pad) 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.hook-top .wordmark { height: 22px; color: var(--text); }
-.hook-top nav { display: flex; gap: 4px; align-items: center; }
-.hook-hero { position: relative; z-index: 2; max-width: calc(var(--maxw) + 2 * var(--pad)); margin: 0 auto; padding: clamp(40px, 9vh, 110px) var(--pad) clamp(30px, 6vh, 70px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 60px); align-items: center; min-height: min(760px, calc(100dvh - 60px)); }
-@media (max-width: 960px) { .hook-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; } }
-.hook-kicker { font-size: .75rem; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 14px; }
-.hook-kicker::before { content: ""; width: 44px; height: 3px; border-radius: 3px; background: var(--lime); }
-.hook-word { margin: 26px 0 10px; color: var(--text); }
-.hook-word .wordmark { width: min(520px, 100%); height: auto; }
-.hook-sub { font-size: clamp(.8rem, .7rem + .5vw, 1.05rem); font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: var(--text-dim); }
-.hook-claim { margin-top: clamp(26px, 5vh, 44px); font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem); font-weight: 500; letter-spacing: -.035em; line-height: 1.08; }
-.hook-claim em { font-style: normal; color: var(--accent); }
-.hook-lead { margin-top: 18px; max-width: 54ch; color: var(--text-dim); font-size: clamp(.95rem, .9rem + .2vw, 1.0625rem); }
-.hook-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
-.hook-visual { position: relative; min-width: 0; }
-.hook-visual svg { width: 100%; height: auto; overflow: visible; }
-.hook-visual .kraj-orp { fill: color-mix(in oklab, var(--accent) 7%, transparent); stroke: color-mix(in oklab, var(--accent) 38%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.hook-visual .kraj-out { fill: none; stroke: color-mix(in oklab, var(--accent) 75%, transparent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-.hook-visual .curve { fill: none; stroke: var(--accent); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linecap: round; }
-.hook-visual .curve-future { stroke-dasharray: 6 6; opacity: .8; }
-.hook-visual .curve-dot { fill: var(--accent); }
-.hook-visual .curve-end { fill: var(--lime); }
-.hook-visual .curve-drop { stroke: color-mix(in oklab, var(--accent) 30%, transparent); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
-.hook-visual .curve-label { fill: var(--text-dim); font-size: 13px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
-.hook-caption { margin-top: 14px; text-align: center; font-size: .6875rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim); line-height: 1.6; }
-/* Ambient blobs behind the landing page, the same material as the simulator
-   hook: something for the glass panes to be translucent *over*. They sit
-   behind the contour lines and take no pointer events. */
-.hook-blobs { position: absolute; top: -10%; left: -10%; right: -10%; height: min(120dvh, 1100px); z-index: 0; filter: blur(62px); opacity: .62; pointer-events: none; }
-.hook-blob { position: absolute; display: block; border-radius: 50%; }
-.hook-blob.b1 { width: 34%; padding-bottom: 34%; left: 2%; top: 4%; background: color-mix(in oklab, var(--accent) 55%, transparent); animation: sc-drift 30s var(--ease-out) infinite alternate; }
-.hook-blob.b2 { width: 28%; padding-bottom: 28%; right: 6%; top: 18%; background: color-mix(in oklab, var(--info) 42%, transparent); animation: sc-drift 38s var(--ease-out) -10s infinite alternate-reverse; }
-.hook-blob.b3 { width: 24%; padding-bottom: 24%; right: 32%; top: 52%; background: color-mix(in oklab, var(--lime) 34%, transparent); animation: sc-drift 44s var(--ease-out) -20s infinite alternate; }
-:root[data-motion="reduce"] .hook-blob { animation: none; }
-
-/* Glass on the landing page, so it is made of the same material as the navbar
-   and the dock instead of flat cards. One guard, mirroring `.glass` in
-   base.css: solid surface when the viewer turned transparency off, or when the
-   browser cannot blur a backdrop. */
-.hook .counter, .hook .layer, .hook .source-tile, .hook .person, .hook .lead-card, .hook .hook-visual {
-  position: relative; background: var(--glass-strong); border: 1px solid var(--glass-hair); box-shadow: var(--glass-shadow);
-}
-.hook .hook-visual { border-radius: var(--r-xl); padding: 18px 18px 10px; }
-.hook .lead-card { background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--glass-strong); border-color: var(--accent-line); }
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root[data-transparency="on"] .hook .counter,
-  :root[data-transparency="on"] .hook .layer,
-  :root[data-transparency="on"] .hook .source-tile,
-  :root[data-transparency="on"] .hook .person,
-  :root[data-transparency="on"] .hook .hook-visual {
-    background: var(--glass);
-    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-    backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-  }
-  :root[data-transparency="on"] .hook .lead-card {
-    background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--glass);
-    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-    backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-  }
-  /* ::after, not ::before — `.layer` and `.person` already use ::before. */
-  :root[data-transparency="on"] .hook .counter::after,
-  :root[data-transparency="on"] .hook .layer::after,
-  :root[data-transparency="on"] .hook .source-tile::after,
-  :root[data-transparency="on"] .hook .person::after,
-  :root[data-transparency="on"] .hook .hook-visual::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    background: linear-gradient(180deg, color-mix(in oklab, white 9%, transparent), transparent 42%);
-    mix-blend-mode: soft-light;
-  }
-}
-.hook-contours { position: absolute; top: 0; left: 0; width: 100%; height: min(100dvh, 920px); z-index: 0; pointer-events: none; opacity: .55; mask-image: radial-gradient(ellipse at 70% 30%, #000 10%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at 70% 30%, #000 10%, transparent 70%); }
-.hook-section { position: relative; z-index: 2; max-width: calc(var(--maxw) + 2 * var(--pad)); margin: 0 auto; padding: clamp(40px, 8vh, 90px) var(--pad); border-top: 1px solid var(--border); }
-.hook-section h2 { font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem); letter-spacing: -.03em; margin-bottom: 8px; }
-.hook-section > .lead { margin-bottom: 30px; }
-/* Six counters: 6 across on a wide screen, 3 × 2 on a laptop or tablet,
-   2 × 3 on a phone — always full rows, never a half-empty one. */
-.counter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-@media (min-width: 1240px) { .counter-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .counter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.counter { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px 18px 18px; min-width: 0; }
-.counter-value { font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
-.counter-label { margin-top: 10px; font-weight: 650; }
-.counter-sub { margin-top: 3px; font-size: .8125rem; color: var(--text-mute); }
-.layer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: var(--gap); }
-.layer { position: relative; padding: 22px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none !important; display: grid; gap: 8px; align-content: start; transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring); min-width: 0; }
-.layer:hover { border-color: var(--accent-line); transform: translateY(-2px); }
-.layer-num { font-size: .75rem; font-weight: 800; letter-spacing: .12em; color: var(--text-mute); }
-.layer h3 { font-size: 1.0625rem; }
-.layer p { color: var(--text-dim); font-size: .875rem; }
-.layer .go { color: var(--accent); font-weight: 700; font-size: .8125rem; display: inline-flex; gap: 6px; align-items: center; margin-top: 6px; }
-.source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; }
-.source-tile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none !important; min-width: 0; }
-.source-tile:hover { border-color: var(--border-strong); }
-.source-tile .st-name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.source-tile .st-count { font-weight: 800; font-variant-numeric: tabular-nums; }
-.tech-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+/* --------------------------------------------------------------- tým
+   Používá ho úvodní stránka i stránka O nás; vlastní vzhled úvodní
+   stránky je v `hook.css`. */
 /* Dva sloupce = dvě oblasti. Pod 860 px se skládají pod sebe celé, aby
    vedoucí nezůstal odtržený od lidí, které vede. */
 .team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
@@ -260,9 +230,6 @@
 .person strong { font-size: 1.0625rem; }
 .person .role { color: var(--accent); font-weight: 650; font-size: .875rem; }
 .person .school { color: var(--text-mute); font-size: .8125rem; }
-.hook-foot { position: relative; z-index: 2; max-width: calc(var(--maxw) + 2 * var(--pad)); margin: 0 auto; padding: 30px var(--pad) calc(30px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--text-mute); font-size: .8125rem; }
-.hook-foot nav { display: flex; gap: 16px; flex-wrap: wrap; }
-.hook-foot a { color: var(--text-dim); }
 
 /* ------------------------------------------------------------- overview */
 .kpi { padding: 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); min-width: 0; display: grid; gap: 4px; }

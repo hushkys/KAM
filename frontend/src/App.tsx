@@ -38,6 +38,21 @@ export function App() {
     document.title = t ? `${t} · KAM` : "KAM — Krajský analytický model";
   }, [m.name]);
 
+  // Kotva musí fungovat i při prvním načtení stránky, ne až při přechodu
+  // uvnitř aplikace — router scrolluje až v `commit()`, který se na startu
+  // nikdy nespustí. Sekce v DOMu jsou hned, data doběhnou potom.
+  useEffect(() => {
+    const id = location.hash.slice(1);
+    if (!id) return;
+    let pokus = 0;
+    const zkus = () => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ block: "start" });
+      else if (pokus++ < 20) requestAnimationFrame(zkus);
+    };
+    requestAnimationFrame(zkus);
+  }, []);
+
   useEffect(() => {
     const open = () => openAssistant();
     window.addEventListener("kam:assistant", open);

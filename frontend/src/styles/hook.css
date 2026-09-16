@@ -1,0 +1,371 @@
+/* Úvodní stránka (pages/Hook.tsx).
+ *
+ * Vlastní soubor, protože je to jediná stránka aplikace, která se chová jako
+ * prezentace: má vlastní typografické měřítko, vlastní mřížky a scénu řízenou
+ * rolováním. Načítá se před `pages.css`, aby dotykový blok na jeho konci
+ * zůstal poslední — média nezvyšují specifičnost, takže rozhoduje pořadí.
+ *
+ * Jediná proměnná, kterou píše JavaScript, je `--p` (postup prvku obrazovkou,
+ * 0–1), `--s` (kolik obrazovek je odrolováno) a u připíchnutého dějství postup
+ * uvnitř něj. Všechno ostatní je odsud.
+ */
+
+/* Kotvy v liště mají klouzat, ne skákat — ale jen tam, kde si člověk pohyb
+   nezakázal; globální blok pro omezený pohyb `scroll-behavior` stejně přebije. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.hp) { scroll-behavior: smooth; }
+}
+
+.hp {
+  --hp-max: 1220px;
+  --hp-pad: clamp(18px, 4vw, 56px);
+  position: relative;
+  isolation: isolate;
+}
+
+/* --------------------------------------------------------------- pozadí
+   Tři vrstvy na místě (fixed), každá se veze jinou rychlostí podle `--s`.
+   Kdyby rolovaly s obsahem, nebyla by to paralaxa, ale jen tapeta. */
+.hp-pozadi { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.hp-aurora { position: absolute; inset: -12% -8% auto; height: 130vh; filter: blur(70px); opacity: .55;
+  transform: translate3d(0, calc(var(--s, 0) * -58px), 0); }
+.hp-skvrna { position: absolute; display: block; border-radius: 50%; }
+.hp-skvrna.s1 { width: 42vw; padding-bottom: 42vw; left: -4%; top: 2%; background: color-mix(in oklab, var(--accent) 52%, transparent); animation: hp-plyn 34s var(--ease-out) infinite alternate; }
+.hp-skvrna.s2 { width: 34vw; padding-bottom: 34vw; right: 2%; top: 14%; background: color-mix(in oklab, var(--info) 40%, transparent); animation: hp-plyn 44s var(--ease-out) -12s infinite alternate-reverse; }
+.hp-skvrna.s3 { width: 26vw; padding-bottom: 26vw; right: 34%; top: 54%; background: color-mix(in oklab, var(--lime) 34%, transparent); animation: hp-plyn 52s var(--ease-out) -24s infinite alternate; }
+@keyframes hp-plyn {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(5%, 7%, 0) scale(1.14); }
+}
+.hp-vrstevnice { position: absolute; inset: 0; width: 100%; height: 118%; opacity: .5;
+  transform: translate3d(0, calc(var(--s, 0) * -120px), 0);
+  mask-image: radial-gradient(ellipse at 66% 26%, #000 6%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at 66% 26%, #000 6%, transparent 72%); }
+/* Zrno: bez něj vypadají velké barevné plochy jako plastová výplň. */
+.hp-zrno { position: absolute; inset: 0; opacity: .04; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* ------------------------------------------------------------------ nav
+   Fixed, ne sticky: navbar má být nad scénou i ve chvíli, kdy je připíchnuté
+   dějství uprostřed své dráhy. */
+.hp-nav {
+  position: fixed; z-index: 40;
+  top: calc(12px + env(safe-area-inset-top)); left: 12px; right: 12px;
+  height: 58px; padding: 0 10px 0 18px; border-radius: var(--r-pill);
+  display: flex; align-items: center; gap: 16px;
+  animation: hp-nav-vjezd 800ms var(--ease-emph) 240ms both;
+}
+@keyframes hp-nav-vjezd { from { opacity: 0; transform: translateY(-16px); } }
+.hp-nav-znak { display: flex; align-items: center; color: var(--text); flex: none; }
+.hp-nav-znak .wordmark { height: 20px; width: auto; }
+.hp-nav-znak:hover { text-decoration: none; }
+/* Ukazatel postupu stránkou. Vede přes celou lištu, takže je to i linka,
+   která ji opticky drží pohromadě. */
+.hp-nav-cesta { flex: 1; height: 2px; border-radius: 2px; background: var(--border); overflow: hidden; min-width: 0; }
+.hp-nav-cesta i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--lime));
+  transform-origin: left; transform: scaleX(var(--hp-cesta, 0)); }
+.hp-nav nav { display: flex; align-items: center; gap: 4px; flex: none; }
+.hp-nav-odkaz { padding: 7px 12px; border-radius: var(--r-pill); color: var(--text-dim); font-size: .8125rem; font-weight: 650;
+  text-decoration: none !important; transition: color var(--t-xs), background var(--t-xs); }
+.hp-nav-odkaz:hover { color: var(--text); background: color-mix(in oklab, var(--text) 8%, transparent); }
+@media (max-width: 760px) { .hp-nav-odkaz { display: none; } .hp-nav { gap: 12px; padding-left: 14px; } }
+
+/* ----------------------------------------------------------------- akty */
+.hp-akt { position: relative; z-index: 2; max-width: calc(var(--hp-max) + 2 * var(--hp-pad)); margin: 0 auto; padding: clamp(72px, 12vh, 140px) var(--hp-pad); }
+.hp-hlavicka { max-width: 62ch; margin-bottom: clamp(28px, 5vh, 54px); }
+.hp-nadpis {
+  font-family: var(--font-nadpis); font-optical-sizing: auto;
+  font-size: clamp(2rem, 1.3rem + 2.6vw, 3.4rem); font-weight: 600; line-height: 1.04; letter-spacing: -.028em;
+  text-wrap: balance;
+}
+.hp-nadpis em { font-style: normal; color: var(--accent); }
+.hp-podnadpis { margin-top: 14px; color: var(--text-dim); font-size: clamp(.95rem, .9rem + .25vw, 1.125rem); line-height: 1.6; max-width: 62ch; }
+
+/* Vjezd: jedna třída, kterou přidá pozorovatel. Žádná smyčka. */
+[data-vjezd] { opacity: 0; transform: translate3d(0, 26px, 0); transition: opacity 760ms var(--ease-out), transform 900ms var(--ease-emph); }
+[data-vjezd].je-videt { opacity: 1; transform: none; }
+.hp-bento [data-vjezd] { transition-delay: calc(var(--i, 0) * 70ms); }
+
+/* ----------------------------------------------------------------- hero */
+.hp-hero {
+  min-height: 100svh; display: grid; align-items: center;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
+  gap: clamp(24px, 4vw, 72px);
+  padding-top: clamp(104px, 16vh, 190px); padding-bottom: clamp(80px, 12vh, 140px);
+}
+.hp-hero-text { min-width: 0; }
+.hp-kicker { font-size: .6875rem; font-weight: 750; letter-spacing: .26em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 14px; }
+.hp-kicker::before { content: ""; width: 42px; height: 3px; border-radius: 3px; background: var(--lime); flex: none; }
+.hp-znak { margin: clamp(20px, 3vh, 34px) 0 12px; color: var(--text); }
+.hp-znak .wordmark { width: min(520px, 100%); height: auto; }
+.hp-podtitul { font-size: clamp(.72rem, .66rem + .3vw, .9rem); font-weight: 700; letter-spacing: .36em; text-transform: uppercase; color: var(--text-mute); }
+/* Claim je jediná věta, kterou si má člověk odnést, takže dostane celý
+   displej: Fraunces, obrovské, po slovech. */
+.hp-claim {
+  margin-top: clamp(22px, 4vh, 44px);
+  font-family: var(--font-nadpis); font-optical-sizing: auto;
+  font-size: clamp(2.6rem, 1.5rem + 5.2vw, 5.4rem); font-weight: 500; line-height: .98; letter-spacing: -.045em;
+}
+.hp-claim span { display: inline-block; }
+.hp-claim em { font-style: italic; font-weight: 600; color: var(--accent); }
+.hp-claim.je-videt span { animation: hp-slovo 900ms var(--ease-emph) both; }
+.hp-claim span:nth-child(1) { animation-delay: 40ms; }
+.hp-claim span:nth-child(2) { animation-delay: 130ms; }
+.hp-claim span:nth-child(3) { animation-delay: 220ms; }
+.hp-claim span:nth-child(4) { animation-delay: 310ms; }
+@keyframes hp-slovo { from { opacity: 0; transform: translate3d(0, 46%, 0) rotate(2deg); } }
+.hp-lead { margin-top: 20px; max-width: 52ch; color: var(--text-dim); font-size: clamp(.95rem, .92rem + .2vw, 1.0625rem); line-height: 1.65; }
+
+.hp-hero-vizual { min-width: 0; transform: translate3d(0, calc((1 - var(--p, 1)) * 40px), 0); }
+
+/* Pobídka k rolování. Kolečko s tečkou, která v něm padá. */
+.hp-dolu { position: absolute; left: var(--hp-pad); bottom: clamp(22px, 5vh, 48px); display: flex; align-items: center; gap: 12px;
+  color: var(--text-mute); font-size: .6875rem; letter-spacing: .22em; text-transform: uppercase; font-weight: 700;
+  text-decoration: none !important; transition: color var(--t-sm); }
+.hp-dolu:hover { color: var(--text); }
+.hp-dolu-kolecko { width: 24px; height: 38px; border-radius: 13px; border: 2px solid currentColor; opacity: .6; position: relative; flex: none; }
+.hp-dolu-kolecko i { position: absolute; left: 50%; top: 7px; width: 3px; height: 7px; border-radius: 2px; background: currentColor; margin-left: -1.5px;
+  animation: hp-pad 1900ms var(--ease-out) infinite; }
+@keyframes hp-pad { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 70% { opacity: 0; transform: translateY(12px); } 100% { opacity: 0; } }
+
+/* ------------------------------------------------- morfující tlačítka
+   Podsvícení putuje mezi tlačítky a ta jsou skleněná, takže skrz ně barva
+   prosvítá. Kdyby byla neprůhledná, bylo by to druhé pozadí, ne podsvícení. */
+.morf-skupina { position: relative; display: inline-flex; flex-wrap: wrap; gap: 10px; }
+.ms-vrstva { position: absolute; inset: 0; pointer-events: none; z-index: 0; filter: var(--goo); opacity: 0; transition: opacity var(--t-md); }
+.morf-skupina[data-morf="ano"] .ms-vrstva { opacity: 1; }
+.ms-telo { position: absolute; top: 0; left: 0; border-radius: var(--r-pill); background: var(--accent); transform-origin: center; will-change: transform, width; }
+.ms-stopa { opacity: .55; }
+.hp-tlacitko {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 54px; padding: 0 26px; border-radius: var(--r-pill);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 42%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 700; letter-spacing: -.01em;
+  cursor: pointer; text-decoration: none !important; white-space: nowrap;
+  transition: color var(--t-sm), transform var(--t-md) var(--ease-spring), border-color var(--t-sm);
+}
+.hp-tlacitko:active { transform: scale(.975); }
+.hp-tlacitko.je-hlavni { color: var(--accent-fg); border-color: transparent; }
+:root[data-theme="dark"] .hp-tlacitko.je-hlavni { color: #0b1410; }
+/* Když podsvícení odjede jinam, hlavní tlačítko zůstane čitelné samo o sobě. */
+.morf-skupina:hover .hp-tlacitko.je-hlavni:not(:hover) { color: var(--text); border-color: var(--glass-hair); }
+.hp-tlacitko svg { flex: none; }
+:root[data-transparency="off"] .hp-tlacitko { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ------------------------------------------------------------ vizuál kraje */
+.kv { position: relative; perspective: 1400px; }
+.kv-scena {
+  position: relative; border-radius: var(--r-xl); padding: clamp(14px, 2vw, 26px);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 46%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge);
+  transform-style: preserve-3d; overflow: hidden;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 420ms var(--ease-out);
+  aspect-ratio: 1000 / 820;
+}
+:root[data-transparency="off"] .kv-scena { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.kv-kostra { width: 100%; height: 100%; border-radius: var(--r-lg); }
+.kv-zare { position: absolute; inset: -30% -20% auto; height: 80%; pointer-events: none;
+  background: radial-gradient(60% 60% at 50% 40%, color-mix(in oklab, var(--accent) 26%, transparent), transparent 70%); filter: blur(30px); }
+.kv-vrstva { position: absolute; inset: clamp(14px, 2vw, 26px); width: auto; height: auto; overflow: visible; }
+.kv-vrstva.je-mapa { transform: translate3d(calc(var(--px, 0px) * .3), calc(var(--py, 0px) * .3), 0); transition: transform 420ms var(--ease-out);
+  mask-image: linear-gradient(180deg, #000 58%, color-mix(in oklab, #000 35%, transparent) 84%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 58%, color-mix(in oklab, #000 35%, transparent) 84%, transparent 100%); }
+.kv-vrstva.je-graf { transform: translate3d(var(--px, 0px), var(--py, 0px), 40px); transition: transform 420ms var(--ease-out); }
+.kv-stitky { position: absolute; inset: clamp(14px, 2vw, 26px); pointer-events: none;
+  transform: translate3d(calc(var(--px, 0px) * 1.3), calc(var(--py, 0px) * 1.3), 70px); transition: transform 420ms var(--ease-out); }
+
+.kv-stin path { fill: color-mix(in oklab, #000 42%, transparent); transform: translate(0, 4px); }
+:root[data-theme="light"] .kv-stin path { fill: color-mix(in oklab, var(--accent) 16%, transparent); }
+.kv-orp { fill: url(#kv-orp); stroke: color-mix(in oklab, var(--accent) 46%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke;
+  animation: kv-tvar 900ms var(--ease-out) both; animation-delay: calc(240ms + var(--i, 0) * 45ms); transition: fill var(--t-md); }
+.kv-orp:hover { fill: color-mix(in oklab, var(--accent) 38%, transparent); }
+@keyframes kv-tvar { from { opacity: 0; transform: translateY(8px); } }
+.kv-obrys { fill: none; stroke: url(#kv-obrys); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--accent) 45%, transparent)); }
+.kv-plocha { fill: url(#kv-plocha); animation: fade-in 900ms var(--ease-out) 900ms both; }
+.kv-krivka { fill: none; stroke: url(#kv-cara); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--lime) 55%, transparent));
+  stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: kv-kresli 1700ms var(--ease-out) 420ms forwards; }
+.kv-krivka.je-budouci { stroke-dasharray: 7 8; stroke-dashoffset: 0; opacity: 0; animation: fade-in 700ms var(--ease-out) 1700ms forwards; }
+@keyframes kv-kresli { to { stroke-dashoffset: 0; } }
+.kv-svisla { stroke: color-mix(in oklab, var(--accent) 34%, transparent); stroke-width: 1; stroke-dasharray: 2 5; vector-effect: non-scaling-stroke; }
+.kv-dnes { stroke: color-mix(in oklab, var(--lime) 40%, transparent); stroke-width: 1.4; stroke-dasharray: 4 6; vector-effect: non-scaling-stroke; }
+.kv-bod { fill: var(--accent); animation: kv-bod 520ms var(--ease-spring) both; animation-delay: calc(900ms + var(--i, 0) * 150ms); transform-box: fill-box; transform-origin: center; }
+.kv-bod.je-konec { fill: var(--lime); filter: drop-shadow(0 0 12px color-mix(in oklab, var(--lime) 75%, transparent)); }
+@keyframes kv-bod { from { opacity: 0; transform: scale(.2); } }
+.kv-stitek { position: absolute; transform: translate(-50%, -190%); font-size: .6875rem; font-weight: 800; letter-spacing: .06em;
+  color: var(--text-dim); white-space: nowrap; animation: fade-in 500ms var(--ease-out) 1300ms both; }
+.kv-stitek.je-konec { color: var(--lime); font-size: .75rem; }
+/* Sken: pomalý pruh světla přes celou scénu. */
+.kv-sken { position: absolute; inset: -20% -40%; pointer-events: none;
+  background: linear-gradient(74deg, transparent 42%, color-mix(in oklab, #fff 16%, transparent) 50%, transparent 58%);
+  animation: sc-sheen 12s var(--ease-out) infinite; }
+.kv-noha { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding: 0 6px; }
+.kv-popis { font-size: .6875rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-mute); }
+.kv-hodnota { display: flex; align-items: baseline; gap: 8px; font-size: .75rem; color: var(--text-mute); }
+.kv-hodnota b { font-family: var(--font-nadpis); font-size: 1.125rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------- čísla
+   Bento: dvě velká pole a čtyři malá. Stejně velké dlaždice by z toho udělaly
+   tabulku a nic by nevyčnívalo. */
+.hp-bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(10px, 1.2vw, 16px); }
+.hp-dlazdice {
+  grid-column: span 2; display: grid; align-content: start; gap: 4px;
+  padding: clamp(18px, 2vw, 26px); border-radius: var(--r-lg);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 52%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+  transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring);
+}
+.hp-dlazdice:hover { border-color: var(--accent-line); transform: translateY(-3px); }
+.hp-dlazdice.je-velka { grid-column: span 3; }
+:root[data-transparency="off"] .hp-dlazdice { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hp-dlazdice-cislo { font-family: var(--font-nadpis); font-optical-sizing: auto; font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 1.3rem + 2.4vw, 3.2rem); font-weight: 700; line-height: 1; letter-spacing: -.04em; }
+.hp-dlazdice.je-velka .hp-dlazdice-cislo { font-size: clamp(2.6rem, 1.6rem + 3.4vw, 4.4rem); }
+.hp-dlazdice-popis { margin-top: 8px; font-weight: 650; }
+.hp-dlazdice-sub { font-size: .8125rem; color: var(--text-mute); }
+
+/* ------------------------------------------------- připíchnuté dějství
+   Výška sekce je dráha; uvnitř sedí scéna na místě a pás se veze do strany.
+   `--p` je postup uvnitř sekce, ne průlet obrazovkou. */
+/* Výška sekce je dráha: jeden pixel posunu do strany stojí půldruhého pixelu
+   rolování. `--drah` měří smyčka, dokud ji nezná, drží se rozumný odhad. */
+.hp-pin { position: relative; z-index: 2; height: calc(100svh + var(--drah, 700px) * 1.5); }
+.hp-pin-scena { position: sticky; top: 0; height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: center;
+  gap: clamp(18px, 3vh, 40px); padding: clamp(96px, 14vh, 150px) 0 clamp(40px, 8vh, 80px); overflow: hidden; }
+.hp-pin-hlava { max-width: calc(var(--hp-max) + 2 * var(--hp-pad)); width: 100%; margin: 0 auto; padding: 0 var(--hp-pad); position: relative; }
+.hp-pin-ukazatel { position: absolute; right: var(--hp-pad); bottom: 4px; width: clamp(80px, 12vw, 160px); height: 3px; border-radius: 3px;
+  background: var(--border); overflow: hidden; display: block; }
+.hp-pin-ukazatel i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--lime));
+  transform-origin: left; transform: scaleX(calc(.08 + var(--p, 0) * .92)); }
+.hp-draha {
+  display: flex; gap: clamp(14px, 1.8vw, 26px); align-items: stretch; padding: 0 var(--hp-pad); will-change: transform;
+  transform: translate3d(calc(var(--p, 0) * var(--drah, 0px) * -1), 0, 0);
+}
+.hp-vrstva {
+  position: relative; flex: 0 0 clamp(260px, 30vw, 380px); display: grid; align-content: start; gap: 10px;
+  padding: clamp(20px, 2.2vw, 30px); border-radius: var(--r-xl);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 55%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%);
+  color: var(--text); text-decoration: none !important;
+  transition: border-color var(--t-sm), transform var(--t-md) var(--ease-spring);
+}
+.hp-vrstva:hover { border-color: var(--accent-line); transform: translateY(-4px); }
+:root[data-transparency="off"] .hp-vrstva { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hp-vrstva-cislo { font-family: var(--font-nadpis); font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -.04em;
+  color: color-mix(in oklab, var(--accent) 60%, transparent); }
+.hp-vrstva-ikona { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; margin-top: 6px;
+  background: var(--accent-soft); color: var(--accent-strong); }
+:root[data-theme="dark"] .hp-vrstva-ikona { color: var(--accent); }
+.hp-vrstva h3 { font-family: var(--font-nadpis); font-size: 1.375rem; font-weight: 600; letter-spacing: -.02em; margin-top: 4px; }
+.hp-vrstva p { color: var(--text-dim); font-size: .9375rem; line-height: 1.6; }
+.hp-vrstva-cta { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-weight: 700; font-size: .875rem; }
+
+/* ---------------------------------------------------------------- zdroje
+   Dva pásy proti sobě. Je to výčet, ne seznam k přečtení — jde o to ukázat,
+   že jich je hodně a že mají jména. */
+.hp-pasy { display: grid; gap: 12px; margin: 0 calc(var(--hp-pad) * -1); }
+.hp-pas { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.hp-pas-obsah { display: flex; gap: 12px; width: max-content; animation: hp-pas 46s linear infinite; }
+.hp-pas.je-zpet .hp-pas-obsah { animation-direction: reverse; animation-duration: 58s; }
+.hp-pas:hover .hp-pas-obsah { animation-play-state: paused; }
+@keyframes hp-pas { to { transform: translate3d(-50%, 0, 0); } }
+.hp-zdroj { display: flex; align-items: center; gap: 14px; flex: none; padding: 13px 18px; border-radius: var(--r-pill);
+  border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 60%, transparent); color: var(--text);
+  text-decoration: none !important; transition: border-color var(--t-xs), background var(--t-xs); }
+.hp-zdroj:hover { border-color: var(--accent-line); background: var(--surface); }
+.hp-zdroj-jmeno { font-weight: 650; font-size: .875rem; white-space: nowrap; }
+.hp-zdroj-pocet { font-weight: 800; font-size: .8125rem; font-variant-numeric: tabular-nums; color: var(--accent); }
+.hp-tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.hp-tech-stitek { padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-dim); font-size: .8125rem; font-weight: 600; }
+
+/* ------------------------------------------------------------------ tým */
+.hp-tym .team { margin-top: 8px; }
+
+/* ---------------------------------------------------------------- konec */
+.hp-konec { padding-bottom: clamp(40px, 8vh, 90px); }
+.hp-konec-karta { position: relative; overflow: hidden; text-align: center; display: grid; justify-items: center;
+  padding: clamp(46px, 9vh, 100px) clamp(24px, 5vw, 70px); border-radius: var(--r-xl);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 50%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); }
+:root[data-transparency="off"] .hp-konec-karta { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hp-konec-tecka { position: absolute; width: 380px; height: 380px; border-radius: 50%; top: -180px; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in oklab, var(--lime) 34%, transparent), transparent 62%); filter: blur(24px); }
+.hp-konec .hp-nadpis { position: relative; font-size: clamp(2.1rem, 1.4rem + 3.4vw, 4.2rem); }
+.hp-konec .hp-podnadpis { position: relative; margin-inline: auto; }
+.hp-konec .hp-cta { margin-top: 30px; justify-content: center; }
+
+/* ------------------------------------------------------------------ noha */
+.hp-noha { position: relative; z-index: 2; max-width: calc(var(--hp-max) + 2 * var(--hp-pad)); margin: 0 auto;
+  padding: 26px var(--hp-pad) calc(30px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; color: var(--text-mute); font-size: .8125rem; }
+.hp-noha nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.hp-noha a { color: var(--text-dim); }
+
+/* ------------------------------------------------------------ užší okna */
+@media (max-width: 1000px) {
+  .hp-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .hp-hero-vizual { max-width: 560px; }
+  .hp-dolu { display: none; }
+  .hp-bento { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hp-dlazdice, .hp-dlazdice.je-velka { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .hp-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hp-dlazdice, .hp-dlazdice.je-velka { grid-column: span 1; }
+  .hp-dlazdice.je-velka { grid-column: span 2; }
+  .hp-tlacitko { height: 50px; padding: 0 20px; font-size: .9375rem; }
+  .morf-skupina { display: grid; width: 100%; }
+  .hp-tlacitko { justify-content: center; }
+}
+
+/* Na dotyku se dráha neveze rolováním, ale prstem: přímé ovládání je vždycky
+   lepší než zprostředkované, a připíchnutá sekce se na telefonu navíc pere
+   s gestem pro přepínání stránek. */
+@media (max-width: 900px), (pointer: coarse) {
+  .hp-pin { height: auto; }
+  .hp-pin-scena { position: static; height: auto; padding: clamp(60px, 10vh, 110px) 0; }
+  .hp-draha { transform: none; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    padding-bottom: 8px; scroll-padding-left: var(--hp-pad); }
+  .hp-draha::-webkit-scrollbar { height: 0; }
+  .hp-vrstva { scroll-snap-align: start; flex-basis: min(78vw, 340px); }
+  .hp-pin-ukazatel { display: none; }
+}
+
+/* --------------------------------------------------------- vypnutý pohyb */
+:root[data-motion="reduce"] .hp-skvrna,
+:root[data-motion="reduce"] .hp-pas-obsah,
+:root[data-motion="reduce"] .kv-sken,
+:root[data-motion="reduce"] .hp-dolu-kolecko i,
+:root[data-motion="reduce"] .hp-claim.je-videt span,
+:root[data-motion="reduce"] .kv-orp,
+:root[data-motion="reduce"] .kv-bod,
+:root[data-motion="reduce"] .kv-stitek,
+:root[data-motion="reduce"] .hp-nav { animation: none; }
+:root[data-motion="reduce"] .kv-krivka,
+:root[data-motion="reduce"] .kv-krivka.je-budouci,
+:root[data-motion="reduce"] .kv-plocha { animation: none; opacity: 1; stroke-dashoffset: 0; }
+:root[data-motion="reduce"] .kv-krivka.je-budouci { stroke-dasharray: 7 8; }
+:root[data-motion="reduce"] [data-vjezd] { opacity: 1; transform: none; transition: none; }
+:root[data-motion="reduce"] .hp-aurora,
+:root[data-motion="reduce"] .hp-vrstevnice,
+:root[data-motion="reduce"] .hp-hero-vizual,
+:root[data-motion="reduce"] .hp-draha { transform: none; }
+:root[data-motion="reduce"] .hp-pin { height: auto; }
+:root[data-motion="reduce"] .hp-pin-scena { position: static; height: auto; }
+:root[data-motion="reduce"] .hp-draha { overflow-x: auto; }
+
+/* Tým na úvodní stránce je ze stejného materiálu jako zbytek scény. */
+.hp .person, .hp .lead-card {
+  border-color: var(--glass-hair);
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+}
+.hp .lead-card { background: linear-gradient(135deg, var(--accent-soft), transparent 70%), color-mix(in oklab, var(--surface) 55%, transparent); }
+:root[data-transparency="off"] .hp .person,
+:root[data-transparency="off"] .hp .lead-card { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }

@@ -150,7 +150,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01", "cv05";
-  overflow-x: hidden;
+  /* `clip`, ne `hidden`: s `hidden` se druhá osa počítá jako `auto`, z `body`
+     se stane rolovací kontejner a `position: sticky` uvnitř se přestane chytat
+     obrazovky — připíchnutá dějství na úvodní stránce by tiše přestala fungovat.
+     `clip` ořezává stejně a kontejner nedělá. */
+  overflow-x: clip;
   overflow-wrap: break-word;
 }
 /* The ambient glow sits on a fixed, viewport-sized layer instead of

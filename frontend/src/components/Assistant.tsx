@@ -2,7 +2,7 @@
 // can operate the app. Used both as a drawer (anywhere, Ctrl+J) and as the
 // full Asistent page.
 
-import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { api, sse } from "../lib/api";
 import { applyAction } from "../lib/prefs";
@@ -23,6 +23,13 @@ const SUGGESTIONS = [
   "Vyhledej data, která se používají pro dopravu",
   "Zapni tmavý režim a otevři mapu",
   "Jak KAM pozná jednorázový výkyv od trendu?",
+];
+
+/** Do šuplíku se vejdou tři a musí být krátké — je to nabídka, ne čtení. */
+const NAVRHY_KRATKE = [
+  "Největší rizika kraje?",
+  "Co udělá 300 bytů v Jaroměři?",
+  "Najdi data o dopravě",
 ];
 
 const SESSION_KEY = "kam.chat.session";
@@ -213,7 +220,11 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
   const [text, setText] = useState("");
   const log = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
+  const pole = useRef<HTMLFormElement>(null);
+  /** Kde pole stálo, než se rozhovor rozjel — z toho se dopočítá jeho cesta dolů. */
+  const odkud = useRef<DOMRect | null>(null);
   const state = useAssistantState();
+  const uvod = msgs.length === 0;
 
   useEffect(() => {
     const p = consumePrompt();
@@ -231,36 +242,79 @@ export function Chat({ territory, compact = false, onClose, header, chat, hideHi
     if (ta) { ta.style.height = "auto"; ta.style.height = `${Math.min(160, ta.scrollHeight)}px`; }
   }, [text]);
 
-  const submit = () => { if (!text.trim()) return; send(text); setText(""); };
+  /** Pole se z prostředka nepřekreslí dole, ono tam sjede.
+   *
+   *  Klasický FLIP: pozici si vezmeme těsně před odesláním, po překreslení
+   *  změříme novou a rozdíl přehrajeme pozpátku. Je to tentýž prvek, takže
+   *  rozepsaný text i kurzor v něm zůstávají — dvě pole, která se prolnou, by
+   *  tohle neuměla. */
+  useLayoutEffect(() => {
+    const el = pole.current, r0 = odkud.current;
+    odkud.current = null;
+    if (!el || !r0 || document.documentElement.dataset.motion === "reduce") return;
+    const r1 = el.getBoundingClientRect();
+    const dy = r0.top - r1.top;
+    if (Math.abs(dy) < 2) return;
+    el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }],
+      { duration: 620, easing: "cubic-bezier(.32,.72,0,1)" });
+  }, [uvod]);
+
+  const submit = () => {
+    if (!text.trim()) return;
+    if (uvod && pole.current) odkud.current = pole.current.getBoundingClientRect();
+    send(text);
+    setText("");
+  };
+  const zeptejSe = (q: string) => {
+    if (uvod && pole.current) odkud.current = pole.current.getBoundingClientRect();
+    send(q);
+  };
+  // Čtyři stačí: nabídka, kterou je potřeba číst na tři řádky, je zadání.
+  const navrhy = compact ? NAVRHY_KRATKE : SUGGESTIONS.slice(0, 4);
+
   return (
-    <div className={`chat ${compact ? "is-compact" : ""}`}>
+    <div className={`chat ${compact ? "is-compact" : ""}`} data-stav={uvod ? "uvod" : "chat"}>
       <div className="chat-head">
         {header ?? <strong>Asistent KAM</strong>}
         <span className="navbar-spacer" />
-        <button className="icon-btn sm" onClick={reset} aria-label="Nová konverzace" title="Nová konverzace"><Icon name="plus" size={17} /></button>
+        {!uvod && <button className="icon-btn sm" onClick={reset} aria-label="Nová konverzace" title="Nová konverzace"><Icon name="plus" size={17} /></button>}
         {onClose && <button className="icon-btn sm" onClick={onClose} aria-label="Zavřít asistenta"><Icon name="close" size={17} /></button>}
       </div>
-      <div className="chat-log" ref={log} aria-live="polite">
-        {msgs.length === 0 && (
-          <div className="chat-empty">
-            <div className="chat-empty-mark" aria-hidden="true"><Icon name="sparkle" size={26} /></div>
-            <h3>Na co se chcete zeptat?</h3>
-            <p className="muted small">Odpovídám z dat KAM, výhledů a scénářů. Umím i ovládat aplikaci.</p>
-            <div className="suggestions">
-              {SUGGESTIONS.map((s) => <button key={s} className="suggestion" onClick={() => send(s)}>{s}</button>)}
-            </div>
-            {!compact && !hideHistory && <History onPick={load} />}
-          </div>
-        )}
-        {msgs.map((m) => <Bubble key={m.id} m={m} onAsk={send} />)}
-      </div>
-      <form className="chat-input" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-        <textarea ref={area} rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder="Zeptejte se nebo zadejte příkaz…" aria-label="Zpráva asistentovi"
+
+      {uvod ? (
+        <div className="chat-uvod">
+          <span className="chat-jiskra" aria-hidden="true"><Icon name="sparkle" size={22} /></span>
+          <h2 className="chat-pozdrav">Na co se podíváme?</h2>
+          <p className="chat-uvod-text">
+            Odpovídám z dat KAM — profilů území, výhledů a scénářů — a umím aplikaci i ovládat.
+            Každé číslo doložím zdrojem.
+          </p>
+        </div>
+      ) : (
+        <div className="chat-log" ref={log} aria-live="polite">
+          {msgs.map((m) => <Bubble key={m.id} m={m} onAsk={send} />)}
+        </div>
+      )}
+
+      <form className="chat-pole" ref={pole} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <textarea ref={area} rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000}
+          placeholder={uvod ? "Zeptejte se na cokoli o kraji…" : "Napište zprávu nebo příkaz…"} aria-label="Zpráva asistentovi"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
         {busy
           ? <button type="button" className="icon-btn send" onClick={stop} aria-label="Zastavit"><Icon name="stop" /></button>
           : <button type="submit" className="icon-btn send" disabled={!text.trim()} aria-label="Odeslat"><Icon name="send" /></button>}
       </form>
+
+      {uvod && (
+        <>
+          <div className="chat-navrhy">
+            {navrhy.map((s) => <button key={s} className="navrh" onClick={() => zeptejSe(s)}>{s}</button>)}
+          </div>
+          {!compact && !hideHistory && <History onPick={load} />}
+          <span className="chat-vzduch" aria-hidden="true" />
+        </>
+      )}
+
       <div className="disclaimer chat-disclaimer"><Icon name="info" size={13} /><span>Odpovědi generuje AI a mohou být chybné. Čísla ověřte v uvedených zdrojích.</span></div>
     </div>
   );
@@ -272,10 +326,12 @@ function History({ onPick }: { onPick: (id: string) => void }) {
   if (!rows.length) return null;
   return (
     <div className="chat-history">
-      <div className="palette-group" style={{ paddingLeft: 0 }}>Předchozí konverzace</div>
-      {rows.slice(0, 6).map((r) => (
-        <button key={r.id} className="suggestion" onClick={() => onPick(r.id)}><Icon name="history" size={14} /> {r.title}</button>
-      ))}
+      <div className="chat-history-nadpis">Předchozí konverzace</div>
+      <div className="chat-history-radky">
+        {rows.slice(0, 4).map((r) => (
+          <button key={r.id} className="navrh je-historie" onClick={() => onPick(r.id)}><Icon name="history" size={14} /> {r.title}</button>
+        ))}
+      </div>
     </div>
   );
 }
