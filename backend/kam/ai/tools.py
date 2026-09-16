@@ -240,6 +240,48 @@ def catalog_brief(region: int = 0) -> str:
     return "\n".join(lines)
 
 
+def asks_plany(text: str) -> bool:
+    """Ptá se někdo na dokumenty obcí napříč krajem?
+
+    Záměrně to nechytá samotné „plán": tím slovem se v týhle aplikaci ptá
+    kdekdo na výhled i na scénáře a podklad o dokumentech by se lepil
+    k odpovědím, kam nepatří."""
+    q = plain(text)
+    return bool(re.search(r"(uzemni\w* plan\w*|program\w* rozvoje|upd\b|povinn\w* zverejn\w*"
+                          r"|plan\w* rozvoje|uzemn\w* planovac\w*)", q))
+
+
+def plany_brief(kraj: int = 0) -> str:
+    """Kolik obcí kraje co zveřejnilo — a kde je hranice toho, co víme.
+
+    Poslední věta není ozdoba: bez ní model z „období uplynulo" udělá
+    „plán je splněný", což je nejpřirozenější chybný závěr nad těmito daty
+    a nikdo ho nezveřejňuje."""
+    from ..territory import HOME_KRAJ
+    p = plany.prehled(kraj or HOME_KRAJ)
+    ma = p["ma_celkem"]
+    obci = p["kraj"]["obci"]
+    lines = [
+        f"DOKUMENTY OBCÍ ({obci} obcí kraje, {_fmt(p['dokumentu'], 0)} sklizených dokumentů):",
+        f"- program rozvoje má {ma['pro']} obcí; z toho {p['pocty']['plati']} s běžícím obdobím, "
+        f"{p['pocty']['konci']} v posledním roce, {p['pocty']['prosly']} po konci platnosti",
+        f"- územní plán (nearchivovaný) má {ma['uzemni_plan']} obcí, celkem {_fmt(p['upd_celkem'], 0)} dokumentů ÚPD",
+        f"- rozpočet v MONITORu má {ma['rozpocet']} obcí, vlastní otevřená data v NKOD vydává {ma['otevrena_data']}",
+        f"- IČO úřadu známe u {p['s_ico']} obcí, datovou schránku u {p['s_ds']}",
+    ]
+    # Nejstarší územní plány: fakt, ne soud. Územní plán nemá platnost, která
+    # by vypršela, takže rok říká jen to, kdy se naposledy přepisoval.
+    stare = sorted((r for r in p["seznam"] if r.get("upd_od")), key=lambda r: r["upd_od"])[:6]
+    if stare:
+        lines.append("- nejstarší nearchivovaný územní plán: "
+                     + "; ".join(f"{r['name']} ({r['upd_od']})" for r in stare))
+    lines.append("POZOR: uplynulý čas období není splněný plán — kolik z plánu je hotové, "
+                 "nezveřejňuje strojově čitelně žádný registr. Územní plán nemá platnost, "
+                 "která by vypršela; rok je datum vydání.")
+    lines.append("Celý rejstřík i s odkazy na originály je na stránce Plány (/plany).")
+    return "\n".join(lines)
+
+
 def dataset_hits(query: str, region: int, k: int) -> list[dict]:
     """Dataset search over the whole catalogue, narrowed to a kraj when one is named."""
     from sqlalchemy import select

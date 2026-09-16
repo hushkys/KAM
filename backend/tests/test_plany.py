@@ -143,7 +143,7 @@ def test_povinnosti_jsou_radek_i_kdyz_dokument_chybi():
 def test_archivovana_dokumentace_se_nevydava_za_platnou():
     hlavni = {r["druh"]: r for r in plany.uzemi("obec:500001")["dokumenty"]}["uzemni_plan"]
     assert hlavni["stav"] == "plati"
-    # Platný je ten neachivovaný, ne prostě nejnovější záznam v evidenci.
+    # Platný je ten nearchivovaný, ne prostě nejnovější záznam v evidenci.
     assert hlavni["nazev"] == "ÚP Horní Testov"
     assert hlavni["pocet"] == 2 and hlavni["platnych"] == 1
 
@@ -166,7 +166,7 @@ def test_prehled_kraje_scita_vsechny_obce():
     # `dokumentu` je počet sklizených dokumentů, ne součet zaškrtnutých
     # políček: rozpočet ani otevřená data žádný dokument nedrží.
     assert p["dokumentu"] == 6 and p["upd_celkem"] == 3
-    assert p["ma_celkem"]["uzemni_plan"] == 1  # jen Horní Testov má neachivovaný
+    assert p["ma_celkem"]["uzemni_plan"] == 1  # jen Horní Testov má nearchivovaný
 
 
 def test_verejne_api_vydava_dokumenty(client):
@@ -219,6 +219,24 @@ def test_uspornyy_podklad_vynecha_co_obec_nema():
     uspornyy = next(r for r in brief("obec:500002", compact=True)[0].splitlines() if r.startswith("DOKUMENTY"))
     assert "chybí" in plny and "chybí" not in uspornyy
     assert len(uspornyy) < len(plny)
+
+
+def test_krajsky_podklad_odpovi_na_otazku_pres_cely_kraj():
+    """Bez něj umí asistent jen obec, na kterou se někdo zeptal jménem."""
+    from kam.ai.tools import asks_plany, plany_brief
+    assert asks_plany("ktere obce maji nejstarsi uzemni plan?")
+    assert asks_plany("kolik obci ma program rozvoje")
+    # „Plán" samo o sobě ne: tím slovem se tady ptá kdekdo na výhled.
+    assert not asks_plany("jaky bude vyhled poctu obyvatel")
+    assert not asks_plany("ukaz mi plan na pristi rok")
+
+    t = plany_brief(86)
+    assert "program rozvoje má 3 obcí" in t
+    assert "nejstarší nearchivovaný územní plán" in t
+    # Tahle věta je celý smysl podkladu — bez ní model z uplynulého času
+    # udělá splněný plán a bude znít přesvědčivě.
+    assert "není splněný plán" in t
+    assert "/plany" in t
 
 
 def test_api_vraci_prehled_i_detail(client):

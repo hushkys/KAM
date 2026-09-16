@@ -13,7 +13,7 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3c7a2b)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-3c7a2b)](https://react.dev/)
 [![otevřené API](https://img.shields.io/badge/otev%C5%99en%C3%A9%20API-v1-3c7a2b)](docs/API.md)
-[![testy](https://img.shields.io/badge/testy-125%20%2B%2017-3c7a2b)](#testy)
+[![testy](https://img.shields.io/badge/testy-126%20%2B%2017-3c7a2b)](#testy)
 
 **[Živá aplikace](https://hack-a-ton-hushkys.web.app)** · **[Otevřené API](docs/API.md)** · **[Web týmu](https://popojedem-web.web.app/#top)**
 
@@ -375,7 +375,7 @@ minut, protože každou sadu ověřuje.
 ## Testy
 
 ```bash
-python -m pytest              # 125 testů
+python -m pytest              # 126 testů
 cd frontend && npm test       # 17 testů
 ```
 

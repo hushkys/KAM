@@ -284,7 +284,7 @@ def _dokumenty(tid: str, ico: str, letos: int, prog: Dokument | None, up: Fact |
     upd = upd or []
     platne = [d for d in upd if d.stav != "archiv"]
     if platne:
-        # Nejnovější neachivovaný dokument je ten, podle kterého se dnes staví;
+        # Nejnovější nearchivovaný dokument je ten, podle kterého se dnes staví;
         # zbytek jsou starší vrstvy a změny a patří do výpisu pod ním.
         hlavni = platne[0]
         ven.append(_radek("uzemni_plan", "plati", hlavni.nazev,

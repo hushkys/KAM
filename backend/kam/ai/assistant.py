@@ -149,6 +149,10 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
     region = (terr.kraj_code if terr is not None and terr.level == "kraj" else 0) or tools.kraj_in_text(remaining)
     if data_q or tools.asks_catalog(remaining):
         blocks.append(tools.catalog_brief(region))
+    # Krajský podklad jen tam, kde se neptají na jednu obec: u té už má model
+    # její vlastní dokumenty z `brief` a čísla za celý kraj by ho jen mátla.
+    if tools.asks_plany(remaining) and (terr is None or terr.level != "obec"):
+        blocks.append(tools.plany_brief(region))
     k = min(cfg["max_sources"], 4) if compact else cfg["max_sources"]
     if data_q:
         hits = tools.dataset_hits(remaining, region, max(k, 6))
