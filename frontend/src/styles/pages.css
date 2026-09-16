@@ -851,6 +851,29 @@
   transform-box: fill-box; transform-origin: center; }
 @keyframes dt-rust { from { opacity: 0; transform: scale(.8); } }
 
+/* --------------------------------------------------------- hook stránky plánů
+   Období na společné ose. Vyplněná část pruhu je uplynulý čas, ne splněné
+   záměry — proto má barvu stavu, a ne barvu „hotovo": na plný pruh prošlého
+   plánu se nesmí dát koukat jako na úspěch. */
+.sc-hook-legend .sw.pl-plati { background: var(--h1); }
+.sc-hook-legend .sw.pl-prosly { background: var(--text-mute); opacity: .7; }
+.sc-hook-legend .sw.pl-dnes { width: 3px; height: 14px; border-radius: 2px; background: var(--text); opacity: .8; }
+.pl-art .pl-mrizka { stroke: var(--border); stroke-width: 1; opacity: .55; }
+.pl-art .pl-rok { fill: var(--text-mute); font-size: 10px; font-weight: 650; letter-spacing: .02em; }
+/* Zbývající část období je budoucnost, ne prázdno: kdyby byla jen odstínem
+   šedi, splyne s pozadím panelu a z pruhu zbyde useknutý konec bez měřítka. */
+.pl-art .pl-cele { fill: var(--h3); opacity: .26; }
+.pl-art .pl-uply { fill: var(--h1); }
+.pl-art .pl-uply.je-konec { fill: var(--h3); }
+.pl-art .pl-uply.je-prosly { fill: var(--text-mute); opacity: .55; }
+/* Čára „dnes" je odkaz, ne údaj, takže je neutrální a čárkovaná. V barvě
+   zvýraznění splývala s olivovou výplní pruhů a četla se jako další data. */
+.pl-art .pl-dnes-cara { stroke: var(--text); stroke-width: 1.6; stroke-dasharray: 3 4; stroke-linecap: round; opacity: .72; }
+.pl-art .pl-dnes-popis { fill: var(--text-dim); font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+.pl-art .pl-pruh { animation: pl-vjezd 560ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 42ms);
+  transform-box: fill-box; transform-origin: left center; }
+@keyframes pl-vjezd { from { opacity: 0; transform: scaleX(.2); } }
+
 :root[data-motion="reduce"] .ph-art .ph-krivka,
 :root[data-motion="reduce"] .ph-art .ph-cara,
 :root[data-motion="reduce"] .ph-art .ph-popisek,
@@ -861,6 +884,7 @@
 :root[data-motion="reduce"] .mp-art .mp-panel,
 :root[data-motion="reduce"] .mp-art .mp-kuzel,
 :root[data-motion="reduce"] .fi-art .fi-rok,
+:root[data-motion="reduce"] .pl-art .pl-pruh,
 :root[data-motion="reduce"] .dt-art .dt-kruh { animation: none; }
 
 /* ---------------------------------------------------- hook stránky podnětů
@@ -1005,6 +1029,10 @@
 .sc-hook[data-vstup="dotace"] .sc-pane { animation-name: hk-ze-stredu; transform-origin: 50% 50%; }
 @keyframes hk-ze-stredu { from { opacity: 0; transform: scale(.86); } }
 
+/* — plány: panel se rozjede zleva jako samotné pruhy --------------------- */
+.sc-hook[data-vstup="plany"] .sc-pane { animation-name: hk-rozjezd; transform-origin: 0% 50%; }
+@keyframes hk-rozjezd { from { opacity: 0; transform: translate3d(-18px, 0, 0) scaleX(.94); } }
+
 /* — podněty: razítko dosedne zleva -------------------------------------- */
 .sc-hook[data-vstup="podnety"] .sc-pane { animation-name: hk-zleva; }
 @keyframes hk-zleva { from { opacity: 0; transform: translate3d(-34px, 0, 0) scale(.97); } }
@@ -1092,6 +1120,59 @@
 @media (max-width: 520px) {
   .ab-kroky { grid-template-columns: 1fr; }
   .ab-cisla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ================================================================ Plány ====
+   Seznam obcí je tabulka, ale řádek nese tři různé věci: jméno, období
+   a odkazy do registrů. Mřížka je proto pojmenovaná po sloupcích a odkazy
+   jsou vpravo v jednom bloku — u 448 řádků je důležitější, aby oko našlo
+   pořád stejné místo, než aby se sloupce roztáhly podle obsahu. */
+.pl-plan-hlava { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-start; justify-content: space-between; }
+.pl-plan-nazev { display: block; font-family: var(--font-nadpis); font-size: 1.15rem; line-height: 1.3; }
+.pl-postup { margin-top: 16px; }
+.pl-postup-hlava { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 7px;
+  font-size: .8125rem; color: var(--text-dim); }
+.pl-postup-hlava strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.pl-podnadpis { margin: 22px 0 4px; font-size: .95rem; font-weight: 700; }
+.zdroj-karta.je-bez-odkazu { cursor: default; }
+
+.pl-nastroje { gap: 10px 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.pl-hledat { flex: 1 1 220px; max-width: 320px; }
+
+.pl-seznam { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.pl-radek {
+  display: grid; align-items: center; gap: 4px 14px;
+  grid-template-columns: minmax(0, 1.4fr) auto minmax(150px, 1.6fr) auto auto;
+  padding: 10px 12px; border-radius: var(--r-md); border: 1px solid transparent;
+}
+.pl-radek:hover { background: var(--surface-2); border-color: var(--border); }
+.pl-obec { font-weight: 650; color: var(--text); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-obec:hover { color: var(--accent); }
+.pl-lidi { font-size: .8125rem; color: var(--text-mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.pl-obdobi { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+.pl-obdobi-roky, .pl-obdobi-pct { font-size: .8125rem; color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pl-obdobi-pct { min-width: 4ch; text-align: right; }
+.pl-obdobi-drah { position: relative; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.pl-obdobi-drah i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--ok); }
+.pl-obdobi-drah[data-stav="konci"] i { background: var(--warn); }
+.pl-obdobi-drah[data-stav="prosly"] i { background: var(--text-mute); }
+
+.pl-odkazy { display: flex; gap: 2px; }
+.pl-odkazy a {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-sm);
+  color: var(--text-mute); text-decoration: none;
+}
+.pl-odkazy a:hover { background: var(--surface-3); color: var(--accent); }
+
+/* Pod 780 px se řádek zalomí na dva: nahoře jméno a stav, dole období
+   s odkazy. Pět sloupců by se muselo zúžit pod čitelnost názvu obce. */
+@media (max-width: 780px) {
+  .pl-radek { grid-template-columns: minmax(0, 1fr) auto; padding: 12px; }
+  .pl-lidi { grid-column: 2; text-align: right; }
+  .pl-obdobi { grid-column: 1 / -1; }
+  .pl-znacka { grid-column: 1; }
+  .pl-odkazy { grid-column: 2; justify-content: flex-end; }
 }
 
 @media (pointer: coarse) {

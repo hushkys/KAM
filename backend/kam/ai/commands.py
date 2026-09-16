@@ -16,6 +16,7 @@ import unicodedata
 ROUTES = {
     "prehled": ("/prehled", "Přehled"), "mapa": ("/mapa", "Mapa"), "obce": ("/obce", "Obce"), "vyhled": ("/vyhled", "Výhled"),
     "scenare": ("/scenare", "Scénáře"), "podnety": ("/podnety", "Podněty"), "data": ("/data", "Data"), "statistiky": ("/statistiky", "Statistiky"),
+    "hospodareni": ("/hospodareni", "Hospodaření"), "dotace": ("/dotace", "Dotace"), "plany": ("/plany", "Plány"),
     "asistent": ("/asistent", "Asistent"), "nastaveni": ("/nastaveni", "Nastavení"), "o-nas": ("/o-nas", "O nás"), "pravni": ("/pravni", "Právní informace"),
     "uvod": ("/", "Úvod"),
 }
@@ -24,6 +25,8 @@ ROUTE_WORDS = (
     (r"\bmap\w*", "mapa"), (r"prehled\w*|dashboard|nastenk\w*", "prehled"), (r"\bobc[ei]\b|\bobci\b|seznam obci|profil\w* obc", "obce"),
     (r"vyhled\w*|predikc\w*|prognoz\w*", "vyhled"), (r"scenar\w*|simulac\w*|simulator\w*|co kdyby", "scenare"), (r"podnet\w*|hlasen\w*", "podnety"),
     (r"\bdat\w*\b|katalog\w*|datov\w* sad\w*", "data"), (r"statistik\w*", "statistiky"), (r"nastaveni", "nastaveni"),
+    (r"hospodaren\w*|rozpoc\w*", "hospodareni"), (r"dotac\w*", "dotace"),
+    (r"plan\w* rozvoje|program\w* rozvoje|\bplany\b|povinn\w* zverejn\w*", "plany"),
     (r"o nas|\btym\w*", "o-nas"), (r"pravni|podminky|gdpr|ochran\w* (osobnich )?udaj", "pravni"), (r"uvod\w*|domovsk\w*|hook", "uvod"),
     (r"asistent\w*|chat\w*", "asistent"),
 )

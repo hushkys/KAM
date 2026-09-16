@@ -55,6 +55,7 @@ const KLICE: Record<string, string> = {
   vyhled: "predikce prognóza projekce budoucnost populace stárnutí 2040 odhad trend",
   scenare: "simulace co kdyby zásah dopad modelování varianty byty školka experiment",
   hospodareni: "rozpočet finance peníze příjmy výdaje provoz investice přebytek dluh fin",
+  plany: "plán rozvoje program rozvoje strategie povinně zveřejňované informace registr smluv monitor státní pokladny ičo datová schránka ares dokumenty obcepro stav plnění",
   dotace: "granty podpora výzvy dotační tituly peníze na projekty poskytovatelé",
   podnety: "hlášení stížnost problém občan participace zpětná vazba nahlásit",
   data: "otevřená data katalog datové sady zdroje export api stahování nkod csv",

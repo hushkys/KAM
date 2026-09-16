@@ -13,7 +13,7 @@ kam to vede — a co se změní, když zasáhneme, nebo nezasáhneme.
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3c7a2b)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-3c7a2b)](https://react.dev/)
 [![otevřené API](https://img.shields.io/badge/otev%C5%99en%C3%A9%20API-v1-3c7a2b)](docs/API.md)
-[![testy](https://img.shields.io/badge/testy-109%20%2B%2017-3c7a2b)](#testy)
+[![testy](https://img.shields.io/badge/testy-117%20%2B%2017-3c7a2b)](#testy)
 
 **[Živá aplikace](https://hack-a-ton-hushkys.web.app)** · **[Otevřené API](docs/API.md)**
 
@@ -148,6 +148,14 @@ další.
 
 <img src="docs/screenshots/dotace.png" alt="Dotace: čerpání a rozcestník vyhlašovatelů" width="100%">
 
+### Plány
+
+Co si obec sama naplánovala a kde to má zveřejněné: program rozvoje s obdobím
+platnosti, kolik z období uplynulo, kolik za tu dobu šlo do majetku — a u všeho
+odkaz, který míří rovnou na tu obec, ne na vyhledávací formulář.
+
+<img src="docs/screenshots/plany.png" alt="Plány: období programů rozvoje a odkazy do registrů" width="100%">
+
 ### Podněty občanů
 
 Jedno hlášení je stížnost. Pět podobných ze stejné obce je doklad — KAM je
@@ -234,6 +242,12 @@ a vyhodnocení *trend / jednorázový výkyv / stabilní*. Tvar grafu si ukazate
 vybírá sám podle toho, co měří: podíl dostane ciferník, roční tok sloupce,
 stav plochu, jednorázový počet značky.
 
+**Povinně zveřejňované dokumenty** — programy rozvoje obcí z registru MMR
+s obdobím platnosti a s tím, kolik z něj uplynulo, plus přesné odkazy do
+MONITORu státní pokladny, registru smluv a ARESu složené z IČO té konkrétní
+obce. Kolik z plánu je hotové, aplikace netvrdí: takový registr v Česku
+neexistuje a odhadovat to z názvů kapitol by bylo vymýšlení.
+
 **Rizika** — pravidla nad daty, ne prompt. Každé riziko má pět stupňů
 závažnosti, důvěru (klesá u malých obcí a krátkých řad) a důkazy s odkazem na
 zdroj.
@@ -318,6 +332,9 @@ odkazy a sady bez odkazu jsou v katalogu vidět zvlášť.
 | Národní geoportál INSPIRE (CENIA, CSW) | katalog |
 | ČSÚ — Městská a obecní statistika, 2005–2025 | hodnoty ukazatelů pro všechny obce |
 | Data KHK přes ArcGIS REST — přes 40 vrstev | zařízení, fakta a hodnoty v obcích |
+| obcepro.cz (MMR) — programy rozvoje obcí | dokumenty s obdobím platnosti, stránka Plány |
+| ARES (MF) — ekonomické subjekty | IČO úřadů, párované na kód obce z RÚIAN |
+| Registr práv a povinností (MV) — seznam OVM | datové schránky úřadů |
 | ČÚZK RÚIAN | hranice kraje, ORP a obcí |
 | ČÚZK DMR 5G | výškový model kraje pro 3D mapu |
 
@@ -351,7 +368,7 @@ minut, protože každou sadu ověřuje.
 ## Testy
 
 ```bash
-python -m pytest              # 109 testů
+python -m pytest              # 117 testů
 cd frontend && npm test       # 17 testů
 ```
 

@@ -186,6 +186,9 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
 .progress { height: 6px; border-radius: 6px; background: color-mix(in oklab, var(--text) 10%, transparent); overflow: hidden; }
 .progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--t-lg) var(--ease-out); }
 .progress.tone-warn > span { background: var(--warn); } .progress.tone-bad > span { background: var(--bad); } .progress.tone-info > span { background: var(--info); }
+/* Utlumený pruh pro dotaženou, ale už neplatnou věc — plný zelený pruh se
+   čte jako úspěch, a u dokumentu, kterému jen vypršela platnost, by lhal. */
+.progress.tone-mute > span { background: var(--text-mute); }
 
 .table-wrap { overflow-x: auto; margin: 0 calc(-1 * var(--card-pad)); padding: 0 var(--card-pad); }
 .table { width: 100%; border-collapse: collapse; font-size: .875rem; }

@@ -13,6 +13,7 @@ from sqlalchemy import case, func, or_, select
 from .. import crowd
 from ..ai import rag
 from ..analytics import dotace as dotace_mod
+from ..analytics import plany
 from ..analytics import finance, forecast, gaps, risks, simulate, store
 from ..analytics.profile import COMPARABLE, PROFILE_CODES, card, profile, reference
 from ..analytics.trends import classify
@@ -286,6 +287,21 @@ def dotace_territory(tid: str) -> dict:
     """Čerpání dotací, krajské dotace do ORP a rozcestník vyhlašovatelů."""
     data = dotace_mod.prehled(tid)
     if not data:
+        raise HTTPException(404, "Území neznámé.")
+    return data
+
+
+@router.get("/plany")
+def plany_kraj() -> dict:
+    """Kraj: kolik obcí má platný program rozvoje a kam vedou jejich registry."""
+    return plany.prehled()
+
+
+@router.get("/plany/{tid}")
+def plany_uzemi(tid: str) -> dict:
+    """Jedno území: plán, kolik z jeho období uplynulo, peníze a přesné odkazy."""
+    data = plany.uzemi(tid)
+    if data is None:
         raise HTTPException(404, "Území neznámé.")
     return data
 

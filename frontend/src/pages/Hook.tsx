@@ -43,8 +43,6 @@ const CESTA = [
   { n: "05", t: "Podnět", d: "Co data nevidí, přidají lidé z místa. Opakovaná hlášení se spojí do podnětu kraji.", to: "/podnety" },
 ];
 
-const TECHNOLOGIE = ["React + TypeScript", "FastAPI (Python)", "SQLite / PostgreSQL", "Gemma 4 v LM Studiu", "Gemini (cloud)", "nomic-embed + BM25, RRF", "ČÚZK RÚIAN", "vlastní vektorová mapa"];
-
 const tichy = () => typeof document !== "undefined" && document.documentElement.dataset.motion === "reduce";
 const sevri = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
@@ -173,12 +171,12 @@ export function Hook() {
   useVjezdy(koren);
 
   const d = ov.data;
-  const zdroje = useMemo(() => {
-    const vse = src.data?.sources ?? [];
-    const jadro = vse.filter((s) => s.group === "core" && s.verified > 0).slice(0, 14);
-    const kraje = vse.filter((s) => s.group === "kraje" && s.verified > 0).slice(0, 14);
-    return { jadro, kraje };
-  }, [src.data]);
+  // Žebříček podle toho, kolik z kterého zdroje opravdu drží ověřených sad.
+  // Dřív tu jely dva nekonečné pásy; pohyb nic neříkal a číst se z něj nedalo.
+  const zdroje = useMemo(
+    () => (src.data?.sources ?? []).filter((s) => s.verified > 0).sort((a, b) => b.verified - a.verified).slice(0, 12),
+    [src.data],
+  );
 
   const cisla: { v: number | null; f: (n: number) => string; l: string; s: string; velky?: boolean }[] = [
     { v: d?.datasets.verified ?? null, f: num, l: "funkčních datových sad", s: d ? `odkaz ověřen · ${num(d.datasets.total)} v katalogu` : "odkaz ověřen", velky: true },
@@ -328,24 +326,19 @@ export function Hook() {
             Každý odkaz je ověřený a přesný seznam je na stránce <Link to="/data">Data</Link>.
           </p>
         </div>
-        <div className="hp-pasy" data-vjezd>
-          {[zdroje.jadro, zdroje.kraje].map((rada, ri) => (
-            <div className={`hp-pas ${ri ? "je-zpet" : ""}`} key={ri}>
-              <div className="hp-pas-obsah">
-                {[...rada, ...rada].map((s, i) => (
-                  <a key={`${s.id}-${i}`} href={s.portal_url || s.url} target="_blank" rel="noopener noreferrer"
-                    className="hp-zdroj" aria-hidden={i >= rada.length ? "true" : undefined} tabIndex={i >= rada.length ? -1 : undefined}>
-                    <span className="hp-zdroj-jmeno">{s.name.replace("NKOD — ", "")}</span>
-                    <span className="hp-zdroj-pocet">{num(s.verified)}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
+        <div className="hp-zdroje-mrizka" data-vjezd>
+          {zdroje.map((s) => (
+            <a key={s.id} href={s.portal_url || s.url} target="_blank" rel="noopener noreferrer" className="hp-zdroj">
+              <span className="hp-zdroj-pocet">{num(s.verified)}</span>
+              <span className="hp-zdroj-jmeno">{s.name.replace("NKOD — ", "")}</span>
+              <Icon name="arrow-up-right" size={15} />
+            </a>
           ))}
         </div>
-        <div className="hp-tech" data-vjezd data-p data-drift>
-          {TECHNOLOGIE.map((t) => <span className="hp-tech-stitek" key={t}>{t}</span>)}
-        </div>
+        <p className="hp-zdroje-pozn" data-vjezd>
+          Čísla jsou ověřené datové sady — odkaz při poslední kontrole odpověděl. Celý seznam
+          i s nefunkčními odkazy je na stránce <Link to="/data">Data</Link>.
+        </p>
       </section>
 
       {/* ------------------------------------------------------------ 5 */}

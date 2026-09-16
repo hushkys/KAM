@@ -72,6 +72,19 @@ const SPECS: Record<string, Spec> = {
       <circle className="mi-1" cx="16.1" cy="12.7" r="1.5" fill={W} />
     </>),
   },
+  // Plány = dokument s razítkem. List s ohnutým rohem a kolečko s fajfkou:
+  // fajfka je tu za platnost dokumentu, ne za splněný plán — ten nikdo
+  // strojově nezveřejňuje a ikona nemá slibovat víc než stránka.
+  plany: {
+    a: ["#c3cf5e", "#79881a"], b: ["#eaf2a4", "#bfcb58"],
+    draw: (fa, fb) => (<>
+      <path d="M4.5 2.5h9.2L20 8.8V20a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 20V4a1.5 1.5 0 0 1 1.5-1.5z" fill={fa} />
+      <path className="mi-1" d="M13.7 2.5L20 8.8h-4.8a1.5 1.5 0 0 1-1.5-1.5z" fill={fb} />
+      <path className="mi-2" d="M6.6 12.2h6.6M6.6 15.4h4.2" fill="none" stroke={W} strokeOpacity=".7" strokeWidth="1.5" strokeLinecap="round" />
+      <circle className="mi-3" cx="17.4" cy="16.9" r="4.1" fill={fb} />
+      <path className="mi-3" d="M15.6 16.9l1.4 1.4 2.6-2.7" fill="none" stroke="#5d6a0f" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </>),
+  },
   // Dotace = peníze, které přijdou odjinud. Mince padající do dlaní: samotná
   // mince by byla jen „peníze", teprve ty dlaně říkají, že je někdo dává.
   dotace: {

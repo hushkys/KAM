@@ -97,6 +97,13 @@ class Territory(Base):
     population: Mapped[int] = mapped_column(Integer, default=0)
     lon: Mapped[float] = mapped_column(Float, default=0.0)
     lat: Mapped[float] = mapped_column(Float, default=0.0)
+    # IČO úřadu z ARES. Je to klíč do registrů, které obce nezveřejňují samy:
+    # rozpočet v MONITORu, smlouvy v registru smluv, zakázky ve věstníku.
+    # Přidáno později, takže má výchozí hodnotu — `_ensure_columns` ho doplní.
+    ico: Mapped[str] = mapped_column(String(16), default="")
+    # ID datové schránky z registru OVM (RPP). Jediná adresa úřadu, kterou
+    # stát vede sám a garantuje — vlastní web obce v žádném registru není.
+    ds: Mapped[str] = mapped_column(String(16), default="")
 
 
 class Indicator(Base):
@@ -286,6 +293,35 @@ class AuditLog(Base):
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
     level: Mapped[str] = mapped_column(String(16), default="info")
     source: Mapped[str] = mapped_column(String(24), default="system")
+
+
+class Dokument(Base):
+    """Povinně zveřejňovaný dokument obce — co si obec sama naplánovala.
+
+    Drží se tu **záznam o dokumentu**, ne jeho obsah: název, období, ke kterému
+    se váže, kdy byl zveřejněn a kam vede. Co z plánu je hotové, nikdo strojově
+    nezveřejňuje, takže se to tady ani netvrdí — stav se počítá z období a data
+    zveřejnění a znamená přesně tolik, kolik na to stačí: jestli dokument
+    v daném roce ještě platí.
+
+    `zdroj_url` je povinná část řádku, ne ozdoba. Údaj o cizím dokumentu bez
+    cesty k originálu je tvrzení z druhé ruky.
+    """
+
+    __tablename__ = "dokument"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    uzemi_id: Mapped[str] = mapped_column(String(32), index=True)
+    druh: Mapped[str] = mapped_column(String(32), index=True)  # pro | rozpocet | …
+    nazev: Mapped[str] = mapped_column(String(500))
+    od: Mapped[int] = mapped_column(Integer, default=0)  # první rok období, 0 = neuvedeno
+    do: Mapped[int] = mapped_column(Integer, default=0)  # poslední rok období
+    publikovano: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    url: Mapped[str] = mapped_column(Text, default="")        # samotný dokument
+    zdroj: Mapped[str] = mapped_column(String(32), default="")  # obcepro | …
+    zdroj_id: Mapped[str] = mapped_column(String(32), default="")
+    zdroj_url: Mapped[str] = mapped_column(Text, default="")   # záznam v registru
+    zdroj_nazev: Mapped[str] = mapped_column(String(255), default="")
+    harvested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class JobState(Base):

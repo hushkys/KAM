@@ -298,7 +298,6 @@
 [data-drift] { transform: translate3d(calc((var(--p, .5) - .5) * var(--drift, 130px)), 0, 0); }
 [data-drift="P"] { --drift: -130px; }
 .hp-bento[data-drift] { --drift: -70px; }
-.hp-tech[data-drift] { --drift: 90px; }
 /* Na telefonu se paralaxa obrátí do svislice. Do strany tam není kam uhnout —
    blok přes celou šířku by se posunul za okraj a `overflow-x: clip` by ho
    uřízl. Svisle je místa dost a hloubka z toho je stejná: každá vrstva se
@@ -307,7 +306,6 @@
   [data-drift] { transform: translate3d(0, calc((var(--p, .5) - .5) * var(--drift-y, -34px)), 0); }
   [data-drift="P"] { --drift-y: 34px; }
   .hp-bento[data-drift] { --drift-y: 22px; }
-  .hp-tech[data-drift] { --drift-y: -20px; }
   /* Karty dějství se na dotyku posouvají prstem, ale panely a dlaždice se
      vezou dál — bez toho by mobil vypadal jako plochý dokument. */
   .hp-hero-vizual { transform: translate3d(0, calc((1 - var(--p, 1)) * 26px), 0); }
@@ -315,23 +313,27 @@
 }
 
 /* ---------------------------------------------------------------- zdroje
-   Dva pásy proti sobě. Je to výčet, ne seznam k přečtení — jde o to ukázat,
-   že jich je hodně a že mají jména. */
-.hp-pasy { display: grid; gap: 12px; margin: 0 calc(var(--hp-pad) * -1); }
-.hp-pas { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.hp-pas-obsah { display: flex; gap: 12px; width: max-content; animation: hp-pas 46s linear infinite; }
-.hp-pas.je-zpet .hp-pas-obsah { animation-direction: reverse; animation-duration: 58s; }
-.hp-pas:hover .hp-pas-obsah { animation-play-state: paused; }
-@keyframes hp-pas { to { transform: translate3d(-50%, 0, 0); } }
-.hp-zdroj { display: flex; align-items: center; gap: 14px; flex: none; padding: 13px 18px; border-radius: var(--r-pill);
-  border: 1px solid var(--border); background: color-mix(in oklab, var(--surface) 60%, transparent); color: var(--text);
-  text-decoration: none !important; transition: border-color var(--t-xs), background var(--t-xs); }
-.hp-zdroj:hover { border-color: var(--accent-line); background: var(--surface); }
-.hp-zdroj-jmeno { font-weight: 650; font-size: .875rem; white-space: nowrap; }
-.hp-zdroj-pocet { font-weight: 800; font-size: .8125rem; font-variant-numeric: tabular-nums; color: var(--accent); }
-.hp-tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
-.hp-tech-stitek { padding: 7px 14px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-dim); font-size: .8125rem; font-weight: 600; }
+   Statická mřížka, ne jedoucí pás. Pás vypadal živě, ale číst se z něj nedalo
+   a na dotyku se navíc pral s rolováním — jméno zdroje i počet sad jsou údaje,
+   které má člověk stihnout přečíst, ne chytat. Číslo je napřed, protože právě
+   podle něj se ta dlaždice prohlíží. */
+.hp-zdroje-mrizka { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.hp-zdroj {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 14px;
+  padding: 16px 18px; border-radius: var(--r-lg);
+  border: 1px solid var(--glass-hair); background: color-mix(in oklab, var(--surface) 52%, transparent);
+  color: var(--text); text-decoration: none !important;
+  transition: border-color var(--t-sm), background var(--t-sm), transform var(--t-md) var(--ease-spring);
+}
+:root[data-transparency="on"] .hp-zdroj { -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+:root[data-transparency="off"] .hp-zdroj { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hp-zdroj:hover { border-color: var(--accent-line); transform: translateY(-2px); }
+.hp-zdroj-pocet { font-family: var(--font-nadpis); font-optical-sizing: auto; font-variant-numeric: tabular-nums;
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; color: var(--accent); min-width: 2.2ch; }
+.hp-zdroj-jmeno { font-size: .875rem; font-weight: 650; line-height: 1.35; overflow-wrap: anywhere; }
+.hp-zdroj > svg { color: var(--text-mute); opacity: 0; transition: opacity var(--t-xs); }
+.hp-zdroj:hover > svg { opacity: 1; }
+.hp-zdroje-pozn { margin-top: 18px; color: var(--text-mute); font-size: .8125rem; max-width: 62ch; }
 
 /* ------------------------------------------------------------------ tým
    Řádky se vezou: sudé o kousek zleva, liché zprava, a portrét jde napřed
@@ -403,7 +405,6 @@
 
 /* --------------------------------------------------------- vypnutý pohyb */
 :root[data-motion="reduce"] .hp-skvrna,
-:root[data-motion="reduce"] .hp-pas-obsah,
 :root[data-motion="reduce"] .kv-sken,
 :root[data-motion="reduce"] .hp-dolu-kolecko i,
 :root[data-motion="reduce"] .hp-claim.je-videt span,

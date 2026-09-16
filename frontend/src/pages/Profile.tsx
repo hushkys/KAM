@@ -6,6 +6,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { openAssistant, setAssistantTerritory } from "../components/assistantBus";
 import { Bullet, ChartSwitch, Columns, Dots, Gauge, LineChart, Legend, Sparkline, Waterfall } from "../components/charts";
 import { Icon, PILLAR_ICON } from "../components/Icon";
+import { PlanyKarta } from "../components/PlanyKarta";
 import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, Severity } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { num, signed, withUnit } from "../lib/format";
@@ -270,7 +271,8 @@ export function Profile({ id }: { id: string }) {
                   <p className="xsmall mute" style={{ marginTop: 8 }}>Zdroj: Data KHK (ArcGIS služby kraje)</p>
                 </Card>
               )}
-              <Card title="Zdroje profilu" icon="book" i={4}>
+              {t?.level === "obec" && <PlanyKarta tid={id} i={4} />}
+              <Card title="Zdroje profilu" icon="book" i={5}>
                 <div className="list">
                   {data.sources.map((s) => (
                     <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer" className="list-row" data-ctx="dataset" data-ctx-label={s.label} data-ctx-url={s.url}>
