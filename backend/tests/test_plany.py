@@ -21,7 +21,12 @@ from kam.models import Dokument, Territory
 
 @pytest.fixture(scope="module", autouse=True)
 def dokumenty():
-    """Tři plány: jeden běží, jednomu letos končí, jeden dávno prošel."""
+    """Tři programy rozvoje a k tomu územně plánovací dokumentace.
+
+    Horní Testov má platný územní plán i archivovanou starší verzi, Velké
+    Město jen archiv — na tom se ověřuje, že se za platný nevydává dokument,
+    který už nahradil jiný.
+    """
     letos = datetime.now(UTC).year
     with session_scope() as s:
         s.execute(delete(Dokument))
@@ -38,6 +43,21 @@ def dokumenty():
                      od=letos - 9, do=letos - 2, url="https://www.obcepro.cz/program-rozvoje-obce-3.pdf",
                      zdroj="obcepro", zdroj_id="3", zdroj_url="https://www.obcepro.cz/publikovane-dokumenty",
                      zdroj_nazev="Program rozvoje obce (MMR)"),
+            Dokument(uzemi_id="obec:500001", druh="upd", nazev="ÚPO Horní Testov",
+                     od=2004, publikovano=datetime(2004, 5, 3, tzinfo=UTC),
+                     url="https://up.khk.cz/upd/dokumentace/detail/1", zdroj="upkhk", zdroj_id="1",
+                     zdroj_url="https://up.khk.cz/upd/seznam", stav="archiv",
+                     zdroj_nazev="Evidence ÚPD Královéhradeckého kraje"),
+            Dokument(uzemi_id="obec:500001", druh="upd", nazev="ÚP Horní Testov",
+                     od=2018, publikovano=datetime(2018, 9, 12, tzinfo=UTC),
+                     url="https://up.khk.cz/upd/dokumentace/detail/2", zdroj="upkhk", zdroj_id="2",
+                     zdroj_url="https://up.khk.cz/upd/seznam", stav="platny",
+                     zdroj_nazev="Evidence ÚPD Královéhradeckého kraje"),
+            Dokument(uzemi_id="obec:500003", druh="upd", nazev="ÚPO Velké Město",
+                     od=1999, publikovano=datetime(1999, 2, 1, tzinfo=UTC),
+                     url="https://up.khk.cz/upd/dokumentace/detail/3", zdroj="upkhk", zdroj_id="3",
+                     zdroj_url="https://up.khk.cz/upd/seznam", stav="archiv",
+                     zdroj_nazev="Evidence ÚPD Královéhradeckého kraje"),
         ])
         s.get(Territory, "obec:500001").ico = "00268810"
         s.get(Territory, "obec:500003").ico = ""
@@ -107,12 +127,46 @@ def test_investice_se_pocitaji_jen_z_let_ktera_mame():
     assert inv["kapital"] > 0
 
 
+def test_povinnosti_jsou_radek_i_kdyz_dokument_chybi():
+    """Chybějící dokument je odpověď, ne mezera — musí mít vlastní řádek."""
+    d = plany.uzemi("obec:500002")
+    druhy = [r["druh"] for r in d["dokumenty"]]
+    assert druhy == ["pro", "uzemni_plan", "rozpocet", "otevrena_data"]
+    # Dolní Lhota nemá v evidenci žádnou ÚPD ani vlastní otevřená data.
+    podle = {r["druh"]: r for r in d["dokumenty"]}
+    assert podle["uzemni_plan"]["stav"] == "chybi"
+    assert podle["otevrena_data"]["stav"] == "chybi"
+    # Rozpočet fixtura má, takže ten řádek musí být naopak platný a s odkazem.
+    assert podle["rozpocet"]["stav"] == "plati"
+
+
+def test_archivovana_dokumentace_se_nevydava_za_platnou():
+    hlavni = {r["druh"]: r for r in plany.uzemi("obec:500001")["dokumenty"]}["uzemni_plan"]
+    assert hlavni["stav"] == "plati"
+    # Platný je ten neachivovaný, ne prostě nejnovější záznam v evidenci.
+    assert hlavni["nazev"] == "ÚP Horní Testov"
+    assert hlavni["pocet"] == 2 and hlavni["platnych"] == 1
+
+    jen_archiv = {r["druh"]: r for r in plany.uzemi("obec:500003")["dokumenty"]}["uzemni_plan"]
+    assert jen_archiv["stav"] == "prosly" and jen_archiv["platnych"] == 0
+
+
+def test_upd_seznam_je_od_nejnovejsi_a_vede_na_dokument():
+    upd = plany.uzemi("obec:500001")["upd"]
+    assert [u["nazev"] for u in upd] == ["ÚP Horní Testov", "ÚPO Horní Testov"]
+    assert all(u["url"].startswith("https://up.khk.cz/upd/dokumentace/detail/") for u in upd)
+
+
 def test_prehled_kraje_scita_vsechny_obce():
     p = plany.prehled(86)
     assert p["kraj"]["obci"] == len(p["seznam"]) == 3
     assert sum(p["pocty"].values()) == p["kraj"]["obci"]
     assert p["s_planem"] == 3 and p["pocty"]["chybi"] == 0
     assert p["pocty"] == {"plati": 1, "konci": 1, "prosly": 1, "bez_obdobi": 0, "chybi": 0}
+    # `dokumentu` je počet sklizených dokumentů, ne součet zaškrtnutých
+    # políček: rozpočet ani otevřená data žádný dokument nedrží.
+    assert p["dokumentu"] == 6 and p["upd_celkem"] == 3
+    assert p["ma_celkem"]["uzemni_plan"] == 1  # jen Horní Testov má neachivovaný
 
 
 def test_api_vraci_prehled_i_detail(client):

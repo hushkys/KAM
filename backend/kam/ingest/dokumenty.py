@@ -9,6 +9,13 @@ PDF na webu každé obce zvlášť. Období platnosti je přímo v názvu dokume
 („Program rozvoje Zaloňov na roky 2016 - 2026"), takže se z něj dá spočítat,
 jestli dokument ještě platí.
 
+**Evidence ÚPD Královéhradeckého kraje** (up.khk.cz) — územní plány obcí
+a všechny jejich změny, každý s datem vydání, vlastní stránkou a odkazem do
+celostátní evidence eUPC. Je to zdaleka nejobjemnější zdroj: územní plán má
+skoro každá obec a změn k němu přibývá, takže odsud pochází víc než devět
+desetin všech dokumentů. Sloupec *Archivováno* je jediná informace o tom, že
+dokument nahradil jiný — jinde se platnost územního plánu strojově nedozvíme.
+
 **Registr práv a povinností** (Ministerstvo vnitra) — seznam orgánů veřejné
 moci, a v něm ID datové schránky úřadu. Vlastní web obce nevede žádný státní
 registr, takže tohle je jediná adresa úřadu, za kterou stát ručí.
@@ -41,6 +48,7 @@ from .common import client, job, log, norm
 OBCEPRO = "https://www.obcepro.cz"
 ARES = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/vyhledat"
 OVM = "https://rpp-opendata.egon.gov.cz/odrpp/datovasada/ovm.json"
+UPD = "https://up.khk.cz/upd/seznam"
 
 #: Řádek tabulky: číslo, název s obdobím, obec, datum zveřejnění, odkazy.
 _RADEK = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S)
@@ -112,6 +120,44 @@ def _stranka(c, kraj_nazev: str, strana: int) -> tuple[list[dict], int]:
     return ven, stran
 
 
+#: Řádek evidence ÚPD: obec, název s odkazem na detail, datum vydání a pak
+#: pět příznaků, z nichž nás zajímá jen první — archivace.
+_UPD_OBEC = re.compile(r'<span class="obec"[^>]*>(.*?)</span>', re.S)
+_UPD_DETAIL = re.compile(r'href="(/upd/dokumentace/detail/(\d+))"[^>]*>(.*?)</a>', re.S)
+_UPD_EUPC = re.compile(r'href="(https?://[^"]*uur\.cz[^"]*)"')
+#: Odkaz do mapy nese kód RÚIAN. Je jen u části řádků, ale kde je, párujeme
+#: podle něj — jméno je u stejnojmenných obcí nejednoznačné.
+_UPD_KOD = re.compile(r"MAP=_(\d{6})")
+
+
+def _upd_stranka(c, strana: int) -> tuple[list[dict], int]:
+    """Jedna stránka evidence ÚPD kraje. Vrací řádky a počet stránek."""
+    r = c.get(UPD, params={"dokumentaceGrid-page": strana})
+    r.raise_for_status()
+    html = r.text
+    ven: list[dict] = []
+    for radek in _RADEK.findall(html):
+        bunky = _BUNKA.findall(radek)
+        obec = _UPD_OBEC.search(radek)
+        detail = _UPD_DETAIL.search(radek)
+        if len(bunky) < 4 or obec is None or detail is None:
+            continue
+        eupc = _UPD_EUPC.search(radek)
+        ven.append({
+            "obec": _text(obec.group(1)),
+            "nazev": _text(detail.group(3)),
+            "zdroj_id": detail.group(2),
+            "url": "https://up.khk.cz" + detail.group(1),
+            "publikovano": _datum(_text(bunky[2])),
+            # Čtvrtý sloupec je „Archivováno"; obrázek nese alt="ano"/"ne".
+            "archiv": 'alt="ano"' in bunky[3],
+            "eupc": eupc.group(1) if eupc else "",
+            "kod": (k.group(1) if (k := _UPD_KOD.search(radek)) else ""),
+        })
+    stran = max((int(x) for x in re.findall(r"dokumentaceGrid-page=(\d+)", html)), default=strana)
+    return ven, stran
+
+
 def _ico_z_ares(c, obec: Territory) -> str:
     """IČO úřadu. Ověřuje se `kodObce`, ne jméno — jinak by se trefilo do jiné obce."""
     for forma in _FORMY:
@@ -150,13 +196,14 @@ def _datove_schranky(c, ica: set[str]) -> dict[str, str]:
 
 
 def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
-    """Stáhne programy rozvoje a doplní IČO. Idempotentní: dokumenty daného
-    druhu se pro kraj smažou a uloží znovu, takže opakovaný běh nahradí, ne
-    zdvojí."""
+    """Stáhne povinně zveřejňované dokumenty obcí a doplní identitu úřadů.
+
+    Idempotentní: dokumenty daného druhu se pro kraj smažou a uloží znovu,
+    takže opakovaný běh nahradí, ne zdvojí."""
     kraj_nazev = KRAJ_BY_CODE[kraj].name.replace(" kraj", "")
     job("dokumenty", "running", f"Programy rozvoje obcí — {kraj_nazev}")
     obce = _obce_kraje(kraj)
-    nalezeno, neprirazeno, ico_novych, ds_novych = 0, 0, 0, 0
+    nalezeno, upd_nalezeno, neprirazeno, ico_novych, ds_novych = 0, 0, 0, 0, 0
 
     with client(60) as c:
         strana, strany, radky = 1, 1, []
@@ -190,6 +237,50 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
             s.execute(delete(Dokument).where(Dokument.druh == "pro", Dokument.uzemi_id.in_(ids)))
             s.add_all(zaznamy)
 
+        # --- územně plánovací dokumentace kraje ---------------------------
+        job("dokumenty", "running", "Územní plány a jejich změny (up.khk.cz)")
+        strana, strany, upd_radky = 1, 1, []
+        while strana <= strany and strana <= 200:
+            davka, strany = _upd_stranka(c, strana)
+            if not davka:
+                break
+            upd_radky.extend(davka)
+            job("dokumenty", "running", f"ÚPD {strana}/{strany}", strana / max(1, strany))
+            strana += 1
+            time.sleep(0.2)
+
+        with session_scope() as s:
+            podle_kodu = {str(t.code): t.id for t in s.scalars(select(Territory).where(
+                Territory.level == "obec", Territory.kraj_code == kraj))}
+
+        upd: list[Dokument] = []
+        for r in upd_radky:
+            # Kód RÚIAN má přednost před jménem — je jednoznačný i tam, kde
+            # jsou v kraji dvě stejnojmenné obce a jméno by nestačilo.
+            uzemi_id = podle_kodu.get(r["kod"]) if r["kod"] else None
+            if uzemi_id is None:
+                obec = obce.get(norm(r["obec"]))
+                uzemi_id = obec.id if obec else None
+            if uzemi_id is None:
+                neprirazeno += 1
+                continue
+            upd.append(Dokument(
+                uzemi_id=uzemi_id, druh="upd", nazev=r["nazev"],
+                od=r["publikovano"].year if r["publikovano"] else 0, do=0,
+                publikovano=r["publikovano"], url=r["url"],
+                zdroj="upkhk", zdroj_id=r["zdroj_id"],
+                # Do celostátní evidence vede odkaz jen u části záznamů; kde
+                # není, zůstane adresa krajské evidence, ne prázdno.
+                zdroj_url=r["eupc"] or UPD,
+                zdroj_nazev="Evidence ÚPD Královéhradeckého kraje",
+                stav="archiv" if r["archiv"] else "platny",
+            ))
+            upd_nalezeno += 1
+
+        with session_scope() as s:
+            s.execute(delete(Dokument).where(Dokument.druh == "upd", Dokument.uzemi_id.in_(ids)))
+            s.add_all(upd)
+
         if s_ares:
             job("dokumenty", "running", "IČO úřadů z ARESu")
             with session_scope() as s:
@@ -217,7 +308,9 @@ def ingest(kraj: int = HOME_KRAJ, s_ares: bool = True) -> dict[str, int]:
                         t.ds = schranky[t.ico]
                         ds_novych += 1
 
-    job("dokumenty", "ok", f"{nalezeno} programů rozvoje, {ico_novych} nových IČO, {ds_novych} datových schránek")
+    job("dokumenty", "ok", f"{nalezeno} programů rozvoje, {upd_nalezeno} ÚPD, "
+        f"{ico_novych} nových IČO, {ds_novych} datových schránek")
     if neprirazeno:
         log.info("[dokumenty] %s dokumentů se nepodařilo přiřadit k obci kraje", neprirazeno)
-    return {"dokumenty": nalezeno, "neprirazeno": neprirazeno, "ico": ico_novych, "ds": ds_novych}
+    return {"pro": nalezeno, "upd": upd_nalezeno, "neprirazeno": neprirazeno,
+            "ico": ico_novych, "ds": ds_novych}

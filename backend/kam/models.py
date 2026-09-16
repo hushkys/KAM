@@ -321,6 +321,10 @@ class Dokument(Base):
     zdroj_id: Mapped[str] = mapped_column(String(32), default="")
     zdroj_url: Mapped[str] = mapped_column(Text, default="")   # záznam v registru
     zdroj_nazev: Mapped[str] = mapped_column(String(255), default="")
+    #: `platny` | `archiv` — u územně plánovací dokumentace je archivace
+    #: jediná informace o tom, že dokument nahradil jiný. Prázdné tam, kde
+    #: to zdroj neříká; nedopočítává se.
+    stav: Mapped[str] = mapped_column(String(16), default="")
     harvested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
