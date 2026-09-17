@@ -38,8 +38,16 @@
   --nav-h: 60px;
   --dock-h: 66px;
   --side-w: 88px;
-  --maxw: 1320px;
-  --pad: clamp(14px, 3.2vw, 32px);
+  /* Šířka obsahu roste s oknem, ne skokem po breakpointech. Pevných
+     1320 px nechávalo na 2K třetinu obrazovky a na 4K skoro dvě třetiny
+     prázdné. Dolní mez drží rozvržení na notebooku beze změny, horní
+     zastaví růst tam, kde už by se řádek nedal přečíst bez otáčení
+     hlavou. Vnější okraj tak zůstává na 4 % šířky okna při každé
+     velikosti — proto `92vw`, ne `100vw`: sklo a stíny potřebují kolem
+     sebe kus pozadí, jinak aplikace vypadá jako tabulka nalepená na
+     sklo monitoru. */
+  --maxw: clamp(1320px, 92vw, 3360px);
+  --pad: clamp(14px, 3.2vw, 40px);
   --gap: 16px;
   --card-pad: 20px;
 
@@ -131,6 +139,12 @@
   --gap: 12px;
   --card-pad: 15px;
 }
+/* Na širokém okně roste i mezera a vnitřní odsazení karty. Beze změny by
+   plocha rostla a rytmus zůstal, takže by karty vypadaly slepené a text
+   v nich nalepený na okraj. Vlastní hustota `compact` má vyšší
+   specifičnost, takže si tyhle kroky nepřebijí. */
+@media (min-width: 1800px) { :root { --gap: 20px; --card-pad: 24px; } }
+@media (min-width: 2600px) { :root { --gap: 24px; --card-pad: 28px; } }
 
 *, *::before, *::after { box-sizing: border-box; }
 html {
@@ -139,6 +153,10 @@ html {
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--nav-h) + 24px);
 }
+/* Na 4K displeji bez systémového zvětšení má řádek dvakrát tolik pixelů co na
+   notebooku a písmo je proto fyzicky menší. Krok o pár procent to srovná;
+   s vlastní předvolbou velikosti se násobí, ne pere. */
+@media (min-width: 2800px) { html { font-size: calc(106% * var(--font-scale)); } }
 body {
   margin: 0;
   min-height: 100dvh;
@@ -231,6 +249,14 @@ ul, ol { margin: 0; padding: 0; }
 .page.is-bare { padding: 0; max-width: none; }
 @media (min-width: 900px) {
   :root[data-dock="side"] .page:not(.is-bare) { padding-left: calc(var(--side-w) + 26px + var(--pad)); padding-bottom: 56px; }
+}
+/* Dokud je stránka užší než okno, vyrovná posun od postranního docku
+   automatické vnější odsazení. Jakmile ale obsah zabere skoro celou
+   šířku, žádné vnější odsazení nezbyde a obsah se o šířku lišty posune
+   doprava — vlevo lišta, vpravo nic. Na širokém okně si proto stránka
+   odsazuje obě strany stejně a lišta sedí ve svém okraji. */
+@media (min-width: 1500px) {
+  :root[data-dock="side"] .page:not(.is-bare) { padding-right: calc(var(--side-w) + 26px + var(--pad)); }
 }
 
 /* ------------------------------------------------------------- navbar */

@@ -17,7 +17,9 @@
 }
 
 .hp {
-  --hp-max: 1220px;
+  /* Prezentace snese užší sazbu než aplikace, ale ne o dvě třetiny
+     obrazovky: proto roste taky, jen pomaleji a s nižším stropem. */
+  --hp-max: clamp(1220px, 84vw, 2800px);
   --hp-pad: clamp(18px, 4vw, 56px);
   position: relative;
   isolation: isolate;
@@ -98,6 +100,7 @@
 .hp-kicker::before { content: ""; width: 42px; height: 3px; border-radius: 3px; background: var(--lime); flex: none; }
 .hp-znak { margin: clamp(20px, 3vh, 34px) 0 12px; color: var(--text); }
 .hp-znak .wordmark { width: min(520px, 100%); height: auto; }
+@media (min-width: 1700px) { .hp-znak .wordmark { width: min(640px, 100%); } }
 .hp-podtitul { font-size: clamp(.72rem, .66rem + .3vw, .9rem); font-weight: 700; letter-spacing: .36em; text-transform: uppercase; color: var(--text-mute); }
 /* Claim je jediná věta, kterou si má člověk odnést, takže dostane celý
    displej: Fraunces, obrovské, po slovech. */
@@ -106,6 +109,10 @@
   font-family: var(--font-nadpis); font-optical-sizing: auto;
   font-size: clamp(2.6rem, 1.5rem + 5.2vw, 5.4rem); font-weight: 500; line-height: .98; letter-spacing: -.045em;
 }
+/* Strop `5.4rem` je nastavený na notebook. Na 2K a 4K obrazovce z claimu
+   dělá popisek, takže tam roste dál — ale až od 1700 px, aby se běžné
+   okno nezměnilo. */
+@media (min-width: 1700px) { .hp-claim { font-size: clamp(5.4rem, 4.2vw, 6.8rem); } }
 .hp-claim span { display: inline-block; }
 .hp-claim em { font-style: italic; font-weight: 600; color: var(--accent); }
 .hp-claim.je-videt span { animation: hp-slovo 900ms var(--ease-emph) both; }

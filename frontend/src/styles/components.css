@@ -182,6 +182,15 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
 .stat-value { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; overflow-wrap: anywhere; }
 .stat-sub { font-size: .75rem; color: var(--text-dim); margin-top: 6px; }
 .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: var(--gap); }
+/* Řada dlaždic má pevný počet členů, takže se na širokém okně neroztrhne
+   do dalšího řádku — jen se roztáhne. Číslo v levém horním rohu půlmetrové
+   dlaždice vypadá jako omylem zapomenuté, proto tady dostane velikost
+   odpovídající ploše, na které leží. */
+@media (min-width: 1500px) {
+  .stat { padding: 20px 24px; }
+  .stat-value { font-size: clamp(1.6rem, 1rem + 1.4vw, 2.25rem); }
+  .stat-label { font-size: .8125rem; }
+}
 
 .progress { height: 6px; border-radius: 6px; background: color-mix(in oklab, var(--text) 10%, transparent); overflow: hidden; }
 .progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--t-lg) var(--ease-out); }
@@ -465,6 +474,11 @@ a.list-row:hover .list-title { color: var(--accent); }
 .map-wrap { position: relative; width: 100%; }
 .map-plocha { position: relative; }
 .map-svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
+/* Mapa má pevný poměr stran, takže by na širokém okně narostla do výšky
+   přes celou obrazovku a zbytek stránky by odsunula pod okraj. Strop
+   výšky ji nechá dorůst do pohodlné velikosti a dál ji jen vycentruje —
+   `viewBox` se o zmenšení postará sám, kresba zůstane ostrá. */
+@media (min-width: 1500px) { .map-svg { max-height: 74vh; } }
 /* Ovládání přiblížení. Vlevo dole, protože vpravo dole sedí na mapových
    stránkách legenda a plovoucí odznak. */
 .map-zoom { position: absolute; left: 8px; bottom: 8px; z-index: 2; display: flex; align-items: center; gap: 4px;

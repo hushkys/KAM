@@ -40,7 +40,11 @@ ZABERY: list[tuple[str, str, int, int, bool]] = [
     ("scenare", SCENAR_URL, 1440, 1180, False),
     ("hospodareni", "/hospodareni?t=obec:569810", 1440, 980, False),
     ("dotace", "/dotace?t=obec:573868", 1440, 980, False),
-    ("plany", "/plany?t=obec:579432", 1440, 1560, False),
+    # Obec z prvních řádků seznamu schválně: `?t=` řádek otevře a najede na
+    # něj, a headless prohlížeč po dlouhém `scrollIntoView` vyfotí prázdný
+    # snímek — v opravdovém okně je stránka v pořádku, v souboru byla černá
+    # plocha. Náchod je třetí, takže se skoro neroluje.
+    ("plany", "/plany?t=obec:573868", 1440, 1560, False),
     ("vyhled", "/vyhled?t=kraj:86", 1440, 980, False),
     ("podnety", "/podnety", 1440, 900, False),
     ("data", "/data", 1440, 980, False),

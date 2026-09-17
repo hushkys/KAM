@@ -467,7 +467,7 @@ export function Settings({ tab }: { tab?: string }) {
         <nav className="settings-nav" aria-label="Sekce nastavení">
           {TABS.map((t) => <Link key={t.key} to={`/nastaveni/${t.key}`} aria-current={t.key === current ? "page" : undefined}><Icon name={t.icon} size={17} />{t.label}</Link>)}
         </nav>
-        <div style={{ minWidth: 0 }}>
+        <div className="settings-panel">
           {current === "vzhled" && <Appearance />}
           {current === "pristupnost" && <Accessibility />}
           {current === "modely" && <Models />}

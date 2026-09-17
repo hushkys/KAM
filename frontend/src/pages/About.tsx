@@ -59,7 +59,7 @@ export function About() {
 
         <div className="grid">
           <Card span={12} i={1} title="K čemu KAM je" icon="target">
-            <div className="prose" style={{ maxWidth: "none" }}>
+            <div className="prose je-siroka">
               <p>
                 Otevřených dat o krajích jsou desetitisíce sad. Popisují minulost, leží odděleně a odpověď
                 na otázku, kterou obec doopravdy řeší — <em>co s námi udělá sto nových bytů</em> — v nich

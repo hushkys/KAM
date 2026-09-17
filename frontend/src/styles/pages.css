@@ -168,6 +168,13 @@
 /* Pole drží rozumnou šířku — přes celou kartu by bylo na širokém okně půl
    metru dlouhé a text v něm ztracený. */
 .ai-main .chat[data-stav="uvod"] .chat-pole { width: 100%; max-width: 760px; margin-inline: auto; }
+/* Bublina odpovědi přes celou šířku okna je nečitelná ze stejného důvodu
+   jako odstavec v kartě. Sloupec konverzace proto drží šířku a sedí
+   uprostřed panelu, stejně jako pole nad ním ve stavu bez zpráv. */
+@media (min-width: 1400px) {
+  .ai-main .chat-log > * { width: 100%; max-width: 900px; margin-inline: auto; }
+  .ai-main .chat[data-stav="chat"] .chat-pole { width: 100%; max-width: 900px; margin-inline: auto; }
+}
 .assistant-drawer .chat-uvod { padding: 16px 18px 10px; }
 .assistant-drawer .chat-pozdrav { font-size: 1.5rem; }
 @media (max-width: 720px) {
@@ -217,6 +224,14 @@
    uprostřed, oblast vpravo — a mezi řádky jen linka. Používá ho úvodní
    stránka i stránka O nás; paralaxa řádků je v `hook.css`. */
 .tym { display: grid; }
+/* Na širokém okně dva sloupce. Řádek přes celou obrazovku má portrét u
+   levého okraje a oblast u pravého a nic mezi tím; ve dvou sloupcích se
+   čte jako seznam a šířka je pořád využitá. Horní linku ztrácejí první
+   dva, protože každý z nich je první ve svém sloupci. */
+@media (min-width: 1500px) {
+  .tym { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(32px, 3vw, 72px); }
+  .tym-radek:nth-child(-n+2) { border-top: 0; }
+}
 .tym-radek {
   position: relative; display: grid; align-items: center; gap: 4px 22px;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -291,6 +306,21 @@
 .kpi-value { font-size: clamp(1.45rem, 1.2rem + 1vw, 1.9rem); font-weight: 800; letter-spacing: -.035em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .kpi-sub { font-size: .75rem; color: var(--text-mute); }
 .kpi .spark { height: 38px; margin-top: 6px; }
+/* Na širokém okně se dlaždice otočí naležato: popisek, číslo a změna
+   vlevo, křivka vpravo přes zbytek šířky. Svisle skládaná dlaždice
+   roztažená na půl metru má číslo v rohu a zbytek prázdný; vodorovně tu
+   šířku spotřebuje graf, který z ní jako jediný něco má. */
+@media (min-width: 1500px) {
+  .kpi {
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 44%);
+    grid-template-areas: "hlava krivka" "cislo krivka" "popis krivka";
+    align-content: center; column-gap: 22px; padding: 20px 24px;
+  }
+  .kpi-top { grid-area: hlava; }
+  .kpi-value { grid-area: cislo; font-size: clamp(1.7rem, 1rem + 1.5vw, 2.35rem); }
+  .kpi-sub { grid-area: popis; }
+  .kpi .spark { grid-area: krivka; align-self: center; margin: 0; }
+}
 .risk-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--border); color: var(--text); text-decoration: none !important; }
 .risk-row:last-child { border-bottom: 0; }
 .risk-row:hover .risk-title { color: var(--accent); }
@@ -310,6 +340,7 @@
 
 .toolbar-card { display: flex; gap: 14px 20px; align-items: flex-end; flex-wrap: wrap; padding: 16px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); min-width: 0; }
 .toolbar-picker { flex: 1 1 280px; max-width: 480px; min-width: 0; }
+@media (min-width: 1500px) { .toolbar-picker { max-width: 640px; } }
 
 /* ------------------------------------------------------------- territories */
 .terr-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
@@ -385,6 +416,9 @@
 .rp-kpi-value { font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
 .rp-kpi-label { font-size: .75rem; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rp-layout { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: var(--gap); align-items: start; }
+/* Na širokém okně širší formulář: dlaždice oblastí se do 380 px vejdou
+   dvě v řadě a názvy se v nich ořezávaly. */
+@media (min-width: 1500px) { .rp-layout { grid-template-columns: minmax(340px, 450px) minmax(0, 1fr); } }
 @media (max-width: 960px) { .rp-layout { grid-template-columns: minmax(0, 1fr); } }
 .rp-form { position: sticky; top: calc(var(--nav-h) + 24px); scroll-margin-top: calc(var(--nav-h) + 24px); }
 @media (max-width: 960px) { .rp-form { position: static; } }
@@ -517,6 +551,20 @@
 .sc-hook-legend .sw.scen { background: var(--h1); }
 
 .sc-stage { position: relative; min-width: 0; aspect-ratio: 640 / 300; }
+/* Na širokém okně by hook s poměrem 640:300 narostl do výšky přes třetinu
+   obrazovky a odsunul obsah stránky pod okraj. Scéna proto dostane plošší
+   poměr a text větší stupeň — hook zůstane stejně velkým gestem, jen ho
+   nese šířka místo výšky. */
+@media (min-width: 1500px) {
+  .sc-hook { grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr); gap: clamp(32px, 3vw, 64px); }
+  .sc-hook-copy h1 { font-size: clamp(2.5rem, 1.6vw + 2rem, 3.5rem); }
+  .sc-hook-copy .lead { max-width: 54ch; font-size: 1.0625rem; }
+  .sc-stage { aspect-ratio: 640 / 215; }
+}
+@media (min-width: 2600px) {
+  .sc-hook-copy h1 { font-size: clamp(3rem, 2.2vw, 4.4rem); }
+  .sc-hook-copy .lead { max-width: 58ch; font-size: 1.1875rem; }
+}
 .sc-pane {
   position: absolute; inset: 0; border-radius: var(--r-lg);
   border: 1px solid var(--glass-edge); background: var(--glass);
@@ -596,6 +644,16 @@
 .ds-desc { grid-column: 1 / -1; font-size: .8125rem; color: var(--text-dim); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ds-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ds-links { display: flex; gap: 4px; align-items: flex-start; }
+/* Na širokém okně je z řádku katalogu pruh s nadpisem vlevo, štítky
+   uprostřed a odkazy vpravo. Jednosloupcová verze tu měla nadpis u levého
+   okraje, ikony u pravého a mezi nimi metr prázdna. */
+@media (min-width: 1900px) {
+  .ds-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; column-gap: 32px; align-items: start; }
+  .ds-row > :first-child { grid-column: 1; }
+  .ds-desc { grid-column: 1; }
+  .ds-tags { grid-column: 2; grid-row: 1 / span 2; align-content: start; }
+  .ds-links { grid-column: 3; grid-row: 1; }
+}
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; margin-bottom: 16px; }
 /* Počet sloupců řídí `--sloupce` z dat. Když byl natvrdo, přibyla v API
    devátá oblast a její buňka se zalomila pod jméno ORP — z matice byl
@@ -625,7 +683,16 @@
 
 /* ------------------------------------------------------------- settings */
 .settings-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; align-items: start; }
+.settings-panel { min-width: 0; }
 @media (max-width: 900px) { .settings-layout { grid-template-columns: minmax(0, 1fr); } }
+/* Formulářový řádek má popisek vlevo a ovladač vpravo; přes dva metry
+   mezi nimi se přestanou číst jako jedna věc. Na širokém okně se proto
+   karty nastavení postaví vedle sebe — šířka se využije a řádek zůstane
+   krátký. `align-items: start`, aby si nižší karta nebrala výšku vyšší. */
+@media (min-width: 1500px) {
+  .settings-layout { grid-template-columns: 250px minmax(0, 1fr); gap: 32px; }
+  .settings-panel > .stack-y { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
 .settings-nav { display: grid; gap: 2px; position: sticky; top: calc(var(--nav-h) + 24px); }
 @media (max-width: 900px) { .settings-nav { position: static; display: flex; overflow-x: auto; gap: 4px; scrollbar-width: none; } }
 .settings-nav a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); color: var(--text-dim); font-weight: 650; font-size: .875rem; text-decoration: none !important; white-space: nowrap; }
@@ -655,6 +722,10 @@
 
 /* ------------------------------------------------------------- about/legal */
 .prose { max-width: 76ch; }
+/* Odstavec přes celou šířku karty je na širokém okně dvoumetrový řádek —
+   oko na konci nenajde začátek dalšího. Pod 1500 px zůstává, jak bylo. */
+.prose.je-siroka { max-width: none; }
+@media (min-width: 1500px) { .prose.je-siroka { max-width: 108ch; } }
 .prose h2 { margin: 28px 0 10px; font-size: 1.1875rem; }
 .prose h2:first-child { margin-top: 0; }
 .prose p, .prose li { color: var(--text-dim); margin-bottom: 10px; }
@@ -802,6 +873,7 @@
 .sc-hook.is-slim .sc-stage { aspect-ratio: 640 / 132; }
 .sc-hook.is-slim .sc-pane.p1 { transform: none; }
 .sc-hook.is-slim .sc-blobs { opacity: .5; }
+@media (min-width: 1500px) { .sc-hook.is-slim .sc-stage { aspect-ratio: 640 / 110; } }
 /* Zalomení na jeden sloupec má `.sc-hook`, jenže `.sc-hook.is-slim` je
    specifičtější a přebilo by ho i uvnitř dotazu. Proto se opakuje. */
 @media (max-width: 900px) { .sc-hook.is-slim { grid-template-columns: minmax(0, 1fr); } }
