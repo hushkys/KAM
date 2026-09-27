@@ -215,7 +215,6 @@ export function Hook() {
       <section className="hp-hero">
         <div className="hp-obsah hp-hero-mrizka">
           <div className="hp-hero-text">
-            <div className="hp-stitek" data-vjezd><i aria-hidden="true" /> Královéhradecký kraj · otevřená data</div>
             <div className="hp-znak" data-vjezd><WordmarkHop /></div>
             <h1 className="hp-claim" data-vjezd>Vidět, kam to směřuje.</h1>
             <p className="hp-lead" data-vjezd>

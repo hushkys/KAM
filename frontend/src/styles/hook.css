@@ -52,32 +52,37 @@
 @media (max-width: 860px) { .hp-nav-odkazy, .hp-nav-popis { display: none; } .hp-nav .btn { margin-left: auto; } }
 
 /* ------------------------------------------------------------------ úvod */
-.hp-hero { padding: calc(var(--hp-nav) + clamp(40px, 9vh, 110px)) 0 clamp(48px, 8vh, 96px); border-bottom: 1px solid var(--border); background: var(--surface); }
-.hp-hero-mrizka { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(32px, 5vw, 88px); align-items: center; }
-.hp-hero-text { min-width: 0; }
-.hp-stitek {
-  display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px;
-  border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface-2);
-  font-size: .75rem; font-weight: 600; color: var(--text-dim);
+/* Úvod vyplní první obrazovku a nese dvě věci: nápis s maskotem a jednu
+   větu. Obojí je ve stupni, který na monitoru zabere, co má — při pevných
+   320 px nápisu a 4 rem věty působil úvod na 1920 px jako okraj stránky.
+   Nápis roste s oknem (`--zw`), věta taky, a mřížka dává textu o kus víc
+   místa než mapě. Štítek „Královéhradecký kraj · otevřená data" nad
+   nápisem odešel: říká totéž co lišta a věta pod ním. */
+.hp-hero {
+  min-height: 100svh; display: flex; flex-direction: column; justify-content: center;
+  padding: calc(var(--hp-nav) + clamp(28px, 6vh, 88px)) 0 clamp(36px, 7vh, 96px);
+  border-bottom: 1px solid var(--border); background: var(--surface);
 }
-.hp-stitek i { width: 7px; height: 7px; border-radius: 0; background: var(--lime); }
+.hp-hero-mrizka { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: clamp(40px, 5vw, 128px); align-items: center; }
+.hp-hero-text { min-width: 0; }
 /* Nápis s maskotem má v `viewBox` vlevo 70 z 430 jednotek volných — tudy
    maskot přibíhá. Záporný okraj ten kus vrací, aby K lícovalo s textem
    pod ním; maskot při příchodu klidně přeběhne přes odsazení stránky. */
-.hp-znak { --zw: min(320px, 70%); margin: clamp(22px, 3.2vh, 36px) 0 0; color: var(--text); }
+.hp-znak { --zw: min(100%, max(44vw, 340px), 900px); margin: 0; color: var(--text); }
 .hp-znak .wordmark { width: var(--zw); height: auto; margin-left: calc(var(--zw) * -70 / 430); }
-@media (min-width: 1700px) { .hp-znak { --zw: min(400px, 70%); } }
 /* Claim je jediná věta, kterou si má člověk odnést. Velký stupeň Interu s
    optickou velikostí — v téhle výšce se sám přepne na užší „Display" střih. */
 .hp-claim {
-  margin-top: clamp(18px, 2.6vh, 28px);
-  font-size: clamp(2.2rem, 1.3rem + 3.4vw, 4rem); font-weight: 650; line-height: 1.04; letter-spacing: -.035em;
+  margin-top: clamp(14px, 2.4vh, 32px);
+  font-size: clamp(2.5rem, .9rem + 4.4vw, 7rem); font-weight: 650; line-height: 1.02; letter-spacing: -.04em;
   text-wrap: balance;
 }
-@media (min-width: 1700px) { .hp-claim { font-size: clamp(4rem, 3vw, 5rem); } }
-.hp-lead { margin-top: 18px; max-width: 56ch; color: var(--text-dim); font-size: clamp(1rem, .95rem + .2vw, 1.125rem); line-height: 1.6; }
-.hp-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-.hp-sliby { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: .8125rem; color: var(--text-dim); }
+.hp-lead { margin-top: clamp(16px, 2.4vh, 28px); max-width: 58ch; color: var(--text-dim); font-size: clamp(1rem, .85rem + .42vw, 1.375rem); line-height: 1.6; }
+.hp-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: clamp(24px, 3.6vh, 44px); }
+/* Tlačítka a sliby rostou s nadpisem: 44px tlačítko pod stovkou pixelů
+   nadpisu vypadalo jako poznámka pod čarou. */
+.hp-hero .hp-cta .btn-lg { height: clamp(44px, 2.9vw, 58px); padding-inline: clamp(18px, 1.5vw, 30px); font-size: clamp(.9375rem, .78rem + .3vw, 1.125rem); }
+.hp-sliby { list-style: none; margin: clamp(20px, 3vh, 34px) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: clamp(.8125rem, .74rem + .16vw, .9375rem); color: var(--text-dim); }
 .hp-sliby li { display: inline-flex; align-items: center; gap: 7px; }
 .hp-sliby svg { color: var(--accent); flex: none; }
 .hp-hero-vizual { min-width: 0; }
@@ -266,6 +271,7 @@
 
 /* ------------------------------------------------------------ užší okna */
 @media (max-width: 1000px) {
+  .hp-hero { min-height: 0; }
   .hp-hero-mrizka { grid-template-columns: minmax(0, 1fr); }
   .hp-hero-vizual { max-width: 620px; }
 }

@@ -19,11 +19,12 @@
 .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 0; background: var(--m); flex: none; }
 .lead { color: var(--text-dim); margin-top: 8px; font-size: .9375rem; line-height: 1.6; max-width: 72ch; }
 
-/* Karta je vysoká jako její obsah. Natahovat karty v řadě na výšku té
-   nejvyšší znamenalo, že karta s jedním řádkem vedle karty s patnácti měla
-   pod textem půl obrazovky prázdné plochy v rámečku — a prázdný rámeček
-   vypadá jako chyba, kdežto prázdné pozadí stránky pod kratší kartou ne. */
-.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
+/* Karty v jednom řádku jsou stejně vysoké — tři karty vedle sebe s různou
+   spodní hranou (Milníky, Věková struktura, Zpětný test ve Výhledu) vypadají
+   jako rozbitá sazba. Tam, kde by natažení udělalo z karty prázdný rámeček
+   (krátká karta vedle dlouhého seznamu), stránka neskládá karty do řádků,
+   ale do dvou sloupců `.stack-y` — sloupec se natáhne, karty v něm ne. */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); align-items: stretch; }
 .grid > * { min-width: 0; grid-column: span 12; }
 .span-3 { grid-column: span 3 !important; } .span-4 { grid-column: span 4 !important; } .span-5 { grid-column: span 5 !important; }
 .span-6 { grid-column: span 6 !important; } .span-7 { grid-column: span 7 !important; } .span-8 { grid-column: span 8 !important; }
@@ -254,6 +255,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 
 .bar-list { display: grid; gap: 10px; }
 .bar-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
+.bar-vic { justify-self: start; margin-top: 4px; }
 .bar-item .bar-label { font-size: .8125rem; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .bar-item .bar-value { font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .bar-item .bar-track { grid-column: 1 / -1; height: 6px; border-radius: 0; background: color-mix(in oklab, var(--text) 7%, transparent); overflow: hidden; }

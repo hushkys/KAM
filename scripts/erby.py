@@ -63,7 +63,16 @@ SEZNAM = KOREN / "frontend" / "src" / "erby.json"
 UA = "KAM-hackathon/1.0 (https://github.com/hushkys/KAM; znaky obci pro krajsky analyticky model)"
 STRANA = 160          # px, čtverec výsledku
 VZDUCH = 0.06         # podíl strany, který zůstane kolem znaku
-KRAJE_WD = {86: "Q192697"}   # Královéhradecký kraj
+# Kód kraje z RÚIAN → kód ISO 3166-2 (P300 ve Wikidatech). Kraj se tak
+# dohledá úředním kódem stejně jako obec, ne jménem.
+KRAJE_ISO = {
+    19: "CZ-10", 27: "CZ-20", 35: "CZ-31", 43: "CZ-32", 51: "CZ-41", 60: "CZ-42", 78: "CZ-51",
+    86: "CZ-52", 94: "CZ-53", 108: "CZ-63", 116: "CZ-64", 124: "CZ-71", 132: "CZ-80", 141: "CZ-72",
+}
+# Praha má ve Wikidatech velký znak se štítonoši a klenoty; vedle třinácti
+# štítů ostatních krajů by vypadal jako z jiné sady a v 24 px je z něj šum.
+# Malý znak (samotný štít) je úřední stejně jako velký.
+KRAJE_SOUBOR = {19: "http://commons.wikimedia.org/wiki/Special:FilePath/Praha%20CoA%20CZ%20small.svg"}
 
 
 def sparql(dotaz: str) -> list[dict]:
@@ -160,19 +169,22 @@ def main() -> int:
     znaky: dict[str, str] = {}
     for b in sparql("SELECT ?kod ?erb WHERE { ?item wdt:P7606 ?kod . ?item wdt:P94 ?erb . }"):
         znaky.setdefault(b["kod"]["value"], b["erb"]["value"])
-    kraj_wd = KRAJE_WD.get(arg.kraj)
-    kraj_erb = None
-    if kraj_wd:
-        r = sparql(f"SELECT ?erb WHERE {{ wd:{kraj_wd} wdt:P94 ?erb . }}")
-        kraj_erb = r[0]["erb"]["value"] if r else None
+    # Znaky všech krajů: mapa Česka a seznam krajů je potřebují všechny, ne
+    # jen ten, pro který se sklízí obce.
+    iso_na_kod = {v: k for k, v in KRAJE_ISO.items()}
+    hodnoty = " ".join(f'"{v}"' for v in KRAJE_ISO.values())
+    kraje_erb: dict[int, str] = {}
+    for b in sparql(f"SELECT ?iso ?erb WHERE {{ VALUES ?iso {{ {hodnoty} }} ?item wdt:P300 ?iso ; wdt:P94 ?erb . }}"):
+        kraje_erb.setdefault(iso_na_kod[b["iso"]["value"]], b["erb"]["value"])
+    kraje_erb.update(KRAJE_SOUBOR)
 
     CIL.mkdir(parents=True, exist_ok=True)
     zdroje: dict[str, str] = {}
     hotove: list[str] = []
     chybi: list[str] = []
     ukoly = [(str(k), n, znaky.get(str(k))) for k, n in obce]
-    if kraj_erb:
-        ukoly.append((f"kraj-{arg.kraj}", "kraj", kraj_erb))
+    for kod, url in sorted(kraje_erb.items()):
+        ukoly.append((f"kraj-{kod}", f"kraj {kod}", url))
     for i, (kod, jmeno, url) in enumerate(ukoly, 1):
         if not url:
             chybi.append(f"{kod} {jmeno}")
@@ -208,14 +220,14 @@ def main() -> int:
     seznam = {
         "obce": obce_s,
         "sidla": sidla,
-        "kraj": {str(arg.kraj): f"kraj-{arg.kraj}"} if f"kraj-{arg.kraj}" in hotove else {},
+        "kraj": {str(k): f"kraj-{k}" for k in KRAJE_ISO if f"kraj-{k}" in hotove},
     }
     SEZNAM.write_text(json.dumps(seznam, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     (CIL / "zdroje.json").write_text(json.dumps(
         {"zdroj": "Wikimedia Commons přes Wikidata (P94, spárováno podle kódu obce P7606)", "soubory": zdroje},
         ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
-    print(f"hotovo: {len(obce_s)} obcí se znakem z {len(obce)}, sídel ORP/okresů: {len(sidla)}, kraj: {bool(seznam['kraj'])}")
+    print(f"hotovo: {len(obce_s)} obcí se znakem z {len(obce)}, sídel ORP/okresů: {len(sidla)}, krajů: {len(seznam['kraj'])} ze {len(KRAJE_ISO)}")
     if chybi:
         print(f"bez znaku ({len(chybi)}):")
         for c in chybi:

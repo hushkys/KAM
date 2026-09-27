@@ -103,9 +103,15 @@ export function MapPage() {
         </Card>
 
         <div className="span-4 stack-y">
-          {view === "cz" && (
-            <Card i={2} title={selKraj ? selKraj.name : "Vyberte kraj"} icon="pin">
-              {!selKraj && <p className="muted small">Klepněte na kraj v mapě. Královéhradecký kraj je označen zelenou tečkou a má v KAM detailní model.</p>}
+          {/* Detail kraje se ukáže až po výběru. Prázdná karta s větou „vyberte
+              kraj" zabírala místo nad seznamem a posílala ho pod okraj okna;
+              nápověda je teď v hlavičce seznamu. */}
+          {view === "cz" && selKraj && (
+            <Card i={2} title={selKraj.name} icon="pin">
+              <div className="mapa-uzemi">
+                <Erb id={selKraj.id} name={selKraj.name} size={48} />
+                <span className="mute small">{selKraj.code === 86 ? "V KAM s detailním modelem obcí" : "Kraj Česka"}</span>
+              </div>
               {selKraj && (
                 <div className="facts-list">
                   <div className="fact-row"><span>Otevřené datové sady o kraji</span><span className="num">{num(selKraj.datasets)}</span></div>
@@ -123,15 +129,21 @@ export function MapPage() {
           )}
           {view === "cz" && (
             <Card i={3} title="Datové sady podle krajů" icon="chart">
-              <div className="list">
-                {[...(cz.data?.kraje ?? [])].sort((a, b) => b.datasets - a.datasets).map((k) => (
-                  <button key={k.code} className="list-row" style={{ background: "none", border: 0, borderBottom: "1px solid var(--border)", textAlign: "left", cursor: "pointer", width: "100%" }} onClick={() => setQuery({ sel: String(k.code) })} data-ctx={k.id} data-ctx-label={k.name}>
-                    <span className="list-main"><span className="list-title">{k.name}</span></span>
-                    <span className="list-side num strong">{num(k.datasets)}</span>
-                  </button>
-                ))}
+              <div className="kraje-seznam">
+                {(() => {
+                  const kraje = [...(cz.data?.kraje ?? [])].sort((a, b) => b.datasets - a.datasets);
+                  const nejvic = Math.max(1, ...kraje.map((k) => k.datasets));
+                  return kraje.map((k) => (
+                    <button key={k.code} className={`kraj-radek${String(k.code) === sel ? " is-on" : ""}`} onClick={() => setQuery({ sel: String(k.code) })} data-ctx={k.id} data-ctx-label={k.name}>
+                      <Erb id={k.id} name={k.name} size={24} />
+                      <span className="kraj-jmeno">{k.name}</span>
+                      <span className="kraj-drah" aria-hidden="true"><i style={{ width: `${(k.datasets / nejvic) * 100}%` }} /></span>
+                      <span className="kraj-pocet num">{num(k.datasets)}</span>
+                    </button>
+                  ));
+                })()}
               </div>
-              <p className="xsmall mute" style={{ marginTop: 10 }}>Sady bez jednoho kraje (celostátní a evropské): {num(cz.data?.national_datasets ?? 0)}. Kraj se určuje podle území, které sada popisuje, ne podle toho, kdo ji vydal.</p>
+              <p className="xsmall mute" style={{ marginTop: 10 }}>{!selKraj && "Klepnutím na kraj v mapě nebo v seznamu se ukáže jeho detail. "}Sady bez jednoho kraje (celostátní a evropské): {num(cz.data?.national_datasets ?? 0)}. Kraj se určuje podle území, které sada popisuje, ne podle toho, kdo ji vydal.</p>
             </Card>
           )}
           {view === "khk" && (

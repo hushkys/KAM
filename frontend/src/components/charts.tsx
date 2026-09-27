@@ -312,12 +312,18 @@ export function Bullet({ value, reference, verdict }: { value: number; reference
   );
 }
 
-export function BarList({ items, format, max, color }: { items: { label: ReactNode; value: number; key: string; hint?: ReactNode }[]; format?: (v: number) => string; max?: number; color?: string }) {
+/** `limit` ukáže jen prvních N položek a zbytek schová za tlačítko: seznam
+ *  padesáti druhů zařízení byl vysoký skoro dvě obrazovky a rozhodil délku
+ *  celého sloupce, přestože po dvanácté položce jde o jednotky kusů. */
+export function BarList({ items, format, max, color, limit }: { items: { label: ReactNode; value: number; key: string; hint?: ReactNode }[]; format?: (v: number) => string; max?: number; color?: string; limit?: number }) {
+  const [vse, setVse] = useState(false);
   const m = max ?? Math.max(1, ...items.map((i) => i.value));
   const f = format ?? ((v: number) => num(v));
+  const zbyva = limit && !vse ? Math.max(0, items.length - limit) : 0;
+  const vidim = zbyva ? items.slice(0, limit) : items;
   return (
     <div className="bar-list">
-      {items.map((it, idx) => (
+      {vidim.map((it, idx) => (
         <div className="bar-item" key={it.key}>
           <span className="bar-label">{it.label}</span>
           <span className="bar-value">{f(it.value)}</span>
@@ -325,6 +331,8 @@ export function BarList({ items, format, max, color }: { items: { label: ReactNo
           {it.hint && <span className="xsmall mute" style={{ gridColumn: "1 / -1" }}>{it.hint}</span>}
         </div>
       ))}
+      {zbyva > 0 && <button className="btn btn-quiet btn-sm bar-vic" onClick={() => setVse(true)}>Zobrazit všech {items.length} <span className="mute">(+{zbyva})</span></button>}
+      {limit && vse && items.length > limit && <button className="btn btn-quiet btn-sm bar-vic" onClick={() => setVse(false)}>Zobrazit jen prvních {limit}</button>}
     </div>
   );
 }

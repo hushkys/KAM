@@ -737,6 +737,22 @@
 .um-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .um-obec { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: .875rem; min-width: 0; overflow-wrap: anywhere; }
 .mapa-uzemi { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+/* Seznam krajů: znak, jméno, pruh a číslo v jednom hustém řádku. Čtrnáct
+   řádků po 44 px s číslem o půl metru vpravo bylo delší než mapa vedle
+   a stránka kvůli němu rolovala; pruh navíc řekne poměr dřív než číslo. */
+.kraje-seznam { display: grid; }
+.kraj-radek {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) clamp(36px, 16%, 110px) auto; align-items: center; gap: 10px;
+  padding: 4px 4px; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--text);
+  font: inherit; font-size: .8125rem; text-align: left; cursor: pointer; transition: background-color var(--t-xs);
+}
+.kraj-radek:last-child { border-bottom: 0; }
+.kraj-radek:hover { background: color-mix(in oklab, var(--text) 4%, transparent); }
+.kraj-radek.is-on { background: var(--m-soft); }
+.kraj-jmeno { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.kraj-drah { height: 6px; background: var(--surface-3); }
+.kraj-drah i { display: block; height: 100%; background: var(--m); }
+.kraj-pocet { text-align: right; font-weight: 650; min-width: 3.4em; }
 .um-detail { grid-column: 1; font-size: .6875rem; }
 .um-prinos { grid-row: 1 / span 2; align-self: center; font-weight: 600; }
 .um-zaver { margin-top: 12px; font-size: .875rem; color: var(--text-dim); }
