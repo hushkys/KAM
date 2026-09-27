@@ -1,21 +1,21 @@
-// Odstín hooku podle modulu, do kterého stránka patří.
+// Odstín hlavičky podle modulu, do kterého stránka patří.
 //
-// Hooky vypadaly všechny stejně zeleně, takže se od sebe nedaly poznat.
-// Barvy si ale nepíšou samy — berou se ze `ModuleIcon`, aby stránka měla
-// přesně ten odstín, který má její ikona v docku, a aby se to při změně
-// palety nerozešlo.
+// Barvy si nepíšou samy — berou se ze `ModuleIcon`, aby hlavička měla
+// přesně ten odstín, který má ikona modulu v navigaci, a aby se to při změně
+// palety nerozešlo. Posílají se tři surové odstíny (`--hs` světlejší, `--ht`
+// sytější, `--hp` bledý) a který z nich nese čáru grafu, rozhoduje styl podle
+// motivu: na světlém podkladu sytý, na tmavém světlý.
 
 import type { CSSProperties } from "react";
 import { modulBarvy } from "./ModuleIcon";
 
 export function hookTema(modul: string): CSSProperties {
   const b = modulBarvy(modul);
-  return { ["--h1" as string]: b.a, ["--h2" as string]: b.b, ["--h3" as string]: b.c } as CSSProperties;
+  return { ["--hs" as string]: b.a, ["--ht" as string]: b.b, ["--hp" as string]: b.c } as CSSProperties;
 }
 
-/** Barva i nájezd jedním rozbalením. `data-vstup` říká stylu, kterou
- *  choreografii má hook při načtení použít — každá stránka jinou, aby
- *  přechod mezi nimi nebyl devětkrát tentýž fade. */
+/** Barva i označení modulu jedním rozbalením. `data-vstup` nese jméno
+ *  modulu pro styl, kdyby některá hlavička potřebovala vlastní úpravu. */
 export function hookVstup(modul: string): { style: CSSProperties; "data-vstup": string } {
   return { style: hookTema(modul), "data-vstup": modul };
 }

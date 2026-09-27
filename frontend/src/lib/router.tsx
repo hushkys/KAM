@@ -1,13 +1,15 @@
 // A small router.
 //
 // History API for real URLs (the server answers every path with the app).
-// Page motion is an entrance only: the new page mounts with a short fade and
-// rise (see `.page-enter` in base.css). There is deliberately no exit
-// animation and no View Transitions API: snapshotting a whole page whose
-// height changes made the old page shrink and fly away, and flickered next
-// to the glass navbar. An entrance-only transition cannot do either.
+// Page motion is an entrance only: the new page mounts with a short fade
+// (see `.page-enter` in base.css) and its cards rise in after it. There is
+// deliberately no exit animation and no View Transitions API: snapshotting a
+// whole page whose height changes made the old page shrink and fly away.
+// An entrance-only transition cannot do that. A swipe between pages is the
+// exception — it moves the real pages (components/Gesta.tsx) and the page it
+// lands on skips its entrance, because it was already on screen.
 
-import { useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent, type ReactNode } from "react";
+import { createContext, useContext, useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 
 export interface Loc {
   path: string;
@@ -34,13 +36,32 @@ function commit(scrollTo: number | null) {
   });
 }
 
-export function navigate(to: string, opts: { replace?: boolean } = {}): void {
+/** Přechod gestem: nová stránka se neukazuje poprvé — člověk ji celou dobu
+ *  tahu viděl v náhledu — takže nesmí znovu naskakovat. Značka na `<html>`
+ *  vypne nájezdové animace (`base.css`) a sama zmizí, až by všechny stejně
+ *  doběhly; kdyby zmizela dřív, rozběhly by se od půlky. Každá jiná
+ *  navigace ji ruší hned, aby další stránka nájezd měla. */
+let prechodCas: number | undefined;
+function znackaPrechodu(gesto: boolean) {
+  if (typeof document === "undefined") return;
+  const r = document.documentElement;
+  window.clearTimeout(prechodCas);
+  if (gesto) {
+    r.dataset.prechod = "gesto";
+    prechodCas = window.setTimeout(() => { delete r.dataset.prechod; }, 2600);
+  } else if (r.dataset.prechod) {
+    delete r.dataset.prechod;
+  }
+}
+
+export function navigate(to: string, opts: { replace?: boolean; gesto?: boolean } = {}): void {
   const url = new URL(to, location.origin);
   if (url.origin !== location.origin) {
     window.open(to, "_blank", "noopener");
     return;
   }
   const samePage = url.pathname === location.pathname;
+  if (!samePage) znackaPrechodu(Boolean(opts.gesto));
   scrolls.set(location.pathname + location.search, window.scrollY);
   if (opts.replace || (samePage && url.search === location.search)) history.replaceState(null, "", url.pathname + url.search + url.hash);
   else history.pushState(null, "", url.pathname + url.search + url.hash);
@@ -61,7 +82,7 @@ export function setQuery(params: Record<string, string | null | undefined>): voi
 
 if (typeof window !== "undefined") {
   history.scrollRestoration = "manual";
-  window.addEventListener("popstate", () => commit(scrolls.get(location.pathname + location.search) ?? 0));
+  window.addEventListener("popstate", () => { znackaPrechodu(false); commit(scrolls.get(location.pathname + location.search) ?? 0); });
 }
 
 function subscribe(cb: () => void) {
@@ -69,8 +90,24 @@ function subscribe(cb: () => void) {
   return () => listeners.delete(cb);
 }
 
+/** Náhled sousední stránky (přejetí prstem) žije pod vlastní adresou.
+ *  Stránka v náhledu tak čte přesně to, co bude číst po skutečném přechodu
+ *  — cestu cíle a prázdný dotaz, protože navigace dotaz nepřenáší — a ne
+ *  adresu stránky, nad kterou zrovna leží. */
+const NahledCtx = createContext<Loc | null>(null);
+export const NahledLokace = NahledCtx.Provider;
+
 export function useLocation(): Loc {
-  return useSyncExternalStore(subscribe, () => loc, () => loc);
+  const nahled = useContext(NahledCtx);
+  const skutecna = useSyncExternalStore(subscribe, () => loc, () => loc);
+  return nahled ?? skutecna;
+}
+
+/** Je komponenta vykreslená v náhledu? Stránka, která při načtení zapisuje
+ *  do adresy (`setQuery` v efektu), to v náhledu dělat nesmí — přepsala by
+ *  adresu stránky, na které člověk ve skutečnosti je. */
+export function useNahled(): boolean {
+  return useContext(NahledCtx) !== null;
 }
 
 export interface Match {

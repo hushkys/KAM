@@ -90,7 +90,7 @@ DOCS: tuple[dict, ...] = (
      "text": "Čísla o samotné aplikaci: kolik datových sad je v katalogu a kolik z nich má ověřený odkaz, kolik hodnot drží "
              "model po letech a oblastech, počty zařízení, formáty dat, provoz asistenta a stav sklízecích úloh."},
     {"id": "stranka-data", "title": "Stránka Data", "url": "/data", "text": "Přesný seznam využívaných datových sad s odkazy, počty podle zdrojů a oblastí, způsob využití každé sady, sledování datových potřeb a metodika."},
-    {"id": "stranka-nastaveni", "title": "Nastavení", "url": "/nastaveni", "text": "Vzhled (motiv, průhlednost, hustota, umístění navigace), přístupnost (kontrast, velikost písma, omezení animací, podtržené odkazy), modely AI (přidání, úprava, test lokálních i cloudových modelů), data a soukromí (kam se posílají dotazy a podněty, historie konverzací)."},
+    {"id": "stranka-nastaveni", "title": "Nastavení", "url": "/nastaveni", "text": "Vzhled (motiv, průhlednost horní lišty, hustota, postranní panel s popisky nebo jen s ikonami), přístupnost (kontrast, velikost písma, omezení animací, podtržené odkazy), modely AI (přidání, úprava, test lokálních i cloudových modelů), data a soukromí (kam se posílají dotazy a podněty, historie konverzací)."},
     {"id": "pravni-ai", "title": "Omezení AI a právní informace", "url": "/pravni",
      "text": "Odpovědi asistenta generuje umělá inteligence a mohou obsahovat chyby. Nejsou právní, finanční ani odbornou radou. Výhledy a scénáře jsou modelové odhady, ne předpovědi. "
              "Aplikace nezpracovává osobní údaje nad rámec nutnosti; podněty jsou anonymizované, historie konverzací je volitelná s nastavitelnou dobou uchování. Data jsou převzata z otevřených zdrojů podle jejich licencí."},

@@ -7,11 +7,12 @@ Vynucené `prefers-reduced-motion` je tu kvůli spolehlivosti: aplikace na něj
 reaguje tím, že zkrátí nájezdové animace na nulu, takže snímek nepadne
 doprostřed prolnutí a karty na něm nejsou poloprůhledné.
 
-Platí to i pro úvodní stránku. Dřív se fotila s pohybem, aby maskot doskákal
-na místo tečky, jenže od chvíle, kdy je z ní prezentace s desítkou nájezdů,
-se do rozpočtu virtuálního času nevejdou všechny — a snímek pak ukazuje
-poloprůhledný nadpis a prázdnou mapu. Bez pohybu kreslí maskot rovnou celý
-nápis i s tečkou, takže se nic neztratí.
+Platí to i pro úvodní stránku: bez pohybu kreslí maskot rovnou celý nápis
+i s tečkou, takže se nic neztratí.
+
+Motiv je vynucený světlý. Výchozí motiv aplikace je „podle systému", takže
+bez toho by snímky vyšly světlé nebo tmavé podle toho, na jakém počítači se
+fotí, a README by se při každém přegenerování přebarvilo.
 
 Fotí se na dvojnásobek a zmenšuje zpátky: text je pak ostrý i po zmenšení.
 """
@@ -61,6 +62,7 @@ def snap(jmeno: str, cesta: str, w: int, h: int, pohyb: bool) -> pathlib.Path:
         "--force-device-scale-factor=2", f"--window-size={w},{h}",
         "--virtual-time-budget=" + ("20000" if pohyb else "12000"),
         "--run-all-compositor-stages-before-draw",
+        "--blink-settings=preferredColorScheme=1",
     ]
     if not pohyb:
         args.append("--force-prefers-reduced-motion")

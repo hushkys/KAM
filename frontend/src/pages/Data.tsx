@@ -8,7 +8,7 @@ import { Icon } from "../components/Icon";
 import { Card, Empty, ErrorBox, Pill, Severity, Stat, Tabs } from "../components/ui";
 import { useApi } from "../lib/api";
 import { ago, date, num } from "../lib/format";
-import { Link, setQuery, useLocation } from "../lib/router";
+import { Link, setQuery, useLocation, useNahled } from "../lib/router";
 import { toast } from "../lib/toast";
 import type { SourceRow, Sources } from "../lib/types";
 
@@ -37,7 +37,8 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
   const params = new URLSearchParams({ size: "25", page: String(page), status });
   if (dq) params.set("q", dq); if (src) params.set("source", src); if (pillar) params.set("pillar", pillar); if (region) params.set("region", region); if (loaded) params.set("loaded", loaded); if (fresh) params.set("freshness", fresh);
   const { data, error, loading } = useApi<DsPage>(`/datasets?${params}`);
-  useEffect(() => { setQuery({ q: dq || null, page: null }); }, [dq]);
+  const nahled = useNahled();
+  useEffect(() => { if (!nahled) setQuery({ q: dq || null, page: null }); }, [dq, nahled]);
   const pages = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
   const sel = (key: string, value: string, opts: [string, string][], label: string) => (
     <label className="field"><span className="field-label">{label}</span>

@@ -46,7 +46,7 @@ function Appearance() {
         </div>
       </Card>
       <Card i={1} title="Rozložení a efekty" icon="layers" className="setting-block">
-        <Switch checked={p.transparency} onChange={(v) => setPrefs({ transparency: v })} label="Efekty průhlednosti" hint="Navigace a panely jako matné sklo. Vypnutím se zrychlí vykreslování na slabších zařízeních." />
+        <Switch checked={p.transparency} onChange={(v) => setPrefs({ transparency: v })} label="Průhledná horní lišta" hint="Obsah pod lištou při rolování lehce prosvítá. Vypnutím je lišta plná a vykreslování na slabších zařízeních rychlejší." />
         {/* Tentýž přepínač jako v Přístupnosti, a schválně: tam je to otázka
             přístupnosti, tady výkonu, a kdo hledá, proč aplikace na starším
             telefonu drhne, dojde k průhlednosti — ne k záložce pro pohyb.
@@ -56,10 +56,9 @@ function Appearance() {
         <Row label="Hustota" hint="Mezery mezi prvky.">
           <Segmented label="Hustota" value={p.density} onChange={(v) => setPrefs({ density: v })} options={[{ value: "comfortable", label: "Vzdušná" }, { value: "compact", label: "Kompaktní" }]} />
         </Row>
-        <Row label="Umístění navigace" hint="Na telefonu je navigace vždy dole.">
-          <Segmented label="Umístění navigace" value={p.dock} onChange={(v) => setPrefs({ dock: v })} options={[{ value: "bottom", label: "Dole", icon: "dock" }, { value: "side", label: "Po straně", icon: "sidebar" }]} />
+        <Row label="Postranní panel" hint="Na tabletu jsou v panelu vždy jen ikony, na telefonu je navigace dole.">
+          <Segmented label="Postranní panel" value={p.nav} onChange={(v) => setPrefs({ nav: v })} options={[{ value: "full", label: "S popisky", icon: "sidebar" }, { value: "compact", label: "Jen ikony", icon: "grid" }]} />
         </Row>
-        <Switch checked={p.dockLabels} onChange={(v) => setPrefs({ dockLabels: v })} label="Popisky v navigaci" />
         <div className="row" style={{ marginTop: 12 }}><button className="btn btn-quiet btn-sm" onClick={() => { reset(); toast("ok", "Vzhled obnoven na výchozí."); }}><Icon name="refresh" size={15} /> Obnovit výchozí</button></div>
       </Card>
     </div>

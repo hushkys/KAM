@@ -18,7 +18,7 @@ import { Umisteni } from "../components/Umisteni";
 import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, Segmented } from "../components/ui";
 import { api, ApiError, invalidate, useApi } from "../lib/api";
 import { date, kc, num, signed } from "../lib/format";
-import { navigate, setQuery, useLocation } from "../lib/router";
+import { navigate, setQuery, useLocation, useNahled } from "../lib/router";
 import { toast } from "../lib/toast";
 
 interface Param { label: string; min?: number; max?: number; step?: number; default: number | string; options?: Record<string, string> }
@@ -57,6 +57,7 @@ const HORIZONTY = [2030, 2035, 2040] as const;
 
 export function Scenarios() {
   const { query } = useLocation();
+  const nahled = useNahled();
   const cat = useApi<Catalog>("/simulate/catalog");
   const saved = useApi<Saved[]>("/scenarios");
   const [tid, setTid] = useState(query.get("t") ?? "obec:574121");
@@ -77,7 +78,7 @@ export function Scenarios() {
   }, [cat.data]);
 
   useEffect(() => {
-    setQuery({ t: tid, iv: ivs.length ? encode(ivs) : null, add: null });
+    if (!nahled) setQuery({ t: tid, iv: ivs.length ? encode(ivs) : null, add: null });
     const my = ++seq.current;
     setBusy(true);
     const timer = setTimeout(() => {

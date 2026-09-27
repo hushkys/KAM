@@ -105,8 +105,6 @@ export function KrajVizual({ className = "" }: { className?: string }) {
   return (
     <div className={`kv ${className}`} ref={box} style={styl}>
       <div className="kv-scena">
-        <span className="kv-zare" aria-hidden="true" />
-
         {/* 1 — kraj po ORP. Pod každým tvarem leží jeho tmavší dvojník o dva
             body níž, takže mapa vypadá vystřižená z papíru, ne natištěná. */}
         <svg className="kv-vrstva je-mapa" viewBox={vb} role="img"
@@ -172,7 +170,6 @@ export function KrajVizual({ className = "" }: { className?: string }) {
           </div>
         )}
 
-        <span className="kv-sken" aria-hidden="true" />
       </div>
 
       <div className="kv-noha">

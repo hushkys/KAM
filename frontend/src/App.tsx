@@ -1,45 +1,39 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { AssistantDrawer } from "./components/Assistant";
 import { Offline } from "./components/Offline";
-import { SkloFiltry, useOdlesk } from "./components/Sklo";
 import { openAssistant } from "./components/assistantBus";
 import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
 import { Dock } from "./components/Dock";
 import { Gesta } from "./components/Gesta";
+import { modulBarvy } from "./components/ModuleIcon";
 import { Navbar } from "./components/Navbar";
-import { TITLES } from "./components/nav";
+import { modulStranky, sekceStranky, TITLES } from "./components/nav";
 import { Toasts } from "./components/Toasts";
 import { match, useLocation } from "./lib/router";
-import { About } from "./pages/About";
-import { AssistantPage } from "./pages/AssistantPage";
-import { DataPage } from "./pages/Data";
-import { Hook } from "./pages/Hook";
-import { Legal } from "./pages/Legal";
-import { MapPage } from "./pages/MapPage";
-import { NotFound } from "./pages/NotFound";
-import { Outlook } from "./pages/Outlook";
-import { Overview } from "./pages/Overview";
-import { Profile } from "./pages/Profile";
-import { Dotace } from "./pages/Dotace";
-import { Plany } from "./pages/Plany";
-import { Finance } from "./pages/Finance";
-import { Reports } from "./pages/Reports";
-import { Scenarios } from "./pages/Scenarios";
-import { Settings } from "./pages/Settings";
-import { Stats } from "./pages/Stats";
-import { Territories } from "./pages/Territories";
+import { Stranka } from "./pages/Stranka";
 
 export function App() {
-  const shell = useRef<HTMLDivElement>(null);
   const loc = useLocation();
   const m = match(loc.path);
   const bare = m.name === "hook";
+  const modul = modulStranky(m.name);
 
   useEffect(() => {
     const t = TITLES[m.name];
     document.title = t ? `${t} · KAM` : "KAM — Krajský analytický model";
   }, [m.name]);
+
+  // Odstín modulu pro celou aplikaci: pozadí stránky, pruh v hlavičce,
+  // zvýraznění v navigaci. Před vykreslením, aby první snímek nové stránky
+  // neměl barvu té předchozí.
+  useLayoutEffect(() => {
+    const b = modulBarvy(modul);
+    const r = document.documentElement;
+    r.style.setProperty("--m-a", b.a);
+    r.style.setProperty("--m-b", b.b);
+    r.dataset.modul = modul;
+  }, [modul]);
 
   // Kotva musí fungovat i při prvním načtení stránky, ne až při přechodu
   // uvnitř aplikace — router scrolluje až v `commit()`, který se na startu
@@ -56,44 +50,21 @@ export function App() {
     requestAnimationFrame(zkus);
   }, []);
 
-  useOdlesk(shell);
-
   useEffect(() => {
     const open = () => openAssistant();
     window.addEventListener("kam:assistant", open);
     return () => window.removeEventListener("kam:assistant", open);
   }, []);
 
-  let page: ReactNode;
-  switch (m.name) {
-    case "hook": page = <Hook />; break;
-    case "prehled": page = <Overview />; break;
-    case "mapa": page = <MapPage />; break;
-    case "obce": page = <Territories />; break;
-    case "profil": page = <Profile id={m.params.id} />; break;
-    case "vyhled": page = <Outlook />; break;
-    case "scenare": page = <Scenarios />; break;
-    case "hospodareni": page = <Finance />; break;
-    case "plany": page = <Plany />; break;
-    case "dotace": page = <Dotace />; break;
-    case "podnety": page = <Reports />; break;
-    case "data": page = <DataPage />; break;
-    case "statistiky": page = <Stats />; break;
-    case "asistent": page = <AssistantPage />; break;
-    case "nastaveni": page = <Settings tab={m.params.tab} />; break;
-    case "o-nas": page = <About />; break;
-    case "pravni": page = <Legal />; break;
-    default: page = <NotFound />;
-  }
+  const rodic = m.name === "profil" ? { label: "Obce", to: "/obce" } : undefined;
 
   return (
-    <div className="shell" ref={shell}>
-      <SkloFiltry />
-      {!bare && <Navbar title={TITLES[m.name] ?? ""} />}
-      <main id="main" tabIndex={-1} className={`page page-enter ${bare ? "is-bare" : ""}`} data-page={m.name} key={m.name === "profil" ? loc.path : m.name}>
-        {page}
-      </main>
+    <div className="shell">
       {!bare && <Dock />}
+      {!bare && <Navbar title={TITLES[m.name] ?? ""} modul={modul} sekce={sekceStranky(m.name)} rodic={rodic} />}
+      <main id="main" tabIndex={-1} className={`page page-enter ${bare ? "is-bare" : ""}`} data-page={m.name} key={m.name === "profil" ? loc.path : m.name}>
+        <Stranka m={m} />
+      </main>
       {!bare && <Gesta />}
       <CommandPalette />
       <ContextMenu />

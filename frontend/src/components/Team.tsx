@@ -5,9 +5,6 @@
 // v každé někdo, kdo ji vede — a to se v mřížce ztratí. Řádek pod řádkem to
 // řekne samo: portrét, jméno, čím se zabývá, a vpravo oblast.
 //
-// Řádky nesou `data-p`, takže se na úvodní stránce vezou s paralaxou (styl
-// v `hook.css`); jinde je to obyčejný seznam.
-//
 // Poslední řádek je odkaz na vlastní web týmu. Je schválně součástí seznamu,
 // ne tlačítko někde bokem: komponenta se vykresluje na úvodní stránce i na
 // stránce O nás, takže odkaz stojí na obou místech, kde se o týmu mluví, a
@@ -23,7 +20,7 @@ export function Team() {
   return (
     <div className="tym">
       {TEAM.map((p, i) => (
-        <article className="tym-radek" key={p.name} data-p style={{ "--i": i } as CSSProperties}>
+        <article className="tym-radek" key={p.name} style={{ "--i": i } as CSSProperties}>
           <span className="tym-portret">
             <Avatar who={p.who} size={104} title={p.name} />
             {p.chranice && <span className="tym-odznak" title="Chrániče na kolena — týmový vtip"><Chranice size={22} /></span>}
@@ -40,7 +37,7 @@ export function Team() {
         </article>
       ))}
       <a className="tym-radek tym-web" href={WEB_TYMU} target="_blank" rel="noopener noreferrer"
-        data-p style={{ "--i": TEAM.length } as CSSProperties}>
+        style={{ "--i": TEAM.length } as CSSProperties}>
         <span className="tym-portret tym-znak" aria-hidden="true">
           <span className="tym-znak-tecka" />
         </span>

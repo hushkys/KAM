@@ -1,9 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource-variable/manrope";
-// Jen osa WONK (34 kB na podmnožinu): dává Fraunces ty křivé patky, kvůli
-// kterým se do nadpisů hooků vybrala, a přitom váží stejně jako holá váha.
-import "@fontsource-variable/fraunces/wonk.css";
+// Inter s osou optické velikosti: v textu se čte jako Inter, v nadpisech se
+// sám přepne na užší „Display" střih. Jedno písmo pro celou aplikaci.
+import "@fontsource-variable/inter/opsz.css";
 import "./styles/base.css";
 import "./styles/components.css";
 // Úvodní stránka má vlastní soubor a načítá se před `pages.css`, aby dotykový

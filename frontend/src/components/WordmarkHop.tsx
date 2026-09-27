@@ -54,7 +54,10 @@ function zabrani(t: number): [number, boolean] {
   return [p, false];
 }
 
-export function WordmarkHop({ onDone }: { onDone?: () => void }) {
+/** `vycentrovat`: nápis stojí uprostřed a po doskákání se má i s tečkou
+ *  posunout na střed. Úvodní stránka má nápis zarovnaný doleva na každé
+ *  šířce, takže ho nepoužívá — posun by tam působil jako překlep. */
+export function WordmarkHop({ onDone, vycentrovat = false }: { onDone?: () => void; vycentrovat?: boolean }) {
   const [tise] = useState(tiseji);
   const svg = useRef<SVGSVGElement>(null);
   const telo_ = useRef<SVGPathElement>(null);
@@ -128,7 +131,7 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     // Na širokém okně je nápis v levém sloupci a zarovnaný doleva; tam by
     // posun působil jako překlep v rozvržení.
     const uzke = window.matchMedia("(max-width: 960px)");
-    const cilPosunu = () => (uzke.matches ? POSUN_STRED : 0);
+    const cilPosunu = () => (vycentrovat && uzke.matches ? POSUN_STRED : 0);
 
     let mrkDo = 0.9 + Math.random() * 1.4;
     let pohledDo = 2.2;
@@ -538,14 +541,14 @@ export function WordmarkHop({ onDone }: { onDone?: () => void }) {
     };
     requestAnimationFrame(tik);
     return () => { zivy = false; };
-  }, [tise, onDone]);
+  }, [tise, onDone, vycentrovat]);
 
   if (tise) {
     return (
       <svg viewBox="-70 -46 430 152" role="img" aria-label="KAM." className="wordmark hop">
         {/* Bez animace je tečka na místě rovnou, takže se centruje stylem —
             jinak by uživatel s vypnutým pohybem viděl nápis natlačený vpravo. */}
-        <g className="ms-stred" style={{ ["--posun" as string]: `${POSUN_STRED}px` }}>
+        <g className={vycentrovat ? "ms-stred" : undefined} style={{ ["--posun" as string]: `${POSUN_STRED}px` }}>
           <path d={K} fill="currentColor" fillRule="evenodd" />
           <path d={A} fill="currentColor" fillRule="evenodd" />
           <path d={M} fill="currentColor" fillRule="evenodd" />

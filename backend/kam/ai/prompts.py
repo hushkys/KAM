@@ -26,6 +26,6 @@ Pravidla, která mají přednost před čímkoli dalším:
 9. Výhled a scénáře popisuj podmíněně („při zachování současných trendů model odhaduje…“), nikdy jako jistotu.
 10. Ovládání aplikace: chce-li uživatel změnit vzhled nebo přejít jinam a ještě se to nestalo, přidej na konec samostatný řádek ve tvaru
 AKCE: {{"type":"set_pref","key":"theme","value":"dark"}}
-Povolené klíče: theme (dark|light|system), transparency (true|false), reduceMotion (true|false), contrast (normal|high), fontScale (up|down|reset), dock (bottom|side), density (comfortable|compact).
+Povolené klíče: theme (dark|light|system), transparency (true|false), reduceMotion (true|false), contrast (normal|high), fontScale (up|down|reset), nav (full|compact), density (comfortable|compact).
 Nebo AKCE: {{"type":"navigate","path":"/mapa"}} — cesty /prehled /mapa /obce /vyhled /scenare /podnety /data /statistiky /nastaveni /o-nas /pravni, profil území /obce/obec:KÓD.
 {('Poznámka ke směrování: ' + route_label) if route_label else ''}"""

@@ -35,7 +35,7 @@ NAV_VERB = r"(otevri|otevrit|prejdi|prejit|jdi|ukaz|zobraz|prepni se|presun|vezm
 
 ALLOWED = {
     "set_pref": {"theme": {"dark", "light", "system"}, "transparency": {True, False}, "reduceMotion": {True, False},
-                 "contrast": {"normal", "high"}, "fontScale": {"up", "down", "reset"}, "dock": {"bottom", "side"},
+                 "contrast": {"normal", "high"}, "fontScale": {"up", "down", "reset"}, "nav": {"full", "compact"},
                  "density": {"comfortable", "compact"}},
     "navigate": set(r for r, _ in ROUTES.values()),
 }
@@ -88,9 +88,11 @@ def _pref_actions(q: str) -> list[tuple[dict, str]]:
             out.append(({"type": "set_pref", "key": "fontScale", "value": "down"}, "Písmo je menší."))
         else:
             out.append(({"type": "set_pref", "key": "fontScale", "value": "reset"}, "Velikost písma je výchozí."))
-    if re.search(r"\b(dock|lista|listu|panel\w*|navigac\w*)\b", q) and re.search(r"vlev\w*|bok\w*|stran\w*|dol\w*|spod\w*", q):
-        side = bool(re.search(r"vlev\w*|bok\w*|stran\w*", q))
-        out.append(({"type": "set_pref", "key": "dock", "value": "side" if side else "bottom"}, "Navigace je po straně." if side else "Navigace je dole."))
+    # Postranní panel: sbalit na ikony, nebo rozbalit s popisky.
+    if re.search(r"\b(panel\w*|navigac\w*|menu|lista|listu)\b", q) and re.search(r"sbal\w*|zuz\w*|jen ikon\w*|rozbal\w*|rozsir\w*|s popisk\w*", q):
+        compact = bool(re.search(r"sbal\w*|zuz\w*|jen ikon\w*", q))
+        out.append(({"type": "set_pref", "key": "nav", "value": "compact" if compact else "full"},
+                    "Postranní panel ukazuje jen ikony." if compact else "Postranní panel je rozbalený."))
     if re.search(r"kompaktn\w*|husts\w*|mensi mezery", q):
         out.append(({"type": "set_pref", "key": "density", "value": "compact"}, "Rozložení je kompaktní."))
     elif re.search(r"(vzdusn\w*|pohodln\w*|vetsi mezery)", q):

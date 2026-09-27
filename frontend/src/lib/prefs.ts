@@ -15,21 +15,21 @@ export interface Prefs {
   contrast: "normal" | "high";
   fontScale: number;
   density: "comfortable" | "compact";
-  dock: "bottom" | "side";
-  dockLabels: boolean;
+  /** Postranní panel na počítači: s popisky, nebo jen ikony. Na tabletu je
+   *  vždycky jen s ikonami a na telefonu je navigace dole — tam se nevolí. */
+  nav: "full" | "compact";
   underlineLinks: boolean;
   focusRing: boolean;
 }
 
 export const DEFAULTS: Prefs = {
-  theme: "dark",
+  theme: "system",
   transparency: true,
   reduceMotion: false,
   contrast: "normal",
   fontScale: 1,
   density: "comfortable",
-  dock: "bottom",
-  dockLabels: true,
+  nav: "full",
   underlineLinks: false,
   focusRing: false,
 };
@@ -52,10 +52,10 @@ export function sanitize(p: Prefs): Prefs {
   if (!["system", "light", "dark"].includes(out.theme)) out.theme = DEFAULTS.theme;
   if (!["normal", "high"].includes(out.contrast)) out.contrast = "normal";
   if (!["comfortable", "compact"].includes(out.density)) out.density = "comfortable";
-  if (!["bottom", "side"].includes(out.dock)) out.dock = "bottom";
+  if (!["full", "compact"].includes(out.nav)) out.nav = "full";
   const fs = Number(out.fontScale);
   out.fontScale = Number.isFinite(fs) ? Math.min(1.3, Math.max(0.85, Math.round(fs * 100) / 100)) : 1;
-  for (const k of ["transparency", "reduceMotion", "dockLabels", "underlineLinks", "focusRing"] as const) out[k] = Boolean(out[k]);
+  for (const k of ["transparency", "reduceMotion", "underlineLinks", "focusRing"] as const) out[k] = Boolean(out[k]);
   return out;
 }
 
@@ -84,14 +84,13 @@ export function apply(p: Prefs = current): void {
   root.dataset.motion = motionReduced(p) ? "reduce" : "full";
   root.dataset.contrast = p.contrast;
   root.dataset.density = p.density;
-  root.dataset.dock = p.dock;
-  root.dataset.dockLabels = p.dockLabels ? "on" : "off";
+  root.dataset.nav = p.nav;
   root.dataset.underline = p.underlineLinks ? "on" : "off";
   root.dataset.focus = p.focusRing ? "strong" : "normal";
   root.style.setProperty("--font-scale", String(p.fontScale));
   root.style.colorScheme = resolvedTheme(p);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", resolvedTheme(p) === "dark" ? "#0a0d0c" : "#f3f5f3");
+  if (meta) meta.setAttribute("content", resolvedTheme(p) === "dark" ? "#16191d" : "#ffffff");
 }
 
 export function get(): Prefs {
@@ -131,8 +130,8 @@ export function applyAction(key: string, value: unknown): string | null {
     case "density":
       set({ density: value === "compact" ? "compact" : "comfortable" });
       return key;
-    case "dock":
-      set({ dock: value === "side" ? "side" : "bottom" });
+    case "nav":
+      set({ nav: value === "compact" ? "compact" : "full" });
       return key;
     case "fontScale": {
       const step = value === "up" ? 0.1 : value === "down" ? -0.1 : 0;
