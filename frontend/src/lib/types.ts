@@ -39,7 +39,7 @@ export interface Overview {
   kpis: { key: string; label: string; value: number; year: number; unit: string; change: number | null; since: number | null; series: SeriesPoint[] }[];
   outlook: Outlook;
   datasets: { total: number; verified: number; broken: number; no_link: number; core: number; kraje: number; other: number; loaded: number; api_sources: number; publishers: number };
-  model: { observations: number; years: [number, number]; territories: number; pois: number; indicators: number };
+  model: { observations: number; years: [number, number]; territories: number; pois: number; indicators: number; obce: number };
   risks: { territory: { id: string; name: string; population: number }; top: { type: string; title: string; level: string; level_label: string; score: number; text: string }; count: number; score: number }[];
   kraj_risks: Risk[];
 }

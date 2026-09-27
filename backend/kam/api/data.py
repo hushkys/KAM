@@ -128,6 +128,7 @@ def overview() -> dict:
         "kpis": kpis, "outlook": out,
         "datasets": {k: counts[k] for k in ("total", "verified", "broken", "no_link", "core", "kraje", "other", "loaded", "api_sources", "publishers")},
         "model": {"observations": obs, "years": [years[0], years[1]], "territories": len(store.territories()), "pois": pois,
+                  "obce": sum(1 for t in store.territories().values() if t.level == "obec" and t.kraj_code == HOME_KRAJ),
                   "indicators": len(store.indicators()) + len(DERIVED)},
         "risks": risks.ranking("obec", HOME_KRAJ, 8), "kraj_risks": risks.assess(kraj)[:4],
     }

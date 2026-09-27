@@ -144,16 +144,18 @@
    Pás šesti čísel s linkami mezi nimi — jako hlavička výroční zprávy, ne
    šest dlaždic. */
 .hp-pas { border-bottom: 1px solid var(--border); background: var(--surface); }
-.hp-pas-mrizka { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.hp-cislo { display: grid; gap: 3px; align-content: start; padding: 26px 20px 26px 0; min-width: 0; }
-.hp-cislo + .hp-cislo { padding-left: 20px; border-left: 1px solid var(--border); }
-.hp-cislo-hodnota { font-size: clamp(1.45rem, 1.1rem + 1vw, 2rem); font-weight: 650; letter-spacing: -.028em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.hp-cislo-popis { font-size: .8125rem; font-weight: 550; color: var(--text); }
-.hp-cislo-sub { font-size: .75rem; color: var(--text-mute); }
+/* Čtyři čísla místo šesti — jen ta, která úředníka zajímají — a proto
+   ve větším stupni a s popiskem, který se dá přečíst jako věta. */
+.hp-pas-mrizka { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.hp-cislo { display: grid; gap: 4px; align-content: start; padding: clamp(24px, 3.4vh, 40px) 24px clamp(24px, 3.4vh, 40px) 0; min-width: 0; }
+.hp-cislo + .hp-cislo { padding-left: 24px; border-left: 1px solid var(--border); }
+.hp-cislo-hodnota { font-size: clamp(1.75rem, 1.1rem + 1.5vw, 3rem); font-weight: 650; letter-spacing: -.032em; line-height: 1.08; font-variant-numeric: tabular-nums; }
+.hp-cislo-popis { font-size: clamp(.875rem, .8rem + .2vw, 1rem); font-weight: 600; color: var(--text); margin-top: 4px; }
+.hp-cislo-sub { font-size: clamp(.8125rem, .76rem + .12vw, .875rem); color: var(--text-mute); }
 @media (max-width: 1100px) {
-  .hp-pas-mrizka { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .hp-cislo:nth-child(4) { padding-left: 0; border-left: 0; }
-  .hp-cislo:nth-child(n+4) { border-top: 1px solid var(--border); }
+  .hp-pas-mrizka { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hp-cislo:nth-child(3) { padding-left: 0; border-left: 0; }
+  .hp-cislo:nth-child(n+3) { border-top: 1px solid var(--border); }
 }
 @media (max-width: 600px) {
   .hp-pas-mrizka { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -231,6 +233,10 @@
   .hp-krok-cislo { grid-row: span 2; margin-bottom: 0; }
 }
 
+.hp-vrstvy-hlava { margin-top: clamp(40px, 6vh, 64px); max-width: 64ch; }
+.hp-vrstvy-hlava h3 { font-size: clamp(1.125rem, 1rem + .4vw, 1.375rem); font-weight: 650; letter-spacing: -.015em; }
+.hp-vrstvy-hlava p { margin-top: 6px; color: var(--text-dim); }
+.hp-vrstvy-hlava + .hp-vrstvy { margin-top: 18px; }
 .hp-vrstvy { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: clamp(32px, 5vh, 52px); }
 .hp-vrstva { display: grid; gap: 6px; align-content: start; justify-items: start; padding: 16px; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface-2); }
 .hp-vrstva strong { font-size: .9375rem; font-weight: 650; margin-top: 4px; }

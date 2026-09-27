@@ -21,26 +21,26 @@ import { Team, WEB_TYMU } from "../components/Team";
 import { KindTag } from "../components/ui";
 import { WordmarkHop } from "../components/WordmarkHop";
 import { useApi } from "../lib/api";
-import { compact, num } from "../lib/format";
+import { num } from "../lib/format";
 import { Link } from "../lib/router";
 import type { Overview, Sources } from "../lib/types";
 
 /** Cesta od údaje k rozhodnutí. Je to pořadí, ve kterém aplikace pracuje,
  *  a zároveň jediná věc, kterou je na úvodní stránce potřeba pochopit. */
 const CESTA = [
-  { n: "1", t: "Profil", d: "Co o území víme. Každý údaj má rok a zdroj — a když zdroj mlčí, řekne se to.", to: "/obce" },
-  { n: "2", t: "Riziko", d: "Kde se řada láme. Robustní statistika, protože počty v malé obci nejsou normální rozdělení.", to: "/prehled" },
-  { n: "3", t: "Výhled", d: "Kam to při současných trendech vede, s pásmem nejistoty a přiznanou mírou důvěry.", to: "/vyhled" },
-  { n: "4", t: "Scénář", d: "Co se změní, když zasáhneme. Tentýž model dvakrát a rozdíl mezi oběma cestami.", to: "/scenare" },
-  { n: "5", t: "Podnět", d: "Co data nevidí, přidají lidé z místa. Opakovaná hlášení se spojí do podnětu kraji.", to: "/podnety" },
+  { n: "1", t: "Profil", d: "Co o obci víme, u každého údaje s rokem a zdrojem. Kde zdroj mlčí, je to tam napsané.", to: "/obce" },
+  { n: "2", t: "Riziko", d: "Kde se vývoj láme — stárnutí, odliv lidí, nezaměstnanost — a co byl jen jednorázový výkyv.", to: "/prehled" },
+  { n: "3", t: "Výhled", d: "Kam to při dnešních trendech vede: tři scénáře, pásmo nejistoty a zpětný test na minulých letech.", to: "/vyhled" },
+  { n: "4", t: "Scénář", d: "Co nová čtvrť, třída, spoj nebo ordinace udělá s kapacitami, daněmi a náklady.", to: "/scenare" },
+  { n: "5", t: "Podnět", d: "Co data nevidí, doplní lidé z místa. Opakovaná hlášení se spojí do podnětu kraji.", to: "/podnety" },
 ];
 
 /** Čtyři druhy čísel, které aplikace ukazuje, a štítek, podle kterého se
  *  poznají. Je to slib: fakt se nikdy nevydává za model a model za fakt. */
 const VRSTVY = [
-  { kind: "FAKT", t: "Zveřejněná hodnota", d: "Číslo tak, jak ho vydal ČSÚ, kraj nebo jiný správce dat — s rokem a odkazem na zdroj." },
-  { kind: "TREND", t: "Směr řady", d: "Robustní odhad sklonu (Theil–Sen, Mann–Kendall) a odlišení jednorázového výkyvu od dlouhodobé změny." },
-  { kind: "MODEL", t: "Výhled", d: "Projekce obyvatel do roku 2040 ze tří složek — narození, úmrtí, migrace — s pásmem nejistoty." },
+  { kind: "FAKT", t: "Zveřejněná hodnota", d: "Číslo tak, jak ho vydal ČSÚ, kraj nebo jiný správce dat, s rokem a původcem." },
+  { kind: "TREND", t: "Směr vývoje", d: "Jestli jde o dlouhodobou změnu, nebo jen o výkyv — metodami, které obstojí i u malé obce." },
+  { kind: "MODEL", t: "Výhled", d: "Projekce obyvatel z narození, úmrtí a stěhování, s pásmem nejistoty a ověřená zpětným testem." },
   { kind: "SCÉNÁŘ", t: "Co kdyby", d: "Tentýž model se zásahem a bez něj. Předpoklady jsou vypsané a dají se změnit." },
 ];
 
@@ -181,13 +181,15 @@ export function Hook() {
   );
   const nejvic = zdroje[0]?.verified ?? 1;
 
+  // Čtyři čísla, která úředníka opravdu zajímají: je tu moje obec, jak daleko
+  // do minulosti data sahají, nemusím obcházet portály, uvidím služby. Počet
+  // měřených hodnot a území vypadl — vypovídá o databázi, ne o jeho práci.
+  const roky = d ? `${d.model.years[0]}–${d.model.years[1]}` : "";
   const cisla: { v: number | null; f: (n: number) => string; l: string; s: string }[] = [
-    { v: d?.datasets.verified ?? null, f: num, l: "funkčních datových sad", s: d ? `z ${num(d.datasets.total)} v katalogu` : "odkaz ověřen" },
-    { v: d?.model.observations ?? null, f: compact, l: "měřených hodnot", s: d ? `roky ${d.model.years[0]}–${d.model.years[1]}` : "" },
-    { v: d?.datasets.publishers ?? null, f: num, l: "poskytovatelů dat", s: "kraje, města, úřady, NKOD" },
-    { v: d?.datasets.loaded ?? null, f: num, l: "sad přímo v modelu", s: "hodnoty v časových řadách" },
-    { v: d?.model.territories ?? null, f: num, l: "území", s: "kraj, okresy, ORP, obce" },
-    { v: d?.model.pois ?? null, f: num, l: "zařízení a zastávek", s: "lékaři, školy, zastávky IREDO" },
+    { v: d?.model.obce ?? null, f: num, l: "obcí kraje, každá s vlastním profilem", s: "obyvatelé, školy, lékaři, rozpočet" },
+    { v: d ? d.model.years[1] : null, f: () => roky, l: "roky v časových řadách", s: "dost dlouhé, aby šlo odlišit trend od výkyvu" },
+    { v: d?.datasets.verified ?? null, f: num, l: "ověřených otevřených sad na jednom místě", s: d ? `od ${num(d.datasets.publishers)} poskytovatelů, odkaz při kontrole odpověděl` : "" },
+    { v: d?.model.pois ?? null, f: num, l: "zařízení a míst na mapě kraje", s: "školy, ordinace, zastávky, knihovny i památky" },
   ];
 
   const moduly = NAV.filter((n) => n.module !== "nastaveni");
@@ -218,18 +220,17 @@ export function Hook() {
             <div className="hp-znak" data-vjezd><WordmarkHop /></div>
             <h1 className="hp-claim" data-vjezd>Vidět, kam to směřuje.</h1>
             <p className="hp-lead" data-vjezd>
-              Analytický model pro obce, kraj a stát. Co se v území děje, proč, kam to vede a co se změní,
-              když zasáhneme — nebo nezasáhneme.
-              {d ? ` Nad ${num(d.datasets.verified)} ověřenými otevřenými sadami a ${compact(d.model.observations)} měřenými hodnotami.` : ""}
+              Podklady pro radu, zastupitelstvo i ministerstvo na jednom místě: co se v obcích kraje děje, kam to vede
+              a co změní zásah. U každého čísla je rok a původce, takže obstojí i na jednání.
             </p>
             <div className="hp-cta" data-vjezd>
-              <Link to="/prehled" className="btn btn-primary btn-lg">Otevřít aplikaci <Icon name="arrow-right" size={17} /></Link>
+              <Link to="/prehled" className="btn btn-primary btn-lg">Otevřít přehled kraje <Icon name="arrow-right" size={17} /></Link>
               <button className="btn btn-lg" onClick={() => openAssistant()}><Icon name="sparkle" size={17} /> Zeptat se asistenta</button>
             </div>
             <ul className="hp-sliby" data-vjezd>
-              <li><Icon name="check" size={15} /> U každého čísla rok a zdroj</li>
-              <li><Icon name="check" size={15} /> Veřejné API pro vlastní analýzy</li>
-              <li><Icon name="check" size={15} /> Bez přihlášení</li>
+              <li><Icon name="check" size={15} /> Rok a původce u každého čísla</li>
+              <li><Icon name="check" size={15} /> Bez přihlášení a bez instalace</li>
+              <li><Icon name="check" size={15} /> Otevřené API i zdrojový kód</li>
             </ul>
           </div>
           <div className="hp-hero-vizual" data-vjezd>
@@ -255,10 +256,10 @@ export function Hook() {
       <section className="hp-sekce" id="moduly">
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Moduly</div>
-            <h2 className="hp-nadpis">Pracovní místa nad jedním modelem kraje</h2>
-            <p className="hp-podnadpis">Každý modul má svou barvu — v navigaci, v hlavičce stránky i v grafech — takže je
-              vždycky vidět, kde člověk je. Všechny pracují nad stejnými čísly.</p>
+            <div className="eyebrow">Co v aplikaci najdete</div>
+            <h2 className="hp-nadpis">Každá otázka má své místo</h2>
+            <p className="hp-podnadpis">Každý modul odpovídá na jednu otázku, kterou úřad řeší. Všechny stojí na stejných
+              číslech, takže si podklady z různých míst neodporují.</p>
           </div>
           <div className="hp-moduly">
             {moduly.map((n, i) => {
@@ -284,9 +285,9 @@ export function Hook() {
       <section className="hp-sekce hp-sekce-alt" id="metodika">
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Metodika</div>
-            <h2 className="hp-nadpis">Od údaje k rozhodnutí</h2>
-            <p className="hp-podnadpis">Pořadí, ve kterém aplikace pracuje. Každý krok stojí na tom předchozím a nikde se nepřeskakuje.</p>
+            <div className="eyebrow">Jak to funguje</div>
+            <h2 className="hp-nadpis">Od údaje k usnesení</h2>
+            <p className="hp-podnadpis">Stejné pořadí, jakým vzniká každý poctivý podklad. Jen už nemusíte data shánět sami.</p>
           </div>
           <ol className="hp-kroky">
             {CESTA.map((c, i) => (
@@ -299,6 +300,10 @@ export function Hook() {
               </li>
             ))}
           </ol>
+          <div className="hp-vrstvy-hlava" data-vjezd>
+            <h3>Fakt se nikdy nevydává za odhad</h3>
+            <p>Každé číslo nese štítek, podle kterého poznáte, co je zač. Asistent žádné číslo nepočítá, jen vysvětluje hotové podklady.</p>
+          </div>
           <div className="hp-vrstvy">
             {VRSTVY.map((v, i) => (
               <div className="hp-vrstva" key={v.kind} data-vjezd style={{ "--i": i } as CSSProperties}>
@@ -316,11 +321,11 @@ export function Hook() {
         <div className="hp-obsah hp-data">
           <div className="hp-hlavicka" data-vjezd>
             <div className="eyebrow">Zdroje</div>
-            <h2 className="hp-nadpis">Celý katalog, ne vybrané sady</h2>
+            <h2 className="hp-nadpis">Kde data hledat, už řešit nemusíte</h2>
             <p className="hp-podnadpis">
-              Národní katalog otevřených dat, krajské a městské portály, geoportál INSPIRE a data ČSÚ. Čísla jsou
-              ověřené datové sady — odkaz při poslední kontrole odpověděl. Celý seznam i s nefunkčními odkazy je na
-              stránce <Link to="/data">Data</Link>, strojově přes <Link to="/data?tab=api">veřejné API</Link>.
+              Národní katalog otevřených dat, portály krajů a měst, ČSÚ, Eurostat a geoportál na jednom místě. Každá sada
+              vede na originál, celý seznam i s nefunkčními odkazy je na stránce <Link to="/data">Data</Link> a všechno
+              je i ve <Link to="/data?tab=api">veřejném API</Link> bez registrace.
             </p>
           </div>
           <ol className="hp-zdroje" data-vjezd>
@@ -344,9 +349,10 @@ export function Hook() {
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
             <div className="eyebrow">Tým Popojedem.</div>
-            <h2 className="hp-nadpis">Loni jsme ukázali, co dělat, když problém nastane. Letos ho chceme vidět dřív.</h2>
+            <h2 className="hp-nadpis">Loni jsme řešili problémy. Letos je chceme vidět dřív.</h2>
             <p className="hp-podnadpis">
-              Navazujeme na KompaZ, se kterým jsme vyhráli loňský ročník téže soutěže. Víc na stránce <Link to="/o-nas">O nás</Link>.
+              S projektem KompaZ jsme vyhráli loňský ročník téže soutěže a KAM se dívá o krok dopředu.
+              Víc na stránce <Link to="/o-nas">O nás</Link>.
             </p>
           </div>
           <div data-vjezd><Team /></div>
@@ -357,11 +363,11 @@ export function Hook() {
       <section className="hp-zaver">
         <div className="hp-obsah hp-zaver-vnitrek" data-vjezd>
           <div>
-            <h2 className="hp-nadpis">Kraj na jedné obrazovce</h2>
-            <p className="hp-podnadpis">Otevřete přehled, nebo se rovnou zeptejte asistenta vlastními slovy.</p>
+            <h2 className="hp-nadpis">Kam to směřuje u vás?</h2>
+            <p className="hp-podnadpis">Najděte svou obec, nebo asistentovi napište vlastními slovy, co potřebujete doložit.</p>
           </div>
           <div className="hp-cta">
-            <Link to="/prehled" className="btn btn-primary btn-lg">Otevřít aplikaci <Icon name="arrow-right" size={17} /></Link>
+            <Link to="/obce" className="btn btn-primary btn-lg">Najít svou obec <Icon name="arrow-right" size={17} /></Link>
             <button className="btn btn-lg" onClick={() => openAssistant()}><Icon name="sparkle" size={17} /> Zeptat se asistenta</button>
           </div>
         </div>
