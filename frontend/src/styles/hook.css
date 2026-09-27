@@ -204,8 +204,10 @@
   transition: border-color var(--t-sm), box-shadow var(--t-sm);
 }
 :root[data-theme="dark"] .hp-modul { --mc: var(--mc-a); }
-.hp-modul::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--mc); }
-.hp-modul:hover { border-color: color-mix(in oklab, var(--mc) 45%, transparent); box-shadow: var(--shadow-md); }
+/* Barvu modulu nese plocha karty a ikona, ne pruh nahoře. */
+.hp-modul { background: color-mix(in oklab, var(--mc) 7%, var(--surface)); border-color: color-mix(in oklab, var(--mc) 20%, var(--border)); }
+:root[data-theme="dark"] .hp-modul { background: color-mix(in oklab, var(--mc) 12%, var(--surface)); border-color: color-mix(in oklab, var(--mc) 26%, var(--border)); }
+.hp-modul:hover { border-color: color-mix(in oklab, var(--mc) 50%, transparent); background: color-mix(in oklab, var(--mc) 11%, var(--surface)); box-shadow: var(--shadow-md); }
 .hp-modul-hlava { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
 .hp-modul-sekce { font-size: .6875rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-mute); }
 .hp-modul strong { font-size: 1rem; font-weight: 650; letter-spacing: -.01em; }

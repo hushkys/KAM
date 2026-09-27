@@ -6,11 +6,10 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
 
-export function PageHeader({ eyebrow, title, lead, actions, titleStyle }: { eyebrow?: string; title: ReactNode; lead?: ReactNode; actions?: ReactNode; titleStyle?: CSSProperties }) {
+export function PageHeader({ title, lead, actions, titleStyle }: { eyebrow?: string; title: ReactNode; lead?: ReactNode; actions?: ReactNode; titleStyle?: CSSProperties }) {
   return (
     <header className="page-header reveal">
       <div className="page-header-text">
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1 style={titleStyle}>{title}</h1>
         {lead && <p className="lead">{lead}</p>}
       </div>

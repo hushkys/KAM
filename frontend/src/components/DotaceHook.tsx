@@ -79,7 +79,6 @@ export function DotaceHook({ cerpani, territory, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Dotace</div>
         <NadpisHooku id={`${uid}-t`}>Každý rok<br />jeden letokruh</NadpisHooku>
         <p className="lead">
           Uprostřed je území, kolem něj roky. Tloušťka prstence je částka, která toho roku doopravdy

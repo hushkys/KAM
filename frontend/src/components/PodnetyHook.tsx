@@ -66,7 +66,6 @@ export function PodnetyHook({ skupiny, prah, hlaseni, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Podněty občanů</div>
         <NadpisHooku id={`${uid}-t`}>{art.p} {plural(art.p, "hlášení", "hlášení", "hlášení")},<br />jeden podnět</NadpisHooku>
         <p className="lead">
           Jedno hlášení je stížnost. {art.p} podobných ze stejné obce je doklad — KAM je spojí, přiloží

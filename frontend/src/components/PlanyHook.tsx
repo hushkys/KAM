@@ -78,7 +78,6 @@ export function PlanyHook({ plany, letos, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Plány</div>
         <NadpisHooku id={`${uid}-t`}>Do kdy<br />si to obec dala</NadpisHooku>
         <p className="lead">
           Program rozvoje má napsané období — co se má postavit a do kterého roku. Každý pruh je

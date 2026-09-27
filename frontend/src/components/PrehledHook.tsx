@@ -94,7 +94,6 @@ export function PrehledHook({ kpis, pozorovani, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Královéhradecký kraj{art ? ` · ${art.x0}–${art.x1}` : ""}</div>
         <NadpisHooku id={`${uid}-t`}>{art ? <>Kde se kraj<br />rozešel</> : <>Co se v kraji děje</>}</NadpisHooku>
         <p className="lead">
           Každá řada začíná na stu v roce, kdy má první údaj. Dál nezáleží na velikosti čísla, ale na

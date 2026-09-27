@@ -109,7 +109,6 @@ export function MapaHook({ orp, obce, krajCode = KHK, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Mapa</div>
         <NadpisHooku id={`${uid}-t`}>Tři měřítka,<br />jedna mapa</NadpisHooku>
         <p className="lead">
           Česko po krajích, kraj po ORP, ORP po obcích — {num(obce)} hranic z registru ČÚZK.

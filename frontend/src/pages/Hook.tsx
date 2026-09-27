@@ -16,7 +16,7 @@ import { Icon } from "../components/Icon";
 import { KrajVizual } from "../components/KrajVizual";
 import { Wordmark } from "../components/Logo";
 import { modulBarvy, ModuleIcon } from "../components/ModuleIcon";
-import { NAV, SEKCE } from "../components/nav";
+import { NAV } from "../components/nav";
 import { Team, WEB_TYMU } from "../components/Team";
 import { KindTag } from "../components/ui";
 import { WordmarkHop } from "../components/WordmarkHop";
@@ -256,7 +256,6 @@ export function Hook() {
       <section className="hp-sekce" id="moduly">
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Co v aplikaci najdete</div>
             <h2 className="hp-nadpis">Každá otázka má své místo</h2>
             <p className="hp-podnadpis">Každý modul odpovídá na jednu otázku, kterou úřad řeší. Všechny stojí na stejných
               číslech, takže si podklady z různých míst neodporují.</p>
@@ -269,7 +268,6 @@ export function Hook() {
                   style={{ "--i": i, "--mc-a": b.a, "--mc-b": b.b } as CSSProperties}>
                   <span className="hp-modul-hlava">
                     <ModuleIcon name={n.module} size={26} />
-                    <span className="hp-modul-sekce">{SEKCE[n.sekce]}</span>
                   </span>
                   <strong>{n.label}</strong>
                   <span className="hp-modul-popis">{n.desc}</span>
@@ -285,7 +283,6 @@ export function Hook() {
       <section className="hp-sekce hp-sekce-alt" id="metodika">
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Jak to funguje</div>
             <h2 className="hp-nadpis">Od údaje k usnesení</h2>
             <p className="hp-podnadpis">Stejné pořadí, jakým vzniká každý poctivý podklad. Jen už nemusíte data shánět sami.</p>
           </div>
@@ -320,7 +317,6 @@ export function Hook() {
       <section className="hp-sekce" id="data">
         <div className="hp-obsah hp-data">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Zdroje</div>
             <h2 className="hp-nadpis">Kde data hledat, už řešit nemusíte</h2>
             <p className="hp-podnadpis">
               Národní katalog otevřených dat, portály krajů a měst, ČSÚ, Eurostat a geoportál na jednom místě. Každá sada
@@ -348,7 +344,6 @@ export function Hook() {
       <section className="hp-sekce hp-sekce-alt" id="tym">
         <div className="hp-obsah">
           <div className="hp-hlavicka" data-vjezd>
-            <div className="eyebrow">Tým Popojedem.</div>
             <h2 className="hp-nadpis">Loni jsme řešili problémy. Letos je chceme vidět dřív.</h2>
             <p className="hp-podnadpis">
               S projektem KompaZ jsme vyhráli loňský ročník téže soutěže a KAM se dívá o krok dopředu.

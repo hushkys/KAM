@@ -93,7 +93,6 @@ export function DataHook({ oblasti, overenych, celkem, poskytovatelu, children }
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Otevřená data</div>
         <NadpisHooku id={`${uid}-t`}>Katalog není seznam.<br />Je to krajina.</NadpisHooku>
         <p className="lead">
           Každá dlaždice je jedna oblast a její plocha odpovídá počtu datových sad s ověřeným odkazem.

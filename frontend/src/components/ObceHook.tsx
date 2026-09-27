@@ -95,7 +95,6 @@ export function ObceHook({ obce, loading, onOpen, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Živé profily</div>
         <NadpisHooku id={`${uid}-t`}>Kraj není jedno místo.{art && <><br />Je jich {num(art.body.length)}.</>}</NadpisHooku>
         <p className="lead">
           Jedna tečka je jedna obec a její plocha odpovídá počtu obyvatel. Od největšího města po vesnici

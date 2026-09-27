@@ -83,7 +83,6 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Výhled 2026–2040{territory ? ` · ${territory}` : ""}</div>
         <NadpisHooku id={`${uid}-t`}>Budoucnost není čára.<br />Je to kužel.</NadpisHooku>
         <p className="lead">
           Každé vlákno je jeden běh modelu, který si vylosoval porodnost, úmrtnost a migraci z vlastní
@@ -93,7 +92,7 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
         <div className="sc-hook-legend">
           <span><i className="sw base" /> Skutečnost</span>
           <span><i className="sw scen" /> Pravděpodobný průběh</span>
-          {baseYear && <span className="mute">výchozí rok {baseYear}</span>}
+          {(territory || baseYear) && <span className="mute">{territory}{territory && baseYear ? " · " : ""}{baseYear ? `výchozí rok ${baseYear}` : ""}</span>}
         </div>
         {children}
       </div>

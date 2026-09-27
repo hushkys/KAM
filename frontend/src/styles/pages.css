@@ -342,7 +342,7 @@
 .ind-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .ind-grid > .ind { flex: 1 1 208px; min-width: 0; }
 .ind { position: relative; display: grid; gap: 4px; padding: 14px 15px 12px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2); min-width: 0; align-content: start; }
-.ind-grid > .ind.is-lead { flex: 2 1 426px; background: var(--surface); border-color: var(--m-line); box-shadow: inset 3px 0 0 var(--m); }
+.ind-grid > .ind.is-lead { flex: 2 1 426px; background: color-mix(in oklab, var(--m) 6%, var(--surface)); border-color: var(--m-line); }
 .ind-grid > .ind.is-lead .ind-value { font-size: 1.75rem; }
 @container stranka (max-width: 520px) { .ind-grid > .ind, .ind-grid > .ind.is-lead { flex-basis: 100%; } }
 .ind-name { font-size: .8125rem; color: var(--text-dim); font-weight: 650; line-height: 1.3; min-height: 2.1em; padding-right: 22px;
@@ -359,7 +359,6 @@
 /* Tiles with no series to draw must not read as tiles whose chart failed to
    load. A single published fact gets a rule down its edge and room to breathe
    instead of an empty 34-pixel band. */
-.ind.shape-state, .ind.shape-dots, .ind.shape-bullet { border-left: 2px solid var(--border-strong); }
 .ind.shape-state .ind-value, .ind.shape-dots .ind-value { font-size: 1.5rem; }
 .ind.shape-gauge .ind-body { align-items: center; }
 .ind-cmp { font-size: .7188rem; display: grid; gap: 4px; }
@@ -497,12 +496,24 @@
   position: relative; overflow: hidden;
   display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 32px; align-items: center;
   padding: 26px 28px 24px; margin-bottom: var(--gap);
-  border: 1px solid var(--border); border-radius: var(--r-xl);
-  background: var(--surface);
+  /* Modul se pozná podle plochy, ne podle čáry. Barevný pruh nahoře a nadpisek
+     verzálkami se čtverečkem tu byly a působily jako šablona z generátoru;
+     přechod v barvě modulu, který se k pravé straně ztratí do povrchu, řekne
+     totéž a nic nepřidává do sazby. */
+  border: 1px solid color-mix(in oklab, var(--h1) 22%, var(--border)); border-radius: var(--r-xl);
+  background:
+    linear-gradient(112deg, color-mix(in oklab, var(--h1) 11%, var(--surface)) 0%,
+      color-mix(in oklab, var(--h1) 4%, var(--surface)) 48%, var(--surface) 100%);
   box-shadow: var(--shadow-sm);
 }
 :root[data-theme="dark"] .sc-hook { --h1: var(--hs); --h2: var(--ht); --h3: var(--hp); }
-.sc-hook::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--h1); }
+/* Na tmavém povrchu je stejný podíl barvy skoro neviditelný — potřebuje víc. */
+:root[data-theme="dark"] .sc-hook {
+  border-color: color-mix(in oklab, var(--h1) 26%, var(--border));
+  background:
+    linear-gradient(112deg, color-mix(in oklab, var(--h1) 17%, var(--surface)) 0%,
+      color-mix(in oklab, var(--h1) 6%, var(--surface)) 50%, var(--surface) 100%);
+}
 @container stranka (max-width: 780px) { .sc-hook { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 22px 18px 18px; } }
 
 .sc-blobs { display: none; }
@@ -653,7 +664,7 @@
 @container stranka (max-width: 720px) { .settings-nav { position: static; display: flex; overflow-x: auto; gap: 4px; scrollbar-width: none; } }
 .settings-nav a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); color: var(--text-dim); font-weight: 650; font-size: .875rem; text-decoration: none !important; white-space: nowrap; }
 .settings-nav a:hover { background: color-mix(in oklab, var(--text) 6%, transparent); color: var(--text); }
-.settings-nav a[aria-current="page"] { background: var(--m-soft); color: var(--text); box-shadow: inset 3px 0 0 var(--m); }
+.settings-nav a[aria-current="page"] { background: var(--m-soft); color: var(--text); font-weight: 600; }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .setting-row:last-child { border-bottom: 0; }
 .setting-row .sr-text { display: grid; gap: 2px; min-width: 0; flex: 1 1 260px; }

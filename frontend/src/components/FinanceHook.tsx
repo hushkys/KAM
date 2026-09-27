@@ -76,7 +76,6 @@ export function FinanceHook({ roky, kryti, territory, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Hospodaření</div>
         <NadpisHooku id={`${uid}-t`}>Zbude, nebo nezbude?</NadpisHooku>
         <p className="lead">
           Nad osou je to, co z příjmů zbylo po zaplacení provozu. Pod osou to, co obec ten rok

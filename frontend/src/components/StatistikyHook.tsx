@@ -70,7 +70,6 @@ export function StatistikyHook({ roky, children }: { roky: RokHodnot[]; children
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Statistiky</div>
         <NadpisHooku id={`${uid}-t`}>{art ? <>Každá tečka<br />je {num(art.jednotka)} čísel</> : <>Čísla o datech a o KAM</>}</NadpisHooku>
         <p className="lead">
           {art

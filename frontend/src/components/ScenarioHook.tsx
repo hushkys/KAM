@@ -101,7 +101,6 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <div className="eyebrow">Co kdyby?</div>
         <NadpisHooku id={`${uid}-t`}>Dvě budoucnosti<br />stejného území</NadpisHooku>
         <p className="lead">
           Vlevo sestavíte zásah. Vpravo běží stejný model dvakrát — bez něj a s ním — a rozdíl mezi
