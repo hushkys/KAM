@@ -1,4 +1,4 @@
-"""`python -m kam.ingest [geo|relief|catalog|eurostat|mos|khk|dotace|dokumenty|link|rag|all]`
+"""`python -m kam.ingest [geo|relief|catalog|eurostat|mos|khk|dotace|dokumenty|link|rag|refresh|all]`
 
 Each step is idempotent and can be re-run on its own; `all` runs them in
 dependency order. The resulting SQLite file is the offline snapshot the demo
@@ -58,6 +58,9 @@ def main(argv: list[str]) -> int:
         elif step == "admin":
             from .geo import extend_admin
             print("admin", extend_admin())
+        elif step == "refresh":
+            from ..refresh import obnov
+            print("refresh", obnov("ruční"))
         elif step == "rag":
             from ..ai.rag import build_index
             print("rag", build_index(embed=True))

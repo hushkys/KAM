@@ -87,29 +87,32 @@ def _udrzba() -> None:
 
 
 def _scheduler() -> None:
+    """Obnova dat podle času poslední obnovy v databázi, ne od startu procesu.
+
+    Dřív se spalo celý interval od startu, takže kontejner restartovaný
+    častěji (každé nasazení) se obnovy nedočkal nikdy. Teď se každých deset
+    minut podívá, jestli je obnova na řadě, a zároveň hlídá, jestli ji mezitím
+    neprovedl jiný proces (Cloud Run Job, ruční `kam.ingest refresh`) — pak
+    vyprázdní mezipaměti, jinak by server dál ukazoval stará čísla."""
+    from . import logs, refresh
+    videno = refresh.naposledy()
     while True:
-        cfg = prefs.get("data")
-        time.sleep(max(1, cfg["refresh_hours"]) * 3600)
-        if not prefs.get("data")["auto_refresh"]:
-            continue
+        time.sleep(600)
         try:
-            from .ai import rag
-            from .analytics import risks, simulate, store
-            from .ingest import catalog, khk, link
-            catalog.harvest()
-            khk.ingest()
-            link.link()
-            store.reset()
-            risks.reset()
-            simulate.reset()
-            rag.build_index(embed=True)
-            log.info("Plánovaná aktualizace dat dokončena")
-            from . import logs
-            logs.zapis("data_aktualizovana", {}, zdroj="data")
+            cfg = prefs.get("data")
+            if cfg["auto_refresh"] and refresh.je_cas(cfg["refresh_hours"]):
+                refresh.obnov("plán", v_serveru=True)
+                videno = refresh.naposledy()
+                log.info("Plánovaná aktualizace dat dokončena")
+                continue
+            posledni = refresh.naposledy()
+            if posledni and (videno is None or posledni > videno):
+                refresh.vyprazdni_mezipameti()
+                videno = posledni
+                log.info("Data obnovil jiný proces, mezipaměti vyprázdněny")
         except Exception as e:
             log.warning("Plánovaná aktualizace selhala: %s", e)
-            from . import logs
-            logs.zapis("data_aktualizace_selhala", {"chyba": str(e)}, uroven="chyba", zdroj="data")
+            logs.zapis("data_aktualizace_selhala", {"chyba": str(e)[:300]}, uroven="chyba", zdroj="data")
 
 
 @asynccontextmanager

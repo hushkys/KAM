@@ -379,6 +379,14 @@ kbd {
 .sb-foot .sb-item:hover { background: color-mix(in oklab, var(--text) 5%, transparent); }
 .sb-foot .sb-item svg { color: var(--text-mute); flex: none; }
 .sb-sbalit svg { transition: transform var(--t-md) var(--ease-out); }
+.sb-cerstvost { display: flex; align-items: center; gap: 10px; padding: 6px 12px 8px; color: var(--text-dim); text-decoration: none !important; font-size: .75rem; line-height: 1.35; }
+.sb-cerstvost:hover { color: var(--text); }
+.sb-cerstvost i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+.sb-cerstvost.je-stare i { background: var(--warn); }
+.sb-cerstvost .sb-label { display: grid; min-width: 0; }
+.sb-cerstvost b { font-weight: 600; color: var(--text); }
+@media (min-width: 720px) and (max-width: 1023px) { .sb-cerstvost { justify-content: center; padding-inline: 0; } }
+@media (min-width: 1024px) { :root[data-nav="compact"] .sb-cerstvost { justify-content: center; padding-inline: 0; } }
 
 /* Jen ikony: tablet vždycky, počítač na přání. Popisky zmizí, nadpisy skupin
    se změní v linky a název místa napoví `title`. */

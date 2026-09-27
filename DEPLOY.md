@@ -90,7 +90,8 @@ firebase deploy --only hosting --project hack-a-ton-hushkys
 ### 5. Nastavení produkce
 
 ```bash
-# katalog se na serveru nepřesklízí sám — data se nahrávají migračním skriptem
+# obnovu dat na serveru nedělá kontejner, ale Cloud Run Job (viz „Obnova dat“ níž);
+# kontejner bez stále přiděleného CPU by sklizeň mezi požadavky nedotáhl
 curl -u kam:HESLO -X PUT -H "Content-Type: application/json" \
   -d '{"auto_refresh": false, "refresh_hours": 24}' https://…/api/settings/data
 # na serveru neběží lokální model, ať na něj router nečeká
@@ -116,6 +117,42 @@ curl -u kam:HESLO -X PUT -H "Content-Type: application/json" \
   pro hlavní dokument, ne pro `fetch` — stránka se načte a API volání vrátí
   401. Skutečný uživatel dostane nativní dialog a pak už to funguje všude.
 
+## Obnova dat
+
+Obnovu dělá jedna funkce, `kam/refresh.py::obnov` — denně katalog, vrstvy
+kraje, **poslední roky statistik ČSÚ** a párování sad, jednou za týden
+kontrola odkazů, dotace a dokumenty obcí. Pustit ji jde dvojím způsobem:
+
+- **v serveru**, když je v nastavení zapnutá automatická obnova. Plánovač se
+  každých deset minut podívá do `job_state` („refresh“), kdy obnova naposledy
+  doběhla, takže ji restart kontejneru nevynuluje. Na Cloud Run to ale nestačí:
+  služba běží bez stále přiděleného CPU (`--no-cpu-throttling` není zapnuté),
+  vlákno na pozadí mezi požadavky skoro nedostane procesor a desetiminutovou
+  sklizeň by nedotáhlo. Proto je na produkci `auto_refresh: false`;
+- **jako Cloud Run Job** — tentýž image, jiný příkaz, spouštěný Cloud
+  Schedulerem. Job zapisuje rovnou do PostgreSQL; běžící služba si změny
+  v `job_state` do deseti minut všimne a vyprázdní mezipaměti sama.
+
+```bash
+# jednou: job ze stejného image jako služba, se stejnými proměnnými z env.yaml
+gcloud run jobs create kam-obnova --image REGION-docker.pkg.dev/PROJEKT/…/kam:latest \
+  --region europe-west1 --env-vars-file env.yaml --cpu 1 --memory 1Gi --task-timeout 3600 \
+  --command python --args=-m,kam.ingest,refresh
+# denně ve 4:30 — úřední data se nemění v řádu hodin a ráno už je obnoveno
+gcloud scheduler jobs create http kam-obnova-denne --location europe-west1 \
+  --schedule "30 4 * * *" --time-zone "Europe/Prague" \
+  --uri "https://europe-west1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/PROJEKT/jobs/kam-obnova:run" \
+  --http-method POST --oauth-service-account-email SLUZEBNI-UCET@PROJEKT.iam.gserviceaccount.com
+# ručně kdykoli
+gcloud run jobs execute kam-obnova --region europe-west1
+```
+
+Na co myslet: **Neon má na free tieru kvótu na přenesená data.** Statistiky
+se proto nestahují celé (380 tisíc řádků), ale jen od roku před posledním,
+který v databázi je, a kontrola dvaceti tisíc odkazů běží jednou týdně.
+Vyprázdnění mezipamětí služby po obnově znamená jedno natažení sérií navíc —
+stejně jako jeden studený start.
+
 ## Ověření po nasazení
 
 ```bash
@@ -130,7 +167,9 @@ Naposledy ověřeno: 23 839 sad (21 998 s ověřeným odkazem), 407 134 pozorov�
 
 ## Údržba
 
-- **Nová data**: sklidit lokálně (`cd backend && python -m kam.ingest all`)
-  a nahrát `scripts/migrate_to_postgres.py`.
+- **Nová data**: běžně je obnoví job `kam-obnova` (viz „Obnova dat“). Celou
+  sklizeň od nuly jde udělat lokálně (`cd backend && python -m kam.ingest all`)
+  a nahrát `scripts/migrate_to_postgres.py`. Jak čerstvá data jsou, říká
+  `/api/aktualnost` a spodek postranního panelu v aplikaci.
 - **Embeddingy**: vektorové vyhledávání potřebuje lokální embedding model.
   Na serveru žádný není, takže RAG jede na BM25 — navržený fallback, ne porucha.

@@ -248,7 +248,8 @@ function Privacy() {
         <div className="row" style={{ marginTop: 10 }}><button className="btn btn-primary btn-sm" onClick={() => saveSection("destinations", d).then(() => { setDest(null); st.reload(); })}>Uložit</button></div>
       </Card>
       <Card i={3} title="Aktualizace dat" icon="refresh" className="setting-block">
-        <Switch checked={s.data.auto_refresh} onChange={(v) => saveSection("data", { auto_refresh: v }).then(st.reload)} label="Automaticky obnovovat katalog a vrstvy kraje" />
+        <Switch checked={s.data.auto_refresh} onChange={(v) => saveSection("data", { auto_refresh: v }).then(st.reload)} label="Automaticky obnovovat data" />
+        <p className="help" style={{ margin: "4px 0 10px" }}>Katalog, statistiky ČSÚ a vrstvy kraje v nastaveném intervalu, kontrola odkazů, dotace a dokumenty obcí jednou týdně. Čas poslední obnovy je v databázi, takže ho restart serveru nevynuluje.</p>
         <Row label="Interval">
           <select className="select" style={{ width: "auto" }} value={s.data.refresh_hours} onChange={(e) => saveSection("data", { refresh_hours: Number(e.target.value) }).then(st.reload)}>
             {[6, 12, 24, 72, 168].map((h) => <option key={h} value={h}>každých {h} h</option>)}

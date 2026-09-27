@@ -8,6 +8,8 @@
 
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { useApi } from "../lib/api";
+import { date } from "../lib/format";
 import { Link, useLocation } from "../lib/router";
 import { set as setPrefs, usePrefs } from "../lib/prefs";
 import { Icon } from "./Icon";
@@ -127,6 +129,7 @@ export function Dock() {
           </Link>
         </nav>
         <div className="sb-foot">
+          <Cerstvost />
           <button type="button" className="sb-item sb-sbalit" onClick={() => setPrefs({ nav: sbaleny ? "full" : "compact" })}
             aria-label={sbaleny ? "Rozbalit postranní panel" : "Sbalit postranní panel"} title={sbaleny ? "Rozbalit panel" : "Sbalit panel na ikony"}>
             <Icon name="chevron-left" size={18} />
@@ -172,5 +175,24 @@ export function Dock() {
         </div>
       </Modal>
     </>
+  );
+}
+
+/** Jak čerstvá jsou data, na každé stránce. Úřední statistika vychází po
+ *  letech, takže „živá“ data tu neexistují; poctivé je říct, kdy se naposledy
+ *  obnovovala a za jaký rok ČSÚ údaje vydal. Tečka zežloutne, když obnova
+ *  neproběhla přes tři dny — to už je porucha, ne rytmus zdroje. */
+function Cerstvost() {
+  const { data } = useApi<{ obnoveno: string | null; hodnoty_zapsany: string | null; odkazy_overeny: string | null; rok_statistik: number | null }>("/aktualnost");
+  if (!data) return null;
+  const kdy = data.obnoveno ?? data.hodnoty_zapsany;
+  const stare = !kdy || Date.now() - new Date(kdy).getTime() > 3 * 864e5;
+  const radek1 = data.obnoveno ? `Obnoveno ${date(data.obnoveno)}` : kdy ? `Sklizeno ${date(kdy)}` : "Data zatím neobnovena";
+  const radek2 = data.rok_statistik ? `Statistiky ČSÚ za rok ${data.rok_statistik}` : "";
+  return (
+    <Link to="/statistiky" className={`sb-cerstvost${stare ? " je-stare" : ""}`} title={`${radek1}${radek2 ? ` · ${radek2}` : ""}${data.odkazy_overeny ? ` · odkazy ověřeny ${date(data.odkazy_overeny)}` : ""}`}>
+      <i aria-hidden="true" />
+      <span className="sb-label"><b>{radek1}</b>{radek2 && <span>{radek2}</span>}</span>
+    </Link>
   );
 }

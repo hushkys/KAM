@@ -375,6 +375,23 @@ def datasets_csv() -> StreamingResponse:
     return StreamingResponse(gen(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="kam-vyuzite-datove-sady.csv"'})
 
 
+_aktualnost: dict = {}
+
+
+@router.get("/aktualnost")
+def aktualnost() -> dict:
+    """Jak čerstvá jsou data: kdy proběhla obnova, kdy se zapisovaly hodnoty,
+    kdy se zkoušely odkazy a za jaký rok jsou nejnovější statistiky ČSÚ.
+    Postranní panel se ptá na každé stránce, proto minutová mezipaměť."""
+    import time
+    from ..refresh import aktualnost as spocitej
+    if _aktualnost and time.time() - _aktualnost["at"] < 60:
+        return _aktualnost["data"]
+    data = spocitej()
+    _aktualnost.update(at=time.time(), data=data)
+    return data
+
+
 @router.get("/sources")
 def sources() -> dict:
     return dataset_counts()
