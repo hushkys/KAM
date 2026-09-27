@@ -76,6 +76,8 @@ def dataset_counts() -> dict:
         by_fresh = dict(s.execute(select(Dataset.freshness, func.count()).where(ok).group_by(Dataset.freshness)).all())
         grouped = dict(s.execute(select(Source.group, func.count(Dataset.id)).join(Source, Source.id == Dataset.source_id).where(ok).group_by(Source.group)).all())
         api_sources = s.scalar(select(func.count(Source.id)).where(Source.kind.in_(["api", "file", "portal"]))) or 0
+        # Kdy se odkazy naposledy zkoušely: „funkční" platí k tomuhle dni, ne k dnešku.
+        checked_at = s.scalar(select(func.max(Dataset.checked_at)))
     sources = [{"id": i, "name": n, "group": g, "portal_url": p, "url": u, "kind": k, "harvested_at": h.isoformat() if h else None, "datasets": c, "verified": int(v or 0)}
                for i, n, g, p, u, k, h, c, v in by_source]
     sources.sort(key=lambda x: ({"core": 0, "kraje": 1}.get(x["group"], 2), -x["datasets"]))
@@ -84,7 +86,8 @@ def dataset_counts() -> dict:
             "unchecked": by_status.get("neovereno", 0), "core": grouped.get("core", 0), "kraje": grouped.get("kraje", 0), "other": grouped.get("ostatni", 0),
             "loaded": loaded, "api_sources": api_sources, "sources": sources, "publishers": sum(1 for x in sources if x["datasets"]),
             "by_pillar": [{"key": k, "label": PILLARS.get(k, "Ostatní"), "count": v} for k, v in sorted(by_pillar.items(), key=lambda kv: -kv[1])],
-            "by_region": {str(k): v for k, v in by_region.items()}, "by_freshness": by_fresh}
+            "by_region": {str(k): v for k, v in by_region.items()}, "by_freshness": by_fresh,
+            "checked_at": checked_at.isoformat() if checked_at else None}
     _counts_cache.update(at=time.time(), data=data)
     return data
 

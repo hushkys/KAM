@@ -9,7 +9,8 @@ import { Icon } from "../components/Icon";
 import { Card, PageHeader } from "../components/ui";
 import { Team, WEB_TYMU } from "../components/Team";
 import { useApi } from "../lib/api";
-import { num } from "../lib/format";
+import { date, num } from "../lib/format";
+import type { Sources } from "../lib/types";
 import { Link } from "../lib/router";
 
 interface ApiIndex {
@@ -43,6 +44,7 @@ const ZAVAZKY: { t: string; d: string }[] = [
 
 export function About() {
   const idx = useApi<ApiIndex>("/v1");
+  const src = useApi<Sources>("/sources");
   const r = idx.data?.rozsah;
 
   return (
@@ -169,7 +171,34 @@ export function About() {
             </div>
           </Card>
 
-          <Card span={6} i={6} title="Co děláme" icon="users">
+          {/* Co přesně znamená „funkční“ u počtu datových sad. Číslo stojí na
+              úvodní stránce i v Datech a bez téhle karty by tvrdilo víc, než
+              kontrola ověřuje: že odkaz odpověděl, ne že je soubor v pořádku. */}
+          <Card span={12} i={6} title="Co znamená „funkční datová sada“" icon="database">
+            <div className="prose je-siroka">
+              <p>
+                Funkční je sada, jejíž odkaz <strong>odpověděl</strong>. U každé sady z katalogu zkoušíme nejkonkrétnější odkaz, který má —
+                přímé stažení souboru, jinak stránku vydavatele. Stránku sady v Národním katalogu přeskakujeme, protože odpoví „v pořádku“ na cokoli.
+                Pošleme dotaz na hlavičku (a když ho server odmítne, stáhneme jediný bajt) a za funkční bereme odpověď 2xx nebo 3xx do 15 sekund.
+                Server s rozbitým certifikátem, který soubor přesto vydá, počítáme taky — v prohlížeči se dá otevřít.
+              </p>
+              {src.data && (
+                <p>
+                  Poslední kontrola{src.data.checked_at ? ` proběhla ${date(src.data.checked_at)} a` : ""} z {num(src.data.total)} sad v katalogu
+                  prošlo {num(src.data.verified)}. {num(src.data.broken)} odpovědělo chybou nebo vůbec (nejčastěji „nenalezeno“, chyba serveru
+                  nebo vypršel čas) a {num(src.data.no_link)} nemá žádný odkaz, který by šlo vyzkoušet.
+                </p>
+              )}
+              <p>
+                <strong>Co kontrola neověřuje:</strong> obsah. Soubor může být prázdný, v jiném formátu, než katalog uvádí, nebo zastaralý,
+                a server, který na chybějící soubor vrátí stránku „nenalezeno“ s kódem 200, projde jako funkční. Číslo tedy říká
+                „odkaz je dostupný“, ne „data jsou v pořádku“. Sady, ze kterých model počítá ({src.data ? num(src.data.loaded) : "…"}),
+                sklizeň opravdu stahuje a čte hodnotu po hodnotě — v katalogu jsou označené jako načtené do modelu.
+              </p>
+            </div>
+          </Card>
+
+          <Card span={6} i={7} title="Co děláme" icon="users">
             <div className="prose">
               <p>Tým má dvě oblasti a každá svého vedoucího. <strong>Ondřej Hušek</strong> vede vývoj a technologie — navrhl architekturu a postavil aplikaci od sklizně dat přes analytické a simulační jádro po AI vrstvu. <strong>Josef Efler</strong> vede brand, produkt a veřejnou komunikaci: značku, brandstorming, marketing a právní stránku projektu.</p>
               <p><strong>Matěj Jirásek</strong> odpovídá za uživatelský zážitek a vizuální jazyk — aby byla složitá data srozumitelná na první pohled — a je klíčový motivátor týmu.</p>
@@ -177,14 +206,14 @@ export function About() {
             </div>
           </Card>
 
-          <Card span={6} i={7} title="Odkud jsme" icon="school">
+          <Card span={6} i={8} title="Odkud jsme" icon="school">
             <div className="prose">
               <p>Ondřej, Matěj a Damián studují bakalářský program <strong>Informační a síťová bezpečnost</strong> na Fakultě informatiky a managementu Univerzity Hradec Králové.</p>
               <p>Josef studuje <strong>Řízení rizik ve veřejné správě</strong> na Fakultě logistiky a krizového řízení Univerzity Tomáše Bati ve Zlíně.</p>
             </div>
           </Card>
 
-          <Card span={12} i={8} title="Co je hotové a co teprve navazuje" icon="history">
+          <Card span={12} i={9} title="Co je hotové a co teprve navazuje" icon="history">
             <p className="small muted" style={{ marginTop: 0 }}>
               Dokončenou funkci nedokládá položka v menu. Tohle je stav podle toho, co v aplikaci opravdu běží.
             </p>
