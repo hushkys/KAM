@@ -105,6 +105,15 @@ def test_find_territory_handles_czech_declension():
     assert tools.find_territory("rizika pro Velké Město").id == "obec:500003"
     assert tools.find_territory("správní obvod Testov").id == "orp:100"
     assert tools.find_territory("jak je na tom Královéhradecký kraj").id == "kraj:86"
+
+
+def test_find_territories_for_comparison():
+    """„Porovnej A a B“ musí dát podklad za obě území, v pořadí z otázky;
+    kus delšího jména (ORP Testov uvnitř Horního Testova) se nepočítá."""
+    ids = [t.id for t in tools.find_territories("Porovnej Velké Město a Horní Testov")]
+    assert ids == ["obec:500003", "obec:500001"]
+    assert [t.id for t in tools.find_territories("Co se děje v Horním Testově?")] == ["obec:500001"]
+    assert tools.find_territories("jak funguje model") == []
     assert tools.find_territory("obecná otázka bez místa") is None
 
 

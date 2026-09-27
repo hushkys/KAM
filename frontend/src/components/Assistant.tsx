@@ -27,10 +27,23 @@ function sessionId(): string {
   } catch { return crypto.randomUUID?.() ?? String(Date.now()); }
 }
 
+/** Řádkové značky: **tučně**, *kurzíva*, `kód`, [text](odkaz) a citace [n].
+ *  Odkaz v aplikaci (/cesta) se otevře routerem, cizí v novém okně. */
 function inline(text: string, sources: Source[] = []): ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|\[\d+\])/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\)|\[\d+\])/g);
   return parts.map((p, i) => {
-    if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={i}>{p.slice(2, -2)}</strong>;
+    if (!p) return null;
+    if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={i}>{inline(p.slice(2, -2), sources)}</strong>;
+    if (/^\*[^*\s][^*]*\*$/.test(p)) return <em key={i}>{p.slice(1, -1)}</em>;
+    if (/^`[^`]+`$/.test(p)) return <code key={i}>{p.slice(1, -1)}</code>;
+    const odkaz = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(p);
+    if (odkaz) {
+      const [, popis, url] = odkaz;
+      const interni = url.startsWith("/");
+      if (!interni && !/^https?:\/\//.test(url)) return <Fragment key={i}>{popis}</Fragment>;
+      return <a key={i} href={url} target={interni ? undefined : "_blank"} rel="noopener noreferrer"
+        onClick={(e) => { if (interni) { e.preventDefault(); navigate(url); } }}>{popis}</a>;
+    }
     const m = /^\[(\d+)\]$/.exec(p);
     if (m) {
       const s = sources.find((x) => x.n === Number(m[1]));
@@ -43,29 +56,106 @@ function inline(text: string, sources: Source[] = []): ReactNode[] {
 
 const KIND_RX = /^(FAKT|TREND|MODEL|SCÉNÁŘ|SCENAR|INTERPRETACE|AI INTERPRETACE)\s*[:—–-]?\s*/i;
 
+/** Štítek druhu tvrzení na začátku řádku (FAKT, MODEL…) → `KindTag`, zbytek textem. */
+function obsah(line: string, sources: Source[] | undefined): ReactNode {
+  let tag: ReactNode = null;
+  const cisty = line.replace(/^\*\*/, "").replace(/\*\*(?=\s*[:—–-])/, "");
+  const k = KIND_RX.exec(cisty);
+  if (k) {
+    const word = k[1].toUpperCase();
+    tag = <KindTag kind={word.includes("INTERPRET") ? "AI" : word === "SCENAR" ? "SCÉNÁŘ" : word} />;
+    line = cisty.slice(k[0].length);
+  }
+  return <>{tag}{tag && " "}{inline(line, sources)}</>;
+}
+
+/** Buňka je číslo, i když je tučně a s citací („**12 487** [1]“). */
+const jeCislo = (c: string) => /^[−\-+]?[\d\s  ,.]+\s*(%|‰|Kč|tis\. Kč|mil\. Kč|p\. b\.|osob|obyv\.)?$/.test(c.replace(/\*\*|\[\d+\]/g, "").trim());
+const bunky = (radek: string) => radek.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+
+/** Markdown bez knihovny, jen to, co model opravdu píše: nadpisy tří úrovní,
+ *  odrážky a číslované seznamy (i o úroveň vnořené), tabulky, citace, kód
+ *  a oddělovač. Neznámé konstrukce spadnou do odstavce, nikdy do HTML —
+ *  text z modelu se do DOMu nevkládá jako kód. */
 export function Markdown({ text, sources }: { text: string; sources?: Source[] }) {
   const lines = text.replace(/\r/g, "").split("\n");
   const blocks: ReactNode[] = [];
-  let list: ReactNode[] = [];
-  const flush = () => { if (list.length) { blocks.push(<ul key={`u${blocks.length}`}>{list}</ul>); list = []; } };
-  lines.forEach((raw, i) => {
-    let line = raw.trim();
-    if (!line) { flush(); return; }
-    const bullet = /^([-*•]|\d+[.)])\s+/.exec(line);
-    if (bullet) line = line.slice(bullet[0].length);
-    if (/^#{1,4}\s/.test(line)) { flush(); blocks.push(<h4 key={i}>{inline(line.replace(/^#+\s/, ""), sources)}</h4>); return; }
-    let tag: ReactNode = null;
-    const k = KIND_RX.exec(line.replace(/^\*\*/, "").replace(/\*\*(?=\s*[:—–-])/, ""));
-    if (k) {
-      const word = k[1].toUpperCase();
-      tag = <KindTag kind={word.includes("INTERPRET") ? "AI" : word === "SCENAR" ? "SCÉNÁŘ" : word} />;
-      line = line.replace(/^\*\*/, "").replace(/\*\*(?=\s*[:—–-])/, "").slice(k[0].length);
+  let i = 0;
+  const key = () => `b${blocks.length}`;
+  while (i < lines.length) {
+    const raw = lines[i];
+    const line = raw.trim();
+    if (!line) { i++; continue; }
+
+    if (line.startsWith("```")) {
+      const kod: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) kod.push(lines[i++]);
+      i++;
+      blocks.push(<pre key={key()}><code>{kod.join("\n")}</code></pre>);
+      continue;
     }
-    const content = <>{tag}{tag && " "}{inline(line, sources)}</>;
-    if (bullet) list.push(<li key={i}>{content}</li>);
-    else { flush(); blocks.push(<p key={i}>{content}</p>); }
-  });
-  flush();
+    const h = /^(#{1,4})\s+(.*)$/.exec(line);
+    if (h) {
+      const uroven = h[1].length;
+      const Tag = uroven <= 2 ? "h3" : uroven === 3 ? "h4" : "h5";
+      blocks.push(<Tag key={key()}>{inline(h[2].replace(/\*\*/g, ""), sources)}</Tag>);
+      i++; continue;
+    }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { blocks.push(<hr key={key()} />); i++; continue; }
+
+    // Tabulka: řádek s „|“ a pod ním oddělovač |---|---|.
+    if (line.includes("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lines[i + 1])) {
+      const hlava = bunky(line);
+      const zarovnani = bunky(lines[i + 1]).map((c) => (c.endsWith(":") ? "r" : ""));
+      i += 2;
+      const telo: string[][] = [];
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim()) telo.push(bunky(lines[i++]));
+      blocks.push(
+        <div className="md-tabulka" key={key()}>
+          <table>
+            <thead><tr>{hlava.map((c, j) => <th key={j} className={zarovnani[j] === "r" ? "r" : undefined}>{inline(c, sources)}</th>)}</tr></thead>
+            <tbody>{telo.map((r, ri) => <tr key={ri}>{hlava.map((_, j) => <td key={j} className={zarovnani[j] === "r" || jeCislo(r[j] ?? "") ? "r" : undefined}>{inline(r[j] ?? "", sources)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
+    if (line.startsWith(">")) {
+      const citace: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) citace.push(lines[i++].trim().replace(/^>\s?/, ""));
+      blocks.push(<blockquote key={key()}>{obsah(citace.join(" "), sources)}</blockquote>);
+      continue;
+    }
+    const polozka = /^(\s*)([-*•]|\d+[.)])\s+(.*)$/;
+    if (polozka.test(raw)) {
+      const cislovany = /^\s*\d+[.)]/.test(raw);
+      const items: { text: string; deti: string[] }[] = [];
+      while (i < lines.length && lines[i].trim()) {
+        const m = polozka.exec(lines[i]);
+        // Odrážky a číslovaný seznam hned pod sebou jsou dva seznamy, ne jeden.
+        if (m && m[1].length < 2 && /^\d/.test(m[2]) !== cislovany) break;
+        if (m && m[1].length < 2) items.push({ text: m[3], deti: [] });
+        else if (m && items.length) items[items.length - 1].deti.push(m[3]);
+        else if (items.length) items[items.length - 1].text += " " + lines[i].trim();
+        else break;
+        i++;
+      }
+      const Seznam = cislovany ? "ol" : "ul";
+      blocks.push(
+        <Seznam key={key()}>
+          {items.map((it, j) => (
+            <li key={j}>{obsah(it.text, sources)}{it.deti.length > 0 && <ul>{it.deti.map((d, k) => <li key={k}>{obsah(d, sources)}</li>)}</ul>}</li>
+          ))}
+        </Seznam>,
+      );
+      continue;
+    }
+    // Každý řádek je vlastní odstavec. Model píše tvrzení po řádcích a každé
+    // začíná štítkem (FAKT, TREND…) — slepené řádky by štítek měly jen první.
+    blocks.push(<p key={key()}>{obsah(line, sources)}</p>);
+    i++;
+  }
   return <div className="md">{blocks}</div>;
 }
 

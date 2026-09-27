@@ -53,6 +53,58 @@ def find_territory(text: str):
     return best
 
 
+def find_territories(text: str, limit: int = 3) -> list:
+    """Všechna území, která otázka jmenuje (nejvýš `limit`), v pořadí, v jakém
+    v ní stojí. `find_territory` vrací jen nejlepší shodu, takže na
+    „Porovnej Náchod a Jaroměř“ dostal model podklad jen za jedno město
+    a odpověděl, že data pro druhé nemá.
+
+    Stejnojmenná území (obec, ORP i okres Náchod) se počítají jednou — vyhraje
+    to s nejvyšším skóre stejně jako ve `find_territory`. Území, jehož jméno je
+    celé obsažené ve jménu jiného nalezeného (Město vs. Nové Město nad Metují),
+    se zahodí: je to kus delšího názvu, ne samostatná zmínka."""
+    q = plain(text)
+    qtoks = re.findall(r"[a-z0-9]+", q)
+    if not qtoks:
+        return []
+    kandidati: dict[str, tuple[float, object, set[str], int]] = {}
+    for t in store.territories().values():
+        if t.level == "cz":
+            continue
+        ntoks = [x for x in re.findall(r"[a-z0-9]+", plain(t.name)) if x not in CONNECTORS]
+        if not ntoks:
+            continue
+        pozice = []
+        for n in ntoks:
+            hit = next((i for i, qt in enumerate(qtoks) if ((qt == n) if len(n) <= 4 else qt.startswith(_stem(n)))), None)
+            if hit is None:
+                break
+            pozice.append(hit)
+        if len(pozice) != len(ntoks):
+            continue
+        score = sum(len(n) for n in ntoks) * 1.0
+        if t.level == "kraj":
+            score += 6 if "kraj" in q else -20
+        elif t.level == "orp":
+            score += 6 if re.search(r"\borp\b|obvod|spravni", q) else -0.5
+        elif t.level == "okres":
+            score += 6 if "okres" in q else -30
+        if score <= 0:
+            continue
+        klic = " ".join(ntoks)
+        if klic not in kandidati or score > kandidati[klic][0]:
+            kandidati[klic] = (score, t, set(ntoks), min(pozice))
+    vybrane = sorted(kandidati.values(), key=lambda c: -c[0])
+    ven: list = []
+    for score, t, toks, poz in vybrane:
+        if any(toks < jine[2] for jine in vybrane if jine[1] is not t):
+            continue
+        ven.append((poz, t))
+        if len(ven) >= limit:
+            break
+    return [t for _, t in sorted(ven, key=lambda x: x[0])]
+
+
 def _fmt(v, d: int = 1) -> str:
     if v is None:
         return "—"

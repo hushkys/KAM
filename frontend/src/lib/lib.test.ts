@@ -154,3 +154,44 @@ describe("dateTime", () => {
     expect(dateTime("nesmysl")).toBe("nesmysl");
   });
 });
+
+describe("markdown odpovědí asistenta", () => {
+  const html = async (text: string) => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    const { Markdown } = await import("../components/Assistant");
+    return renderToStaticMarkup(createElement(Markdown, { text, sources: [{ n: 1, title: "ČSÚ", url: "https://csu.gov.cz", type: "dataset" }] }));
+  };
+
+  it("vykreslí nadpisy, seznamy a vnoření", async () => {
+    const h = await html("Závěr jednou větou.\n\n### Obyvatelé\n- **554 668** lidí [1]\n  - z toho senioři\n1. první\n2. druhý");
+    expect(h).toContain("<h4>Obyvatelé</h4>");
+    expect(h).toContain("<strong>554 668</strong>");
+    expect(h).toMatch(/<ul><li>.*<ul><li>z toho senioři<\/li><\/ul><\/li><\/ul>/);
+    expect(h).toContain("<ol><li>první</li><li>druhý</li></ol>");
+    expect(h).toContain('class="cite"');
+  });
+
+  it("vykreslí tabulku s čísly zarovnanými vpravo", async () => {
+    const h = await html("| Ukazatel | Náchod | Jaroměř |\n|---|---:|---:|\n| Obyvatelé | 19 649 | 12 487 |");
+    expect(h).toContain("<table>");
+    expect(h).toContain('<td class="r">19 649</td>');
+  });
+
+  it("nevloží text z modelu jako HTML", async () => {
+    const h = await html('<img src=x onerror="alert(1)"> a [odkaz](javascript:alert(1))');
+    expect(h).not.toContain("<img");
+    expect(h).not.toContain("javascript:");
+  });
+});
+
+describe("markdown: řádky se štítky a čísla v tabulce", () => {
+  it("dá každému řádku se štítkem vlastní odstavec a zarovná tučná čísla s citací", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    const { Markdown } = await import("../components/Assistant");
+    const h = renderToStaticMarkup(createElement(Markdown, { text: "FAKT: první [1].\nTREND: druhý.\n\n| A | B |\n|---|---|\n| x | **12 487** [1] |", sources: [] }));
+    expect((h.match(/<p>/g) ?? []).length).toBe(2);
+    expect(h).toContain('<td class="r"><strong>12 487</strong>');
+  });
+});

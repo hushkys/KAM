@@ -156,7 +156,7 @@ export function Scenarios() {
       </ScenarioHook>
 
       <div className="grid">
-        <div className="span-5 stack-y">
+        <div className="span-5 stack-y sim-ovladani">
           <Card i={0} title={<span className="step-head"><span className="step-n">1</span> Vyberte území</span>} icon="pin">
             <TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" />
           </Card>
@@ -260,7 +260,7 @@ export function Scenarios() {
           )}
         </div>
 
-        <div className="span-7 stack-y sim-sticky">
+        <div className="span-7 stack-y">
           <ErrorBox error={err} />
           {res && !res.available && <Card><Empty icon="alert" title="Scénář pro toto území spočítat nejde">{res.reason}</Empty></Card>}
           {res?.available && (

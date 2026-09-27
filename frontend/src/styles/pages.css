@@ -116,6 +116,38 @@
 .msg-ai .msg-bubble { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 11px 14px; max-width: 100%; min-width: 60px; }
 .msg-bubble .md > :first-child { margin-top: 0; }
 .msg-bubble .md > :last-child { margin-bottom: 0; }
+/* Odpověď asistenta: struktura jako v dokumentu, ne zeď textu. Nadpisy
+   nesou barvu modulu, tabulka má číslice zarovnané vpravo a vlastní posuv,
+   aby široké srovnání nerozšířilo bublinu přes okraj. */
+.md { font-size: .9375rem; line-height: 1.6; color: var(--text); }
+.md p { margin: 0 0 .7em; }
+.md h3, .md h4, .md h5 { margin: 1.1em 0 .45em; font-weight: 650; letter-spacing: -.01em; line-height: 1.3; color: var(--text); }
+.md h3 { font-size: 1.0625rem; padding-bottom: .35em; border-bottom: 1px solid var(--border); }
+.md h4 { font-size: .9375rem; color: color-mix(in oklab, var(--m) 70%, var(--text)); }
+.md h5 { font-size: .8125rem; text-transform: none; color: var(--text-dim); }
+.md ul, .md ol { margin: 0 0 .8em; padding-left: 1.25em; display: grid; gap: .3em; }
+.md ul { list-style: none; padding-left: 1.05em; }
+.md ul > li { position: relative; }
+.md ul > li::before { content: ""; position: absolute; left: -1.05em; top: .62em; width: 6px; height: 6px; background: var(--m); }
+.md ul ul { margin: .3em 0 0; }
+.md ul ul > li::before { width: 5px; height: 1.5px; top: .75em; background: var(--text-mute); }
+.md ol { list-style: decimal; }
+.md ol > li::marker { color: var(--m); font-weight: 650; }
+.md strong { font-weight: 650; }
+.md em { font-style: italic; }
+.md code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .85em; padding: 1px 5px; background: color-mix(in oklab, var(--text) 7%, transparent); }
+.md pre { margin: 0 0 .8em; padding: 10px 12px; overflow-x: auto; background: color-mix(in oklab, var(--text) 6%, transparent); border: 1px solid var(--border); }
+.md pre code { padding: 0; background: none; }
+.md blockquote { margin: 0 0 .8em; padding: 8px 12px; border-left: 3px solid var(--m-line); background: var(--m-soft); color: var(--text-dim); }
+.md hr { border: 0; border-top: 1px solid var(--border); margin: 1em 0; }
+.md a:not(.cite) { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.md-tabulka { margin: 0 0 .9em; overflow-x: auto; border: 1px solid var(--border); }
+.md-tabulka table { width: 100%; border-collapse: collapse; font-size: .8438rem; }
+.md-tabulka th, .md-tabulka td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+.md-tabulka th { background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+.md-tabulka tr:last-child td { border-bottom: 0; }
+.md-tabulka .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.md > :first-child { margin-top: 0; }
 .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: var(--r-xs); font-size: .6563rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); vertical-align: 2px; margin: 0 1px; text-decoration: none !important; }
 .cite.is-dead { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text-mute); }
 .msg-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -132,12 +164,20 @@
 
 /* --------------------------------------------------------- stránka asistenta
    Vyplní okno mezi lištou a spodním okrajem; roluje jen rozhovor. */
-.page[data-page="asistent"] { padding-bottom: calc(var(--dock-h) + 20px + env(safe-area-inset-bottom)); }
+/* Stránka se nikdy neroluje, roluje jen konverzace (a historie vlevo).
+   Dokument je zamčený jen tehdy, když je asistent skutečná stránka (`#main`),
+   ne náhled sousední stránky při přejíždění prstem — ten by jinak zamkl
+   rolování stránce, na které člověk ve skutečnosti je. Výška se počítá
+   z viditelné plochy (`--vvh` sleduje i klávesnici na telefonu) a nemá
+   spodní mez: v nízkém okně se místo rolování svlékne úvod (níž). */
+html:has(#main[data-page="asistent"]), html:has(#main[data-page="asistent"]) body { overflow: hidden; overscroll-behavior: none; }
+.page[data-page="asistent"] { padding-bottom: 0; }
 .ai-page {
   display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: var(--gap);
-  height: calc(var(--vvh, 100dvh) - var(--nav-h) - var(--dock-h) - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  min-height: 440px;
+  height: calc(var(--vvh, 100dvh) - var(--nav-h) - var(--dock-h) - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
 }
+.ai-main, .ai-side { min-height: 0; }
 .ai-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; border-radius: var(--r-lg);
   border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-sm);
   animation: ai-vjezd 360ms var(--ease-out) both; }
@@ -502,6 +542,17 @@
 .cache-badge b { color: var(--accent); }
 .sim-sticky { position: sticky; top: calc(var(--nav-h) + 24px); align-self: start; }
 @container stranka (max-width: 1040px) { .sim-sticky { position: static; } }
+/* Scénáře: výsledek vpravo je vždycky mnohem delší než kroky vlevo, a pod
+   kroky pak zela půl metru prázdné plochy. Ovládání proto jede s obrazovkou
+   a má vlastní posuv — člověk hýbe posuvníkem a vidí, co se děje ve výsledku,
+   aniž by roloval nahoru. Na úzké ploše, kde jsou sloupce pod sebou, je to
+   obyčejný tok stránky. Vnitřní odsazení drží stíny karet mimo ořez. */
+.sim-ovladani {
+  position: sticky; top: calc(var(--nav-h) + 16px); align-self: start;
+  max-height: calc(var(--vvh, 100dvh) - var(--nav-h) - 32px); overflow-y: auto; overscroll-behavior: contain;
+  padding: 2px 6px 16px 2px; margin: -2px -6px 0 -2px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+@container stranka (max-width: 800px) { .sim-ovladani { position: static; max-height: none; overflow: visible; padding: 0; margin: 0; } }
 
 /* --------------------------------------------------- hlavička modulu (hook)
    Každá hlavní stránka začíná panelem se svým výřezem dat: vlevo název,

@@ -138,6 +138,14 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
         brief, src = tools.brief(terr.id, compact=compact)
         blocks.append(brief)
         sources.extend(src)
+        # Otázka, která jmenuje víc území, dostane podklad za každé — jinak
+        # model na „porovnej A a B“ odpoví, že data pro B nemá.
+        for dalsi in tools.find_territories(remaining):
+            if dalsi.id == terr.id:
+                continue
+            b2, src2 = tools.brief(dalsi.id, compact=compact)
+            blocks.append(b2)
+            sources.extend(src2)
     sim_link = None
     if route.intent == "SCENARIO" and terr is not None:
         ivs = tools.scenario_from_text(remaining)
