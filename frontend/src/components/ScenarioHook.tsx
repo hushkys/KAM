@@ -101,10 +101,10 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Dvě budoucnosti<br />stejného území</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Dvě budoucnosti:<br />bez zásahu a s ním</NadpisHooku>
         <p className="lead">
-          Vlevo sestavíte zásah. Vpravo běží stejný model dvakrát — bez něj a s ním — a rozdíl mezi
-          oběma cestami je to jediné, co zásah ve skutečnosti způsobí. Proto je nakreslený zvlášť.
+          Model spočítá výhled území dvakrát — bez zásahu a se zásahem — a ukáže rozdíl. Je to odhad
+          z předpokladů, které můžete změnit, ne předpověď.
         </p>
         <div className="sc-hook-legend">
           <span><i className="sw base" /> Bez zásahu</span>
@@ -173,7 +173,7 @@ export function ScenarioHook({ baseline, scenario, territory, baseYear, delta, c
                 <line className="sc-nula" x1={art.levy} x2={art.pravy} y1={art.nula} y2={art.nula} />
                 {art.kryjiSe && (
                   <text className="sc-kryje" x={W / 2} y={(PRUH.od + PRUH.do) / 2 + 4} textAnchor="middle">
-                    obě cesty zatím vedou stejně — zásah sestavíte vlevo
+                    mezi oběma cestami zatím není rozdíl
                   </text>
                 )}
 

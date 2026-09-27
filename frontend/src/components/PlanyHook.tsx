@@ -78,11 +78,10 @@ export function PlanyHook({ plany, letos, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Do kdy<br />si to obec dala</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Co obce plánují<br />a do kdy</NadpisHooku>
         <p className="lead">
-          Program rozvoje má napsané období — co se má postavit a do kterého roku. Každý pruh je
-          jedna obec a svislá čára je dnešek. Vyplněná část je čas, který už uplynul; že je hotovo,
-          z toho neplyne a nikdo to strojově nezveřejňuje.
+          Každý pruh je program rozvoje jedné obce, svislá čára je dnešek. Vyplněná část ukazuje
+          uplynulý čas, ne splněný plán.
         </p>
         <div className="sc-hook-legend">
           <span><i className="sw pl-plati" /> období ještě běží</span>
@@ -129,7 +128,7 @@ export function PlanyHook({ plany, letos, children }: {
             <div className="sc-delta glass">
               <Icon name="calendar" size={14} />
               <strong>{art.plati} z {art.celkem}</strong>
-              <span>plánů má období, které ještě běží</span>
+              <span>programů rozvoje ještě platí</span>
             </div>
           )}
         </div>

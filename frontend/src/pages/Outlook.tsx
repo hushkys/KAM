@@ -45,7 +45,7 @@ export function Outlook() {
         pravdepodobny={ok?.scenarios.pravdepodobny.map((r) => ({ year: r.year, population: r.population })) ?? []}
         pasmo={ok?.scenarios.pravdepodobny.map((r) => ({ year: r.year, lo: r.lower, hi: r.upper })) ?? []}>
         <div className="row" style={{ marginTop: 20 }}>
-          <Link className="btn btn-primary" to={`/scenare?t=${tid}`}><Icon name="split" size={16} /> Co když zasáhneme?</Link>
+          <Link className="btn btn-primary" to={`/scenare?t=${tid}`}><Icon name="split" size={16} /> Spočítat scénář se zásahem</Link>
         </div>
       </VyhledHook>
       <div className="stack-y">
@@ -61,9 +61,9 @@ export function Outlook() {
           <>
             <div className="stats-row">
               <Stat i={0} label={`Obyvatelé ${ok.base_year}`} value={num(ok.base_population)} sub="FAKT · ČSÚ" />
-              <Stat i={1} label="2040 · pravděpodobný" value={num(y40?.population ?? null)} sub={`${num(y40?.lower ?? null)}–${num(y40?.upper ?? null)} · ${signed(y40 ? 100 * (y40.population / ok.base_population - 1) : null, 1, " %")}`} />
-              <Stat i={2} label="Podíl 65+ v roce 2040" value={pct(y40?.share_65 ?? null)} sub={last?.age_65 ? `dnes ${pct((100 * last.age_65) / last.population)}` : ""} />
-              <Stat i={3} label="Zpětný test" value={ok.backtest.available ? `${num(ok.backtest.mape!, 2)} %` : "—"} sub="průměrná odchylka modelu" />
+              <Stat i={1} label={`Obyvatelé ${y40?.year ?? ""} · pravděpodobný`} value={num(y40?.population ?? null)} sub={`pásmo ${num(y40?.lower ?? null)}–${num(y40?.upper ?? null)} · ${signed(y40 ? 100 * (y40.population / ok.base_population - 1) : null, 1, " %")}`} />
+              <Stat i={2} label={`Podíl seniorů 65+ v roce ${y40?.year ?? ""}`} value={pct(y40?.share_65 ?? null)} sub={last?.age_65 ? `dnes ${pct((100 * last.age_65) / last.population)}` : ""} />
+              <Stat i={3} label="Zpětný test" value={ok.backtest.available ? `${num(ok.backtest.mape!, 2)} %` : "—"} sub="o kolik se model v minulosti spletl" />
             </div>
             <Card i={2} title={label} icon="trend-up" actions={<KindTag kind="MODEL" />}>
               <ChartSwitch id={`vyhled-${metric}`} views={[
@@ -73,8 +73,8 @@ export function Outlook() {
                       <LineChart ariaLabel={`${label} — historie a scénáře`} series={series} height={320} nowYear={ok.base_year} />
                       <Legend items={[
                         { label: "Skutečnost (ČSÚ)", color: "var(--text)" },
-                        { label: `Pravděpodobný${metric === "population" ? " + 90% pásmo" : ""}`, color: "var(--accent)" },
-                        ...(metric === "population" && ok.paths?.length ? [{ label: "Možné průběhy s ročními výkyvy (Monte Carlo)", color: "color-mix(in oklab, var(--accent) 45%, transparent)" }] : []),
+                        { label: `Pravděpodobný${metric === "population" ? " + pásmo nejistoty (90 %)" : ""}`, color: "var(--accent)" },
+                        ...(metric === "population" && ok.paths?.length ? [{ label: "Možné průběhy s náhodnými výkyvy mezi roky", color: "color-mix(in oklab, var(--accent) 45%, transparent)" }] : []),
                         { label: "Optimistický", color: "var(--info)", dashed: true }, { label: "Rizikový", color: "var(--warn)", dashed: true },
                       ]} />
                     </>
@@ -87,18 +87,18 @@ export function Outlook() {
                     const s = ok.scenarios.pravdepodobny;
                     const sum = (k: "births" | "deaths" | "migration") => s.reduce((a, r) => a + (r[k] ?? 0), 0);
                     return (
-                      <Waterfall ariaLabel="Z čeho se skládá změna počtu obyvatel do roku 2040" height={290} steps={[
+                      <Waterfall ariaLabel={`Z čeho se skládá změna počtu obyvatel do roku ${y40?.year ?? ""}`} height={290} steps={[
                         { label: String(ok.base_year), value: ok.base_population, total: true },
                         { label: "narození", value: Math.round(sum("births")) },
                         { label: "zemřelí", value: -Math.round(sum("deaths")) },
-                        { label: "migrace", value: Math.round(sum("migration")) },
+                        { label: "stěhování", value: Math.round(sum("migration")) },
                         { label: String(s[s.length - 1].year), value: Math.round(s[s.length - 1].population), total: true },
                       ]} />
                     );
                   },
                 }] : []),
                 {
-                  key: "mrizka", label: "Roky × scénáře", icon: "grid", render: () => {
+                  key: "mrizka", label: "Scénáře po letech", icon: "grid", render: () => {
                     const years = [2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040];
                     const kinds = [["pravdepodobny", "Pravděpodobný"], ["optimisticky", "Optimistický"], ["rizikovy", "Rizikový"]] as const;
                     return (
@@ -110,8 +110,8 @@ export function Outlook() {
                   },
                 },
                 ...(y40?.age_0_14 && y40.age_65 ? [{
-                  key: "struktura", label: "Věková struktura 2040", icon: "users", render: () => (
-                    <Donut ariaLabel="Věková struktura v roce 2040" caption="obyvatel 2040" parts={[
+                  key: "struktura", label: `Věková struktura ${y40?.year ?? ""}`, icon: "users", render: () => (
+                    <Donut ariaLabel={`Věková struktura v roce ${y40?.year ?? ""}`} caption={`obyvatel ${y40?.year ?? ""}`} parts={[
                       { label: "Děti 0–14", value: Math.round(y40.age_0_14!), color: "var(--info)" },
                       { label: "15–64 let", value: Math.round(y40.population - y40.age_0_14! - y40.age_65!), color: "var(--accent)" },
                       { label: "Senioři 65+", value: Math.round(y40.age_65!), color: "var(--warn)" },
@@ -121,7 +121,7 @@ export function Outlook() {
               ]} />
             </Card>
             <div className="grid">
-              <Card span={4} i={3} title="Milníky" icon="target" flush>
+              <Card span={4} i={3} title="Scénáře v klíčových letech" icon="target" flush>
                 <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
                   <table className="table">
                     <thead><tr><th>Rok</th><th className="r">Pravděp.</th><th className="r">Optim.</th><th className="r">Rizik.</th></tr></thead>
@@ -139,27 +139,27 @@ export function Outlook() {
                   <div className="stack-y">
                     <div><div className="small strong" style={{ marginBottom: 6 }}>{ok.base_year} <KindTag kind="FAKT" /></div>
                       <ShareBar parts={[{ label: "0–14", value: last.age_0_14, color: "var(--info)" }, { label: "15–64", value: last.population - last.age_0_14 - last.age_65, color: "var(--accent)" }, { label: "65+", value: last.age_65, color: "var(--warn)" }]} /></div>
-                    <div><div className="small strong" style={{ marginBottom: 6 }}>2040 <KindTag kind="MODEL" /></div>
+                    <div><div className="small strong" style={{ marginBottom: 6 }}>{y40?.year} <KindTag kind="MODEL" /></div>
                       <ShareBar parts={[{ label: "0–14", value: y40.age_0_14, color: "var(--info)" }, { label: "15–64", value: y40.population - y40.age_0_14 - y40.age_65, color: "var(--accent)" }, { label: "65+", value: y40.age_65, color: "var(--warn)" }]} /></div>
                   </div>
-                ) : <p className="muted small">Věková struktura není k dispozici.</p>}
+                ) : <p className="muted small">Pro toto území chybí údaje o věku.</p>}
               </Card>
-              <Card span={4} i={5} title="Zpětný test modelu" icon="check" actions={<InfoHint>Model se spustí s daty jen do roku {ok.backtest.cutoff} a výsledek se porovná s tím, co ČSÚ skutečně zveřejnil v dalších letech.</InfoHint>}>
+              <Card span={4} i={5} title="Zpětný test modelu" icon="check" actions={<InfoHint>Model dostal data jen do roku {ok.backtest.cutoff} a jeho odhad dalších let se porovnal s tím, co ČSÚ skutečně zveřejnil. Čím menší odchylka a čím víc skutečnosti v pásmu, tím víc se výhledu dá věřit.</InfoHint>}>
                 {ok.backtest.available ? (
                   <>
                     <div className="row" style={{ gap: 18, marginBottom: 6 }}>
                       <div><div className="stat-label">Průměrná odchylka</div><div className="stat-value">{num(ok.backtest.mape!, 2)} %</div></div>
-                      <div><div className="stat-label">Skutečnost v pásmu</div><div className="stat-value">{Math.round(100 * ok.backtest.coverage!)} %</div></div>
+                      <div><div className="stat-label">Skutečnost uvnitř pásma</div><div className="stat-value">{Math.round(100 * ok.backtest.coverage!)} %</div></div>
                     </div>
                     <LineChart ariaLabel="Zpětný test" height={150} series={[
                       { key: "a", label: "Skutečnost", color: "var(--text)", points: ok.backtest.points!.map((p) => ({ year: p.year, value: p.actual })) },
                       { key: "p", label: `Model z roku ${ok.backtest.cutoff}`, color: "var(--accent)", dashed: true, points: ok.backtest.points!.map((p) => ({ year: p.year, value: p.predicted })), band: ok.backtest.points!.map((p) => ({ year: p.year, lo: p.lower, hi: p.upper })) },
                     ]} />
                   </>
-                ) : <p className="muted small">Pro zpětný test chybí data.</p>}
+                ) : <p className="muted small">Na zpětný test tu není dost let s daty.</p>}
               </Card>
             </div>
-            <Card i={6} title="Předpoklady a metoda" icon="book">
+            <Card i={6} title="Z čeho výhled vychází" icon="book">
               <p className="small muted" style={{ marginBottom: 10 }}>{ok.method}.</p>
               <ul style={{ paddingLeft: 18, display: "grid", gap: 6 } as CSSProperties} className="small">{ok.assumptions.map((a) => <li key={a}>{a}</li>)}</ul>
             </Card>

@@ -37,14 +37,14 @@ export function Territories() {
       <div className="terr-toolbar">
         <div className="input-icon">
           <Icon name="search" size={17} />
-          <input className="input" value={q} onChange={(e) => { setQ(e.target.value); setLimit(60); }} placeholder="Hledat území, např. Jaroměř…" aria-label="Hledat území" />
+          <input className="input" value={q} onChange={(e) => { setQ(e.target.value); setLimit(60); }} placeholder="Hledat podle názvu, např. Jaroměř" aria-label="Hledat podle názvu" />
         </div>
         <Segmented label="Úroveň" value={level} onChange={(v) => { setQuery({ level: v === "obec" ? null : v }); setLimit(60); }}
           options={[{ value: "obec", label: "Obce" }, { value: "orp", label: "ORP" }, { value: "okres", label: "Okresy" }, { value: "kraj", label: "Kraj" }]} />
-        <Segmented label="Řazení" size="sm" value={sort} onChange={(v) => setQuery({ sort: v === "pop" ? null : v })} options={[{ value: "pop", label: "Podle velikosti" }, { value: "name", label: "Podle názvu" }]} />
+        <Segmented label="Řazení" size="sm" value={sort} onChange={(v) => setQuery({ sort: v === "pop" ? null : v })} options={[{ value: "pop", label: "Podle počtu obyvatel" }, { value: "name", label: "Podle názvu" }]} />
       </div>
       <p className="small mute" style={{ marginBottom: 12 }} aria-live="polite">{loading ? "Načítám…" : `${num(rows.length)} ${plural(rows.length, "území", "území", "území")}`}</p>
-      {!loading && rows.length === 0 && <Empty icon="search" title="Nic nenalezeno">Zkuste jiný název nebo úroveň.</Empty>}
+      {!loading && rows.length === 0 && <Empty icon="search" title="Žádné území tohoto názvu">Zkuste jiný název nebo přepněte úroveň.</Empty>}
       <div className="terr-grid">
         {rows.slice(0, limit).map((t, i) => (
           <a key={t.id} href={`/obce/${t.id}`} onClick={(e) => open(e, t.id)} className="terr-card reveal" style={{ "--i": Math.min(i, 14) } as CSSProperties} data-ctx={t.id} data-ctx-label={t.name}>

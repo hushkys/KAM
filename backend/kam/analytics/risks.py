@@ -99,7 +99,7 @@ def assess(tid: str) -> list[dict]:
             since = f" od roku {tr['since']}" if tr.get("since") else ""
             out.append(_risk(tid, "starnuti", "Stárnutí populace", "demografie", score, "trend" if tr["kind"] == "trend" else "stav",
                              f"Podíl obyvatel 65+ je {_fmt(cur)} %" + (f" (kraj {_fmt(r)} %)" if r else "") + f" a mění se o {_fmt(slope, 2)} p. b. ročně{since}.",
-                             ["Vyšší poptávka po zdravotní a sociální péči", "Větší citlivost na dostupnost veřejné dopravy"],
+                             ["Víc lidí bude potřebovat zdravotní a sociální péči", "Víc lidí bude závislých na veřejné dopravě"],
                              ["d_podil_65", "110990", "110900"], ["domov_seniori", "ordinace", "spoj"], tr, tr["points"]))
 
     # 2 — depopulation
@@ -109,7 +109,7 @@ def assess(tid: str) -> list[dict]:
         if tr["kind"] == "trend" and tr["slope"] < 0:
             o = outlook(tid)
             m35 = next((m for m in o.get("milestones", []) if m["year"] == 2035), None) if o.get("base_year") else None
-            extra = f" Při zachování trendů model odhaduje v roce 2035 {_fmt(m35['population'], 0)} obyvatel ({_fmt(m35['lower'], 0)}–{_fmt(m35['upper'], 0)})." if m35 else ""
+            extra = f" Pokud trendy vydrží, model pro rok 2035 odhaduje {_fmt(m35['population'], 0)} obyvatel ({_fmt(m35['lower'], 0)}–{_fmt(m35['upper'], 0)})." if m35 else ""
             score = _clamp(0.3 + abs(tr["pct_per_year"]) / 1.2)
             out.append(_risk(tid, "ubytek", "Dlouhodobý úbytek obyvatel", "demografie", score, "trend",
                              f"Počet obyvatel klesá od roku {tr['since']} o {_fmt(abs(tr['pct_per_year']), 2)} % ročně.{extra}",
@@ -126,8 +126,8 @@ def assess(tid: str) -> list[dict]:
             score = _clamp(0.25 + abs(med) / 12)
             kind = "opakovany" if negative_years >= 4 else "stav"
             out.append(_risk(tid, "odliv", "Odliv obyvatel", "demografie", score, kind,
-                             f"Saldo migrace bylo záporné v {negative_years} z posledních 5 let (medián {_fmt(med)} ‰).",
-                             ["Odcházejí převážně mladší obyvatelé", "Zrychluje stárnutí"], ["d_migrace", "110600"], ["byty", "pracovni_mista", "spoj"],
+                             f"Víc lidí se odstěhovalo, než přistěhovalo, v {negative_years} z posledních 5 let (saldo obvykle {_fmt(med)} ‰ ročně).",
+                             ["Odcházejí hlavně mladší lidé", "Obec rychleji stárne"], ["d_migrace", "110600"], ["byty", "pracovni_mista", "spoj"],
                              classify(mig, 1), len(mig)))
 
     # 4 — GP availability (read at ORP level for an obec: a GP serves the area)
@@ -138,7 +138,7 @@ def assess(tid: str) -> list[dict]:
         gap = 1 - gp[1] / rgp
         where = f"ve správním obvodu {ctx.name}" if ctx else ""
         out.append(_risk(area if ctx else tid, "lekari", "Dostupnost praktických lékařů", "zdravotnictvi", _clamp(0.3 + 1.4 * gap), "stav",
-                         f"Na 10 000 obyvatel připadá {_fmt(gp[1])} ordinací praktického lékaře {where} (kraj {_fmt(rgp)}).",
+                         f"Na 10 000 obyvatel připadá {_fmt(gp[1])} ordinací praktického lékaře{(" " + where) if where else ""} (kraj {_fmt(rgp)}).",
                          ["Delší dojíždění k lékaři", "Riziko roste se stárnutím populace"], ["d_pl_10k", "070700"], ["ordinace", "spoj"],
                          classify(store.series(area, "d_pl_10k"), 1), len(store.series(area, "d_pl_10k"))))
         out[-1]["id"] = f"{tid}:lekari"
@@ -184,7 +184,7 @@ def assess(tid: str) -> list[dict]:
         if sew is not None and sew[1] == 0 and p and p[1] >= 300:
             out.append(_risk(tid, "kanalizace", "Chybí veřejná kanalizace", "prostredi", 0.45 if p[1] >= 1000 else 0.3, "stav",
                              f"Obec s {_fmt(p[1], 0)} obyvateli nemá podle ČSÚ veřejnou kanalizaci ({sew[0]}).",
-                             ["Omezení další výstavby", "Závislost na septicích a DČOV"], ["600201", "600301"], ["byty"], None, 1))
+                             ["Omezení další výstavby", "Závislost na septicích a domácích čistírnách"], ["600201", "600301"], ["byty"], None, 1))
 
     # 9 — public finances
     sal = store.series(tid, "200802")
@@ -195,7 +195,7 @@ def assess(tid: str) -> list[dict]:
         if all(v < 0 for v in last3) and tax and rtax and tax[1] < 0.85 * rtax:
             out.append(_risk(tid, "finance", "Opakovaný rozpočtový schodek", "finance", 0.35, "opakovany",
                              f"Saldo rozpočtu bylo záporné tři roky po sobě a daňové příjmy na obyvatele jsou {_fmt(tax[1], 0)} Kč (kraj {_fmt(rtax, 0)} Kč).",
-                             ["Schodek může odrážet investice — nutné posoudit s rozpočtem obce"], ["200802", "d_dan_obyv"], [], None, len(sal)))
+                             ["Schodek může znamenat investice. Posuďte s rozpočtem obce."], ["200802", "d_dan_obyv"], [], None, len(sal)))
 
     # 10 — one-off spikes worth a note, explicitly not a trend
     for code in ("110900", "110300", "500020", "121800", "110600"):
@@ -206,8 +206,8 @@ def assess(tid: str) -> list[dict]:
         if tr["kind"] == "vykyv":
             o = tr["outliers"][-1]
             out.append(_risk(tid, f"vykyv_{code}", f"Jednorázový výkyv: {store.meta(code)['name']}", store.meta(code)["pillar"], 0.2, "vykyv",
-                             f"Hodnota v roce {o['year']} ({_fmt(o['value'], 0)}) se odchyluje od dlouhodobého vývoje o {_fmt(abs(o['z']))} robustních σ. "
-                             "Jde o jednorázovou odchylku, ne o trend.", ["Ověřit příčinu (metodická změna, jednorázová událost)"], [code], [], tr, tr["points"]))
+                             f"Hodnota v roce {o['year']} ({_fmt(o['value'], 0)}) vybočuje z dlouhodobého vývoje ({_fmt(abs(o['z']))}× víc, než je obvyklé kolísání). "
+                             "Jde o jednorázovou odchylku, ne o trend.", ["Ověřte příčinu: změna metodiky, nebo jednorázová událost?"], [code], [], tr, tr["points"]))
     out.sort(key=lambda r: -r["score"])
     _cache[tid] = out
     return out

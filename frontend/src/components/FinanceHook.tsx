@@ -76,14 +76,14 @@ export function FinanceHook({ roky, kryti, territory, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Zbude, nebo nezbude?</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Zbude obci na investice?</NadpisHooku>
         <p className="lead">
-          Nad osou je to, co z příjmů zbylo po zaplacení provozu. Pod osou to, co obec ten rok
-          proměnila v majetek. Když je zlatý sloupec vyšší, zaplatila si investici sama.
+          Provozní přebytek je to, co z příjmů zbude po zaplacení běžného chodu obce. Je-li sloupec
+          nad osou vyšší než ten pod ní, zaplatila si obec investice toho roku sama.
         </p>
         <div className="sc-hook-legend">
           <span><i className="sw scen" /> Provozní přebytek</span>
-          <span><i className="sw fi-kap" /> Kapitálové výdaje</span>
+          <span><i className="sw fi-kap" /> Investice (kapitálové výdaje)</span>
           {territory && <span className="mute">{territory}</span>}
         </div>
         {children}
@@ -95,7 +95,7 @@ export function FinanceHook({ roky, kryti, territory, children }: {
         <div className="sc-pane p1">
           <span className="sc-sheen" />
           <svg className="sc-art fi-art" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
-            role="img" aria-label={art ? `Provozní přebytek a kapitálové výdaje v letech ${art.x0} až ${art.x1}` : "Zatím bez dat"}>
+            role="img" aria-label={art ? `Provozní přebytek a investice v letech ${art.x0} až ${art.x1}` : "Zatím bez dat"}>
             {art && (
               <>
                 {art.sloupce.map((s, i) => (
@@ -113,7 +113,7 @@ export function FinanceHook({ roky, kryti, territory, children }: {
             <div className="sc-delta glass">
               <Icon name="coins" size={14} />
               <strong>{kryti !== null && kryti !== undefined ? `${num(kryti, 1)} %` : kc(art.soucet)}</strong>
-              <span>{kryti !== null && kryti !== undefined ? "investic z vlastních peněz" : `přebytek ${art.x0}–${art.x1}`}</span>
+              <span>{kryti !== null && kryti !== undefined ? "investic zaplaceno z vlastního" : `provozní přebytek ${art.x0}–${art.x1}`}</span>
             </div>
           )}
         </div>

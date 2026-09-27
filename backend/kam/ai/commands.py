@@ -67,14 +67,14 @@ def _pref_actions(q: str) -> list[tuple[dict, str]]:
     on = re.search(r"\b(zapni|zapnout|aktivuj|povol|nastav|dej|chci|prepni|pouzij)\w*", q)
     off = re.search(r"\b(vypni|vypnout|deaktivuj|zakaz|zrus|odstran|bez|nechci|omez)\w*", q)
     if re.search(r"tmav\w*|dark|nocn\w* rezim|cern\w* (rezim|motiv|tema)", q) and (on or "rezim" in q or "tema" in q or "motiv" in q):
-        out.append(({"type": "set_pref", "key": "theme", "value": "light" if off and not on else "dark"}, "Tmavý režim je zapnutý." if not (off and not on) else "Světlý režim je zapnutý."))
+        out.append(({"type": "set_pref", "key": "theme", "value": "light" if off and not on else "dark"}, "Tmavý motiv je zapnutý." if not (off and not on) else "Světlý motiv je zapnutý."))
     elif re.search(r"svetl\w*|light|denni rezim|bil\w* (rezim|motiv|tema)", q) and (on or "rezim" in q or "tema" in q or "motiv" in q):
-        out.append(({"type": "set_pref", "key": "theme", "value": "light"}, "Světlý režim je zapnutý."))
+        out.append(({"type": "set_pref", "key": "theme", "value": "light"}, "Světlý motiv je zapnutý."))
     elif re.search(r"(podle|dle) systemu|automatick\w* (rezim|motiv|tema)|systemov\w* (rezim|motiv|tema)", q):
         out.append(({"type": "set_pref", "key": "theme", "value": "system"}, "Motiv se řídí nastavením systému."))
     if re.search(r"pruhledn\w*|sklo|skleneny|blur|rozmaz\w*|transparen\w*|efekt\w* (skla|pruhlednosti)", q):
         val = not bool(off)
-        out.append(({"type": "set_pref", "key": "transparency", "value": val}, "Efekty průhlednosti jsou zapnuté." if val else "Efekty průhlednosti jsou vypnuté."))
+        out.append(({"type": "set_pref", "key": "transparency", "value": val}, "Průhledné lišty jsou zapnuté." if val else "Průhledné lišty jsou vypnuté."))
     if re.search(r"animac\w*|pohyb\w*|prechod\w*", q) and (on or off):
         reduce = bool(off)
         out.append(({"type": "set_pref", "key": "reduceMotion", "value": reduce}, "Animace jsou omezené." if reduce else "Animace jsou zapnuté."))

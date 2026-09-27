@@ -51,7 +51,7 @@ const KATEGORIE: { key: Kat | "vse"; label: string }[] = [
 /** Slova, kterými lidé hledají to, co se v aplikaci jmenuje jinak. */
 const KLICE: Record<string, string> = {
   prehled: "domů dashboard souhrn rizika puls kraj přehled začátek",
-  mapa: "kartogram choropleth terén 3d gis okresy orp obce území atlas",
+  mapa: "kartogram choropleth gis okresy orp obce území atlas",
   obce: "obec město profil srovnání porovnání seznam území orp okres katalog obcí",
   vyhled: "predikce prognóza projekce budoucnost populace stárnutí 2040 odhad trend",
   scenare: "simulace co kdyby zásah dopad modelování varianty byty školka experiment",
@@ -67,26 +67,27 @@ const KLICE: Record<string, string> = {
 
 /** Místa mimo dock, která se taky mají dát najít. */
 const MISTA: { path: string; label: string; desc: string; icon: string; klice: string }[] = [
-  { path: "/o-nas", label: "O nás", desc: "Tým Popojedem. a co KAM řeší", icon: "users", klice: "tým autoři kdo kompaz proxis kontakt popojedem" },
-  { path: "/pravni", label: "Právní informace", desc: "Podmínky, soukromí, licence, AI", icon: "shield", klice: "licence gdpr ochrana údajů podmínky cookies mit" },
-  { path: "/nastaveni/vzhled", label: "Vzhled", desc: "Motiv, průhlednost, animace, hustota", icon: "sun", klice: "tmavý světlý motiv barvy animace průhlednost navigace" },
+  { path: "/o-nas", label: "O nás", desc: "Kdo aplikaci dělá a proč", icon: "users", klice: "tým autoři kdo kompaz proxis kontakt popojedem" },
+  { path: "/pravni", label: "Právní informace", desc: "Podmínky, osobní údaje, licence, AI", icon: "shield", klice: "licence gdpr ochrana údajů podmínky cookies mit" },
+  { path: "/nastaveni/vzhled", label: "Vzhled", desc: "Motiv, průhlednost lišt, animace, hustota", icon: "sun", klice: "tmavý světlý motiv barvy animace průhlednost navigace" },
   { path: "/nastaveni/pristupnost", label: "Přístupnost", desc: "Písmo, kontrast, pohyb, zkratky", icon: "eye", klice: "velikost písma kontrast čitelnost pohyb klávesnice" },
-  { path: "/nastaveni/soukromi", label: "Data a soukromí", desc: "Co smí opustit server", icon: "shield", klice: "politika ai cloud lokální uchování retence" },
-  { path: "/data?tab=api", label: "Otevřené API", desc: "Jedno rozhraní na všechna data", icon: "share", klice: "api rest json csv ndjson endpoint dokumentace stahování" },
+  { path: "/nastaveni/soukromi", label: "Data a soukromí", desc: "Co smí odejít mimo server", icon: "shield", klice: "politika ai cloud lokální uchování retence" },
+  { path: "/data?tab=api", label: "Otevřené API", desc: "Všechna data ke stažení a pro vlastní aplikace", icon: "share", klice: "api rest json csv ndjson endpoint dokumentace stahování" },
 ];
 
 const PRIKAZY: { title: string; icon: string; klice: string; run: () => void }[] = [
-  { title: "Tmavý režim", icon: "moon", klice: "tma noc dark motiv", run: () => setPrefs({ theme: "dark" }) },
-  { title: "Světlý režim", icon: "sun", klice: "světlo den light motiv bílá", run: () => setPrefs({ theme: "light" }) },
+  { title: "Tmavý motiv", icon: "moon", klice: "tma noc dark motiv", run: () => setPrefs({ theme: "dark" }) },
+  { title: "Světlý motiv", icon: "sun", klice: "světlo den light motiv bílá", run: () => setPrefs({ theme: "light" }) },
   { title: "Motiv podle systému", icon: "monitor", klice: "auto systém automaticky", run: () => setPrefs({ theme: "system" }) },
-  { title: "Zapnout průhlednost lišty", icon: "layers", klice: "průsvitná lišta rozostření efekty", run: () => setPrefs({ transparency: true }) },
-  { title: "Vypnout průhlednost lišty", icon: "layers", klice: "plná lišta efekty výkon", run: () => setPrefs({ transparency: false }) },
+  { title: "Zapnout průhlednost lišt", icon: "layers", klice: "průsvitná lišta rozostření efekty", run: () => setPrefs({ transparency: true }) },
+  { title: "Vypnout průhlednost lišt", icon: "layers", klice: "plná lišta efekty výkon", run: () => setPrefs({ transparency: false }) },
   { title: "Vypnout animace", icon: "motion", klice: "pohyb výkon slabý telefon zrychlit", run: () => setPrefs({ reduceMotion: true }) },
   { title: "Zapnout animace", icon: "motion", klice: "pohyb zpět", run: () => setPrefs({ reduceMotion: false }) },
   { title: "Sbalit postranní panel", icon: "sidebar", klice: "navigace jen ikony úzký menu", run: () => setPrefs({ nav: "compact" }) },
   { title: "Rozbalit postranní panel", icon: "sidebar", klice: "navigace popisky široký menu", run: () => setPrefs({ nav: "full" }) },
-  { title: "Vysoký kontrast", icon: "contrast", klice: "čitelnost přístupnost", run: () => setPrefs({ contrast: "high" }) },
-  { title: "Kompaktní hustota", icon: "sliders", klice: "mezery hustě víc obsahu", run: () => setPrefs({ density: "compact" }) },
+  { title: "Zapnout vysoký kontrast", icon: "contrast", klice: "čitelnost přístupnost", run: () => setPrefs({ contrast: "high" }) },
+  { title: "Hustší rozvržení", icon: "sliders", klice: "mezery hustě víc obsahu", run: () => setPrefs({ density: "compact" }) },
+  { title: "Běžné rozvržení", icon: "sliders", klice: "mezery vzdušně vzdušné pohodlné výchozí hustota", run: () => setPrefs({ density: "comfortable" }) },
   { title: "Otevřít asistenta", icon: "sparkle", klice: "chat ai zeptat", run: () => openAssistant() },
 ];
 
@@ -274,7 +275,7 @@ export function CommandPalette() {
     if (f.length > 1) {
       out.push({
         key: "ask", kat: "asistent", group: "Asistent", title: `Zeptat se: „${q.trim()}"`,
-        sub: "Asistent odpoví nad daty KAM a doloží zdroj", icon: "sparkle", skore: 0.05, run: () => openAssistant(q.trim()),
+        sub: "Odpoví z dat aplikace a uvede zdroj", icon: "sparkle", skore: 0.05, run: () => openAssistant(q.trim()),
       });
     }
     return out;
@@ -336,7 +337,7 @@ export function CommandPalette() {
       <div className="palette glass" role="dialog" aria-modal="true" aria-label="Hledat">
         <div className="palette-input">
           <Icon name="search" size={19} />
-          <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Obec, datová sada, ukazatel, stránka…" aria-label="Hledat"
+          <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat obec, datovou sadu, ukazatel nebo stránku…" aria-label="Hledat v aplikaci"
             role="combobox" aria-expanded="true" aria-controls="palette-list" aria-activedescendant={ploche[active] ? `ph-${active}` : undefined}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(ploche.length - 1, a + 1)); }
@@ -347,7 +348,7 @@ export function CommandPalette() {
               else if (e.key === "Escape") setOpen(false);
             }} />
           {cekam && <span className="palette-cekam" aria-hidden="true" />}
-          {q && <button className="icon-btn sm" aria-label="Vymazat" onClick={() => { setQ(""); input.current?.focus(); }}><Icon name="close" size={15} /></button>}
+          {q && <button className="icon-btn sm" aria-label="Vymazat hledání" onClick={() => { setQ(""); input.current?.focus(); }}><Icon name="close" size={15} /></button>}
           <kbd className="jen-mys">Esc</kbd>
         </div>
 
@@ -390,15 +391,15 @@ export function CommandPalette() {
               })}
               {s.vic > 0 && (
                 <button className="palette-vic" onClick={() => setKat(s.polozky[0].kat)}>
-                  Zobrazit všech {s.polozky.length + s.vic} ve skupině {s.nazev.toLowerCase()}
+                  Zobrazit všechny výsledky ({s.polozky.length + s.vic})
                 </button>
               )}
             </div>
           ))}
           {!ploche.length && (
             <div className="empty">
-              <strong>Nic neodpovídá</strong>
-              <span className="small muted">Zkuste jiné slovo, nebo se rovnou zeptejte asistenta.</span>
+              <strong>Nic jsme nenašli</strong>
+              <span className="small muted">Zkuste jiné slovo, nebo otázku napište asistentovi.</span>
             </div>
           )}
         </div>

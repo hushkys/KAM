@@ -52,6 +52,12 @@
 
 .chat { display: flex; flex-direction: column; min-height: 0; width: 100%; height: 100%; position: relative; }
 .chat-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 10px 16px; border-bottom: 1px solid var(--border); font-weight: 650; font-size: .875rem; }
+.chat-nazev { display: inline-flex; align-items: center; gap: 8px; }
+.chat-nazev svg { color: var(--m); }
+/* Na stránce asistenta horní lišta název nese — hlavička chatu ho neopakuje
+   a v úvodu na širokém okně zmizí celá, dokud v ní není co ovládat. */
+.ai-main .chat[data-stav="uvod"] .chat-head { border-bottom: 0; }
+@container stranka (min-width: 761px) { .ai-main .chat[data-stav="uvod"] .chat-head { display: none; } }
 
 /* `safe end`, ne `end`: v nízkém okně se obsah nevejde a obyčejné `end` ho
    vystrčí nahoru ven z boxu, kde leží přes hlavičku. `overflow-y: auto` je
@@ -65,7 +71,22 @@
 .chat-vzduch-horni { flex: 1; min-height: 0; }
 @keyframes chat-uvod-in { from { opacity: 0; transform: translateY(8px); } }
 .chat-pozdrav { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.875rem); font-weight: 650; line-height: 1.15; letter-spacing: -.022em; color: var(--text); }
-.chat-uvod-text { max-width: 46ch; color: var(--text-mute); font-size: .875rem; line-height: 1.6; }
+.chat-uvod-text { max-width: 46ch; color: var(--text-dim); font-size: .9375rem; line-height: 1.55; }
+/* Dlaždice s jiskrou v barvě modulu: hranatá jako zbytek aplikace, ale plná
+   barva, aby úvod měl jeden jasný bod, na který oko dopadne. */
+.chat-znak { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 6px;
+  background: var(--m); color: #fff; box-shadow: 0 10px 28px -12px var(--m); }
+.assistant-drawer .chat-znak { width: 42px; height: 42px; }
+/* Příklady otázek: hranatá tlačítka ve dvou sloupcích pod polem. */
+.chat-priklady { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+  width: calc(100% - 44px); max-width: 680px; margin: 4px auto 0; animation: chat-uvod-in 420ms var(--ease-out) 80ms both; }
+.chat-priklad { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); font: inherit; font-size: .8125rem; text-align: left; cursor: pointer;
+  transition: border-color var(--t-xs), color var(--t-xs), background-color var(--t-xs); }
+.chat-priklad svg { flex: none; color: var(--text-mute); transition: transform var(--t-sm) var(--ease-out), color var(--t-xs); }
+.chat-priklad:hover { border-color: var(--m-line); color: var(--text); background: var(--m-soft); }
+.chat-priklad:hover svg { color: var(--m); transform: translateX(2px); }
+@container (max-width: 520px) { .chat-priklady { grid-template-columns: minmax(0, 1fr); } }
 
 .chat-log { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 14px; overscroll-behavior: contain;
   animation: fade-in var(--t-md) var(--ease-out) both; }
@@ -122,6 +143,9 @@
   animation: ai-vjezd 360ms var(--ease-out) both; }
 .ai-main { min-width: 0; min-height: 0; display: flex; animation: ai-vjezd 360ms var(--ease-out) 50ms both; }
 .ai-main .chat { border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
+/* V úvodu jemná záře v barvě modulu shora: prázdná bílá plocha s polem
+   uprostřed vypadala jako rozbitá stránka, ne jako pozvánka. */
+.ai-main .chat[data-stav="uvod"] { background: radial-gradient(ellipse 70% 55% at 50% 0%, color-mix(in oklab, var(--m) 11%, transparent), transparent 70%), var(--surface); }
 @keyframes ai-vjezd { from { opacity: 0; transform: translateY(6px); } }
 .ai-side-label { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-mute); margin-top: 8px; }
 .ai-sessions { display: grid; gap: 1px; overflow-y: auto; min-height: 0; flex: 1; align-content: start; }
@@ -142,12 +166,14 @@
 @container stranka (max-width: 760px) {
   .ai-page { grid-template-columns: minmax(0, 1fr); }
   .ai-side { display: none; }
-  .ai-hist-btn { display: grid; }
+  .ai-hist-btn { display: inline-flex; }
 }
 
 /* Pole drží rozumnou šířku — přes celou kartu by bylo na širokém okně půl
    metru dlouhé a text v něm ztracený. */
-.ai-main .chat[data-stav="uvod"] .chat-pole { width: 100%; max-width: 760px; margin-inline: auto; }
+/* `calc(100% - 44px)`, ne `100%`: `margin-inline: auto` jinak přebije boční
+   odsazení a pole na telefonu sahalo od okraje k okraji karty. */
+.ai-main .chat[data-stav="uvod"] .chat-pole { width: calc(100% - 44px); max-width: 680px; margin-inline: auto; }
 /* Bublina odpovědi přes celou šířku okna je nečitelná ze stejného důvodu
    jako odstavec v kartě. Sloupec konverzace proto drží šířku a sedí
    uprostřed panelu, stejně jako pole nad ním ve stavu bez zpráv. */
@@ -164,7 +190,8 @@
 /* Nízké okno: uvítání se svléká odshora, ať zůstane pole a aspoň jeden návrh.
    Řídí se výškou samotného chatu, ne obrazovky — šuplík i stránka mají svoje. */
 .chat { container-type: size; }
-@container (max-height: 460px) { .chat-uvod-text { display: none; } }
+@container (max-height: 560px) { .chat-priklady { display: none; } }
+@container (max-height: 460px) { .chat-uvod-text, .chat-znak { display: none; } }
 @container (max-height: 330px) {
   .chat-pozdrav { font-size: 1.2rem; }
   .chat-disclaimer { display: none; }

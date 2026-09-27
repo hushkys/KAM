@@ -70,12 +70,12 @@ export function StatistikyHook({ roky, children }: { roky: RokHodnot[]; children
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>{art ? <>Každá tečka<br />je {num(art.jednotka)} čísel</> : <>Čísla o datech a o KAM</>}</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>{art ? <>Každá tečka<br />je {num(art.jednotka)} hodnot</> : <>Stav dat a provozu</>}</NadpisHooku>
         <p className="lead">
           {art
-            ? <>Model drží {num(art.celkem)} měřených hodnot z let {art.od}–{art.do}. Tady jsou všechny najednou —
-              jedna tečka za každých {num(art.jednotka)}. Čím světlejší, tím novější.</>
-            : <>Kolik dat model drží, odkud jsou, jak čerstvá a jak se aplikace používá.</>}
+            ? <>Kolik dat KAM má, odkud jsou a jak se aplikace používá. Na obrázku je všech {num(art.celkem)} měřených
+              hodnot z let {art.od}–{art.do}, novější jsou světlejší.</>
+            : <>Kolik dat KAM má, odkud jsou, jak jsou čerstvá a jak se aplikace používá.</>}
         </p>
         {art && (
           <div className="st-ramp">

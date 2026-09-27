@@ -9,7 +9,7 @@ export interface NavItem { path: string; label: string; module: string; icon: st
 
 export const NAV: NavItem[] = [
   { path: "/prehled", label: "Přehled", module: "prehled", icon: "grid", desc: "Kde se v kraji něco láme, na první pohled", group: "main", sekce: "analyza" },
-  { path: "/mapa", label: "Mapa", module: "mapa", icon: "map", desc: "Kraj obec po obci, Česko kraj po kraji, i v terénu", group: "main", sekce: "analyza" },
+  { path: "/mapa", label: "Mapa", module: "mapa", icon: "map", desc: "Kraj obec po obci, Česko kraj po kraji", group: "main", sekce: "analyza" },
   { path: "/obce", label: "Obce", module: "obce", icon: "home", desc: "Profil kterékoli obce, připravený jako podklad pro radu", group: "main", sekce: "analyza" },
   { path: "/vyhled", label: "Výhled", module: "vyhled", icon: "trend-up", desc: "Kolik bude obyvatel, dětí a seniorů v příštích letech", group: "main", extra: true, sekce: "analyza" },
   { path: "/scenare", label: "Scénáře", module: "scenare", icon: "split", desc: "Co nová výstavba udělá se školou, školkou a rozpočtem", group: "main", sekce: "analyza" },

@@ -512,31 +512,6 @@ a.list-row:hover .list-title { color: var(--accent); }
 .map-appear path.region { animation: region-in 600ms var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); }
 @keyframes region-in { from { opacity: 0; } }
 
-/* 3D terrain: the canvas keeps the flat map's aspect so switching between
-   Plošně and Terén does not make the card jump. */
-.relief-wrap { position: relative; width: 100%; }
-.relief-canvas { position: relative; width: 100%; aspect-ratio: 1000 / 760; border-radius: var(--r-md); overflow: hidden;
-  background: var(--surface-2); border: 1px solid var(--border);
-  cursor: grab; touch-action: none; }
-.relief-canvas:active { cursor: grabbing; }
-.relief-skeleton { width: 100%; aspect-ratio: 1000 / 760; border-radius: var(--r-md); }
-.relief-bar { position: absolute; right: 12px; bottom: 44px; z-index: 5; display: flex; align-items: center; gap: 10px;
-  padding: 7px 10px; border-radius: var(--r-md); }
-.relief-bar input[type="range"] { width: 120px; accent-color: var(--accent); }
-.relief-bar .relief-lock { height: 28px; padding: 0 10px; border-radius: var(--r-md); border: 1px solid var(--border-strong);
-  background: var(--surface); color: var(--text-dim); font-size: .75rem; font-weight: 600; cursor: pointer; }
-/* Locked: the page scrolls through the terrain instead of orbiting it. */
-.relief-canvas.is-locked { cursor: default; }
-.relief-unlock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
-  min-height: 40px; padding: 0 16px; border-radius: var(--r-md);
-  color: var(--text); font-size: .8125rem; font-weight: 600; cursor: pointer; }
-.relief-note { margin-top: 10px; }
-@media (max-width: 640px) {
-  .relief-canvas { aspect-ratio: 1 / 1; }
-  .relief-bar { left: 12px; right: 12px; bottom: 52px; justify-content: space-between; }
-  .relief-bar input[type="range"] { flex: 1; height: 28px; }
-}
-
 /* ------------------------------------------------------------- znak území
    Soubor je čtverec s vycentrovaným, oříznutým znakem (`scripts/erby.py`),
    takže tady stačí velikost. Náhradní štít pro obec bez znaku je tlumený,

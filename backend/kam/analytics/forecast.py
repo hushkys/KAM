@@ -115,12 +115,12 @@ def project(tid: str, until: int | None = None, last_year: int = LAST_YEAR) -> d
     pop = store.raw_series(tid, "110900")
     base_years = sorted(y for y in pop if until is None or y <= until)
     if len(base_years) < 5:
-        return {"available": False, "reason": "Pro území chybí dostatečná časová řada počtu obyvatel."}
+        return {"available": False, "reason": "Pro území není dost let s údajem o počtu obyvatel."}
     y0 = base_years[-1]
     p0 = pop[y0]
     rates = _rates(tid, until)
     if min(len(v) for v in rates.values()) < 3:
-        return {"available": False, "reason": "Chybí složky pohybu obyvatel (narození, zemřelí, migrace)."}
+        return {"available": False, "reason": "Chybí údaje o narozených, zemřelých nebo stěhování."}
 
     parent = t.orp_id if t and t.level == "obec" else ""
     parent_rates = _rates(parent, until) if parent else None
@@ -204,20 +204,20 @@ def project(tid: str, until: int | None = None, last_year: int = LAST_YEAR) -> d
     growth = [(pop[b] - pop[a]) / pop[a] for a, b in zip(base_years, base_years[1:], strict=False) if pop[a]][-15:]
     assumptions = [
         f"Výchozí stav: {int(p0):,} obyvatel k 31. 12. {y0} (ČSÚ, MOS).".replace(",", " "),
-        f"Míry z posledních {n} let (medián): porodnost {fmt(r['b'])}, úmrtnost {fmt(r['d'])}, saldo migrace {fmt(r['m'])}.",
-        "Porodnost se mění s podílem obyvatel 15–64 let, úmrtnost s podílem 65+; migrace se postupně vrací k dlouhodobému mediánu "
-        f"({fmt(m_long)}, poločas {int(MIGRATION_HALF_LIFE)} let).",
-        "Optimistický a rizikový scénář používají příznivý / nepříznivý kvartil každé míry.",
-        "Věková struktura se posouvá podle trendu podílů 0–14 a 65+ (Theil–Sen na logitové škále).",
-        f"Pásmo je 5.–95. percentil z {RUNS} simulací Monte Carlo, které každý rok losují odchylky měr z historie území.",
+        f"Obvyklé hodnoty (medián) za posledních {n} let: porodnost {fmt(r['b'])}, úmrtnost {fmt(r['d'])}, saldo stěhování {fmt(r['m'])}.",
+        "Porodnost sleduje podíl lidí ve věku 15–64 let, úmrtnost podíl lidí 65+. Stěhování se postupně vrací k dlouhodobé obvyklé hodnotě "
+        f"({fmt(m_long)}; polovinu cesty urazí za {int(MIGRATION_HALF_LIFE)} let).",
+        "Optimistický a rizikový výhled počítají s hodnotami z lepších a horších let území (horní a dolní čtvrtina).",
+        "Podíl dětí 0–14 let a seniorů 65+ se dál mění podle dosavadního trendu.",
+        f"Pásmo pokrývá 90 % z {RUNS} simulací, ve kterých se každý rok náhodně opakují výkyvy z historie území.",
     ]
     if w < 1.0:
-        assumptions.append(f"Malé území: míry kombinovány s mírami ORP (váha vlastních dat {w:.0%}).")
+        assumptions.append(f"Malé území: hodnoty jsou doplněné daty správního obvodu ORP (vlastní data mají váhu {w:.0%}).")
     return {
         "available": True, "territory": tid, "base_year": y0, "base_population": p0, "history": history,
         "scenarios": out_scen, "paths": paths,
         "rates": {k: {m: round(v, 6) for m, v in rr.items()} for k, rr in scen.items()},
-        "assumptions": assumptions, "method": "Komponentní model s měrami závislými na věkové struktuře a pásmem z Monte Carlo simulace",
+        "assumptions": assumptions, "method": "Narození, úmrtí a stěhování rok po roce podle věkového složení území, pásmo nejistoty ze simulací",
         "kind": "MODEL", "sd_growth": round(float(np.std(growth)) if len(growth) > 2 else 0.0, 5), "shrink_weight": round(w, 3),
     }
 

@@ -1,4 +1,4 @@
-// Otevření přehledu: kde se kraj rozešel.
+// Otevření přehledu: co se v kraji mění nejvíc.
 //
 // Předchozí verze kreslila hřebeny — každou řadu na vlastní výšku. Vypadalo to
 // dobře a neříkalo to nic: dva tvary vedle sebe, které nemají společné měřítko,
@@ -94,11 +94,10 @@ export function PrehledHook({ kpis, pozorovani, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>{art ? <>Kde se kraj<br />rozešel</> : <>Co se v kraji děje</>}</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>{art ? <>Co se v kraji<br />mění nejvíc</> : <>Co se v kraji děje</>}</NadpisHooku>
         <p className="lead">
-          Každá řada začíná na stu v roce, kdy má první údaj. Dál nezáleží na velikosti čísla, ale na
-          tom, jak daleko se od svého startu dostala — proto jde počet obyvatel porovnat
-          s nezaměstnaností a je vidět, co se rozchází nejrychleji.
+          Každý ukazatel začíná na 100 v roce svého prvního údaje, takže jdou změny porovnat mezi sebou.
+          Níže najdete obce, které potřebují pozornost.
         </p>
         {art && (
           <ul className="ph-radky">
@@ -106,7 +105,7 @@ export function PrehledHook({ kpis, pozorovani, children }: {
               <li key={k.key} className={k.hlavni ? "je-hlavni" : ""}>
                 <i style={{ opacity: k.sila }} />
                 <span className="ph-jmeno">{k.label}</span>
-                <span className="mute">{k.od}</span>
+                <span className="mute">od {k.od}</span>
                 <span className={`ph-zmena ${k.zmena > 0 ? "je-nahoru" : k.zmena < 0 ? "je-dolu" : ""}`}>{zmena(k.zmena)}</span>
               </li>
             ))}
@@ -121,7 +120,7 @@ export function PrehledHook({ kpis, pozorovani, children }: {
         <div className="sc-pane p1">
           <span className="sc-sheen" />
           <svg className="sc-art ph-art" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
-            role="img" aria-label={art ? `Vývoj ${art.krivky.length} ukazatelů kraje jako index od roku prvního údaje, ${art.x0} až ${art.x1}` : "Zatím bez dat"}>
+            role="img" aria-label={art ? `Změna ${art.krivky.length} ukazatelů kraje od roku prvního údaje (= 100), ${art.x0} až ${art.x1}` : "Zatím bez dat"}>
             <defs>
               <linearGradient id={`${uid}p`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--h1)" stopOpacity="0.20" />
@@ -159,7 +158,7 @@ export function PrehledHook({ kpis, pozorovani, children }: {
             <div className="sc-delta glass">
               <Icon name="split" size={14} />
               <strong>{art.rozpeti.toFixed(0)} b.</strong>
-              <span>mezi nejrychlejším a nejpomalejším{pozorovani ? ` · ${num(pozorovani)} hodnot` : ""}</span>
+              <span>rozdíl mezi největší a nejmenší změnou{pozorovani ? ` · ${num(pozorovani)} hodnot v modelu` : ""}</span>
             </div>
           ) : null}
         </div>

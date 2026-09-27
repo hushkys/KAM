@@ -59,7 +59,7 @@ function useTip() {
  * Gesta jsou rozdělená tak, aby se nepraly se stránkou. V základním pohledu
  * jeden prst roluje stránku (`touch-action: pan-y`) a dva prsty přibližují.
  * Jakmile je mapa přiblížená, jeden prst ji posouvá — v tu chvíli už člověk
- * mapu ovládá vědomě a čekal by to. Stejná úvaha jako u 3D terénu.
+ * mapu ovládá vědomě a čekal by to.
  */
 const ZOOM_MAX = 8;
 /** Pod osm pixelů je to klepnutí, ne tah — jinak by se posunem rušil výběr. */
@@ -114,9 +114,23 @@ function useZoom(viewBox: string | undefined) {
 
   const zpet = useCallback(() => setPohled(null), []);
 
+  // Sevření dvěma prsty se počítá ze skutečné vzdálenosti prstů a z posunu
+  // jejich středu mezi dvěma událostmi. Dřívější verze brala „předchozí
+  // vzdálenost" jako současnou minus délku pohybu jednoho prstu — to je menší
+  // číslo, ať se prsty rozjíždějí, nebo sjíždějí, takže mapa se přibližovala
+  // i při oddalování, a posouvala se o celý pohyb jednoho prstu, proto skákala.
+  const sevreni = useRef<{ d: number; mx: number; my: number } | null>(null);
+  const start = useRef<{ x: number; y: number } | null>(null);
+
+  const zmer = () => {
+    const [a, b] = [...prsty.current.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  };
+
   const dolu = (e: React.PointerEvent) => {
     prsty.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (prsty.current.size === 1) tahl.current = false;
+    if (prsty.current.size === 1) { tahl.current = false; start.current = { x: e.clientX, y: e.clientY }; }
+    if (prsty.current.size === 2) { sevreni.current = zmer(); tahl.current = true; }
   };
 
   const pohyb = (e: React.PointerEvent) => {
@@ -127,28 +141,34 @@ function useZoom(viewBox: string | undefined) {
     const stary = p.get(e.pointerId)!;
     const dx = e.clientX - stary.x, dy = e.clientY - stary.y;
     p.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (Math.hypot(dx, dy) > PRAH_TAHU / 4) tahl.current = true;
 
     if (p.size >= 2) {
-      const [a, b] = [...p.values()];
-      const vzdal = Math.hypot(a.x - b.x, a.y - b.y);
-      const predchozi = vzdal - Math.hypot(dx, dy);
+      const ted = zmer(), pred = sevreni.current ?? ted;
+      sevreni.current = ted;
       // Strop na faktor drží gesto v klidu, když jeden prst na okamžik vypadne.
-      const faktor = Math.max(0.5, Math.min(2, predchozi > 0 ? vzdal / predchozi : 1));
-      const fx = ((a.x + b.x) / 2 - r.left) / r.width, fy = ((a.y + b.y) / 2 - r.top) / r.height;
+      const faktor = pred.d > 0 ? Math.max(0.5, Math.min(2, ted.d / pred.d)) : 1;
+      const fx = (ted.mx - r.left) / r.width, fy = (ted.my - r.top) / r.height;
+      const posunX = (ted.mx - pred.mx) / r.width, posunY = (ted.my - pred.my) / r.height;
       uprav((v) => {
         const w = v.w / faktor, h = w * (v.h / v.w);
-        return { x: v.x + (v.w - w) * fx - (dx / r.width) * v.w, y: v.y + (v.h - h) * fy - (dy / r.height) * v.h, w, h };
+        return { x: v.x + (v.w - w) * fx - posunX * w, y: v.y + (v.h - h) * fy - posunY * h, w, h };
       });
       return;
     }
+    // Tah se měří od místa dotyku, ne po jednotlivých událostech: s prahem
+    // na jednu událost spolklo klepnutí i obyčejné chvění prstu.
+    if (start.current && Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > PRAH_TAHU) tahl.current = true;
     // Jeden prst posouvá jen přiblíženou mapu; jinak patří rolování stránky.
-    if (zoom > 1.01 && e.pointerType !== "mouse") {
+    if (zoom > 1.01 && e.pointerType !== "mouse" && tahl.current) {
       uprav((v) => ({ ...v, x: v.x - (dx / r.width) * v.w, y: v.y - (dy / r.height) * v.h }));
     }
   };
 
-  const nahoru = (e: React.PointerEvent) => { prsty.current.delete(e.pointerId); };
+  const nahoru = (e: React.PointerEvent) => {
+    prsty.current.delete(e.pointerId);
+    if (prsty.current.size < 2) sevreni.current = null;
+    if (prsty.current.size === 0) start.current = null;
+  };
 
   const gesta = {
     ref: plocha,
@@ -167,7 +187,7 @@ function Zoom({ zoom, priblizit, zpet }: { zoom: number; priblizit: (f: number) 
     <div className="map-zoom" role="group" aria-label="Přiblížení mapy">
       <button type="button" className="icon-btn sm" onClick={() => priblizit(1.6)} disabled={zoom >= ZOOM_MAX - 0.01} aria-label="Přiblížit" title="Přiblížit"><Icon name="plus" size={16} /></button>
       <button type="button" className="icon-btn sm" onClick={() => priblizit(1 / 1.6)} disabled={zoom <= 1.01} aria-label="Oddálit" title="Oddálit"><Icon name="minus" size={16} /></button>
-      <button type="button" className="icon-btn sm" onClick={zpet} disabled={zoom <= 1.01} aria-label="Celý kraj" title="Celý kraj"><Icon name="refresh" size={15} /></button>
+      <button type="button" className="icon-btn sm" onClick={zpet} disabled={zoom <= 1.01} aria-label="Zobrazit celý kraj" title="Zobrazit celý kraj"><Icon name="refresh" size={15} /></button>
       {zoom > 1.01 && <span className="map-zoom-hod" aria-live="polite">{zoom.toFixed(1)}×</span>}
     </div>
   );
@@ -238,7 +258,7 @@ export function KhkMap({ level, values, breaks, polarity = 1, selected, onSelect
               tabIndex={level === "orp" || i < 1000 ? 0 : -1} role="button" aria-label={`${s.name}: ${format(v ?? null)}`}
               data-ctx={id} data-ctx-label={s.name}
               onClick={() => onSelect(id, s.name)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(id, s.name))}
-              onPointerMove={(e) => place(e, s.name, lines)} onPointerLeave={() => setTip(null)}
+              onPointerMove={(e) => e.pointerType !== "touch" && place(e, s.name, lines)} onPointerLeave={() => setTip(null)}
               onFocus={(e) => placeEl(e.currentTarget, s.name, lines)} onBlur={() => setTip(null)} />
           );
         })}
@@ -265,7 +285,7 @@ export function MapLegend({ breaks, polarity = 1, format, unit }: { breaks: numb
       <span className="num">≤ {f(breaks[0])}{unit === "%" ? " %" : ""}</span>
       <span className="scale">{colors.map((c) => <span key={c} style={{ background: c }} />)}</span>
       <span className="num">&gt; {f(breaks[breaks.length - 1])}{unit === "%" ? " %" : ""}</span>
-      <span className="mute">· šedá = bez dat</span>
+      <span className="mute">· šedá: data chybí</span>
     </div>
   );
 }

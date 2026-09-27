@@ -158,24 +158,6 @@ def test_eurostat_classification_uses_english_stems():
     assert classify_en("Železniční přejezdy") == "ostatni"
 
 
-def test_relief_bbox_matches_the_map_projection():
-    """The elevation grid has to sit in the same frame as the SVG paths."""
-    from kam.ingest.geo import KX, Projector
-    from kam.ingest.relief import _bbox_of
-
-    p = Projector((15.2, 50.1, 16.6, 50.7), 1000, 16)
-    khk = {"viewBox": f"0 0 {p.width:.0f} {p.height:.0f}",
-           "projection": {"lon0": p.lon0, "lat1": p.lat1, "k": p.k, "kx": KX, "pad": p.pad}}
-    west, south, east, north = _bbox_of(khk)
-    # The corners of the drawing, projected back, are the corners of the grid.
-    x0, y0 = p(west, north)
-    x1, y1 = p(east, south)
-    assert (round(x0), round(y0)) == (0, 0)
-    assert (round(x1), round(y1)) == (round(p.width), round(p.height))
-    # And the kraj itself is inside, with the padding around it.
-    assert west < 15.2 and east > 16.6 and south < 50.1 and north > 50.7
-
-
 def test_eurostat_rows_say_what_territory_they_cover():
     """Coverage decides `region_code`, and a narrowed link keeps its filter."""
     from kam.ingest.eurostat import build_rows

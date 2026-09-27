@@ -62,7 +62,7 @@ export function Notifications() {
   const r = btn.current?.getBoundingClientRect();
   return (
     <>
-      <button ref={btn} className={`icon-btn ${open ? "is-on" : ""}`} aria-label={`Upozornění${unread ? ` (${unread} nových)` : ""}`} aria-expanded={open} onClick={toggle} title="Upozornění">
+      <button ref={btn} className={`icon-btn ${open ? "is-on" : ""}`} aria-label={`Upozornění${unread ? ` (nepřečtená: ${unread})` : ""}`} aria-expanded={open} onClick={toggle} title="Upozornění">
         <Icon name="bell" size={19} />
         {unread > 0 && <span className="count-dot">{unread > 9 ? "9+" : unread}</span>}
       </button>
@@ -70,9 +70,9 @@ export function Notifications() {
         <div ref={panel} className="popover glass" role="dialog" aria-label="Upozornění" style={{ top: r.bottom + 10, right: Math.max(8, window.innerWidth - r.right - 60) }}>
           <div className="popover-head">
             <h3>Upozornění</h3>
-            {unread > 0 && <button className="btn btn-quiet btn-sm" onClick={markAll}>Označit jako přečtené</button>}
+            {unread > 0 && <button className="btn btn-quiet btn-sm" onClick={markAll}>Označit vše jako přečtené</button>}
           </div>
-          {notes.length === 0 && <div className="empty"><strong>Vše v pořádku</strong><p>Žádná nová upozornění.</p></div>}
+          {notes.length === 0 && <div className="empty"><strong>Nic nového</strong><p>Teď nic nečeká na vaše rozhodnutí.</p></div>}
           {notes.map((n) => (
             <Link key={n.id} to={n.href} className="notif" onClick={() => { setOpen(false); markAll(); }}>
               <span style={{ paddingTop: 3 }}><Severity level={n.level} label="" /></span>
@@ -83,7 +83,7 @@ export function Notifications() {
             </Link>
           ))}
           <div className="popover-head" style={{ paddingTop: 10 }}>
-            <button className="btn btn-quiet btn-sm" onClick={() => { setOpen(false); navigate("/data?tab=potreby"); }}>Sledování datových potřeb <Icon name="arrow-right" size={14} /></button>
+            <button className="btn btn-quiet btn-sm" onClick={() => { setOpen(false); navigate("/data?tab=potreby"); }}>Otevřít chybějící data <Icon name="arrow-right" size={14} /></button>
           </div>
         </div>,
         document.body,

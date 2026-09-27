@@ -47,17 +47,17 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
     </label>
   );
   return (
-    <Card i={1} title={data ? `${num(data.total)} ${status === "ok" ? "funkčních " : ""}datových sad` : "Datové sady"} icon="database" actions={<a className="btn btn-sm" href="/api/datasets/export.csv"><Icon name="download" size={15} /> Export CSV</a>}>
+    <Card i={1} title={data ? `${num(data.total)} ${status === "ok" ? "funkčních " : ""}datových sad` : "Datové sady"} icon="database" actions={<a className="btn btn-sm" href="/api/datasets/export.csv"><Icon name="download" size={15} /> Stáhnout seznam (CSV)</a>}>
       <div className="input-icon" style={{ marginBottom: 12 }}><Icon name="search" size={17} /><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat v názvech a popisech (i bez diakritiky)…" aria-label="Hledat datové sady" /></div>
       <div className="filters">
         {sel("source", src, (sources?.sources ?? []).filter((s) => s.datasets > 0).map((s) => [s.id, s.name]), "Zdroj")}
         {sel("pillar", pillar, PILLARS, "Oblast")}
-        {sel("region", region, KRAJE, "Územní rozsah")}
-        {sel("loaded", loaded, [["true", "Načteno do modelu"], ["false", "Metadata"]], "Využití")}
-        {sel("fresh", fresh, [["aktualni", "Aktuální"], ["zastarala", "Po termínu"], ["neznama", "Neuvedeno"]], "Čerstvost")}
-        <label className="field"><span className="field-label">Dostupnost odkazu</span>
+        {sel("region", region, KRAJE, "Území")}
+        {sel("loaded", loaded, [["true", "Načteno do modelu"], ["false", "Jen v katalogu"]], "Využití")}
+        {sel("fresh", fresh, [["aktualni", "Aktuální"], ["zastarala", "Po termínu"], ["neznama", "Termín neuveden"]], "Aktuálnost")}
+        <label className="field"><span className="field-label">Odkaz</span>
           <select className="select" value={status} onChange={(e) => setQuery({ status: e.target.value === "ok" ? null : e.target.value, page: null })}>
-            <option value="ok">Funkční (ověřeno)</option><option value="chyba">Nedostupné</option><option value="bez_odkazu">Bez odkazu</option><option value="vse">Vše</option>
+            <option value="ok">Funkční</option><option value="chyba">Nefunkční</option><option value="bez_odkazu">Bez odkazu</option><option value="vse">Vše</option>
           </select>
         </label>
       </div>
@@ -72,12 +72,12 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
           </div>
           <div className="ds-links">
             {d.download_url && <a className="icon-btn sm" href={d.download_url} target="_blank" rel="noopener noreferrer" aria-label="Stáhnout data" title="Stáhnout data"><Icon name="download" size={16} /></a>}
-            <a className="icon-btn sm" href={d.url} target="_blank" rel="noopener noreferrer" aria-label="Otevřít v katalogu" title="Otevřít v katalogu"><Icon name="external" size={16} /></a>
+            <a className="icon-btn sm" href={d.url} target="_blank" rel="noopener noreferrer" aria-label="Otevřít stránku sady" title="Otevřít stránku sady"><Icon name="external" size={16} /></a>
           </div>
           {d.description && <p className="ds-desc">{d.description}</p>}
           <div className="ds-tags">
-            {d.check_status === "ok" && <Pill tone="ok" icon="check">Odkaz ověřen</Pill>}
-            {d.check_status === "chyba" && <Pill tone="bad" icon="alert">Nedostupné{d.check_code ? ` (${d.check_code})` : ""}</Pill>}
+            {d.check_status === "ok" && <Pill tone="ok" icon="check">Odkaz funguje</Pill>}
+            {d.check_status === "chyba" && <Pill tone="bad" icon="alert">Odkaz nefunguje{d.check_code ? ` (${d.check_code})` : ""}</Pill>}
             {d.check_status === "bez_odkazu" && <Pill tone="warn">Bez odkazu na data</Pill>}
             {d.loaded && <Pill tone="accent" icon="database">V modelu</Pill>}
             <Pill>{d.pillar_label}</Pill>
@@ -115,7 +115,7 @@ function ZdrojeSkupina({ label, rows, i }: { label: string; rows: SourceRow[]; i
     <Card i={i} title={`${label} (${num(rows.length)})`} icon="layers" flush>
       <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
         <table className="table">
-          <thead><tr><th>Zdroj</th><th>Typ</th><th className="r">Funkčních</th><th className="r">Celkem</th><th>Sklizeno</th><th /></tr></thead>
+          <thead><tr><th>Zdroj</th><th>Typ</th><th className="r">Funkčních</th><th className="r">Celkem</th><th>Načteno</th><th /></tr></thead>
           <tbody>
             {videt.map((s) => (
               <tr key={s.id}>
@@ -126,7 +126,7 @@ function ZdrojeSkupina({ label, rows, i }: { label: string; rows: SourceRow[]; i
                 <td className="small mute">{s.harvested_at ? ago(s.harvested_at) : "—"}</td>
                 <td className="r" style={{ whiteSpace: "nowrap" }}>
                   {s.portal_url && <a className="icon-btn sm" href={s.portal_url} target="_blank" rel="noopener noreferrer" aria-label={`Otevřít ${s.name}`}><Icon name="external" size={15} /></a>}
-                  {s.datasets > 0 && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady"><Icon name="filter" size={15} /></Link>}
+                  {s.datasets > 0 && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady tohoto zdroje"><Icon name="filter" size={15} /></Link>}
                 </td>
               </tr>
             ))}
@@ -153,7 +153,7 @@ function SourcesTab({ data }: { data: Sources | undefined }) {
       {groups.map(([g, label], gi) => (
         <ZdrojeSkupina key={g} i={gi} label={label} rows={data.sources.filter((s) => s.group === g && (s.datasets > 0 || s.kind !== "nkod"))} />
       ))}
-      <p className="small mute">Duplicity mezi NKOD a portály krajů a měst jsou sloučené — každá sada je započítána jednou a nese oba odkazy. Funkční = odkaz na data nebo stránku sady při poslední kontrole odpověděl. IČ 17651921 patří Digitální a informační agentuře.</p>
+      <p className="small mute">Sada, která je v celostátním katalogu (NKOD) i na portálu kraje nebo města, se počítá jednou a má oba odkazy. Funkční znamená, že odkaz na data nebo stránku sady při poslední kontrole odpověděl — ne že je obsah v pořádku. IČ 17651921 patří Digitální a informační agentuře.</p>
     </div>
   );
 }
@@ -181,9 +181,9 @@ function coverageVeta(c: Gaps["coverage"]): string {
   if (!po.length || !pu.length) return "";
   const pMin = Math.min(...po), pMax = Math.max(...po), uMin = Math.min(...pu), uMax = Math.max(...pu);
   const zaver = pMax - pMin > (uMax - uMin) * 2
-    ? "Chybějící data nejsou otázka místa, ale oboru."
-    : "Liší se i jednotlivá území mezi sebou.";
-  return `Mezi oblastmi je rozdíl ${pMin}–${pMax} %, mezi ORP ${uMin}–${uMax} %. ${zaver}`;
+    ? "Data tedy chybějí podle oboru, ne podle místa."
+    : "Rozdíly jsou i mezi územími.";
+  return `Pokrytí se mezi oblastmi pohybuje od ${pMin} do ${pMax} %, mezi správními obvody ORP od ${uMin} do ${uMax} %. ${zaver}`;
 }
 
 function Needs() {
@@ -192,19 +192,19 @@ function Needs() {
   if (!data) return <span className="skeleton" style={{ height: 400, width: "100%" }} />;
   return (
     <div className="grid">
-      <Card span={4} i={0} title="Zdraví dat" icon="gauge" className="sim-sticky">
-        <div className="row" style={{ alignItems: "baseline" }}><span className="kpi-value">{data.coverage.health} %</span><span className="muted small">průměrné pokrytí</span></div>
+      <Card span={4} i={0} title="Pokrytí podle oblastí" icon="gauge" className="sim-sticky">
+        <div className="row" style={{ alignItems: "baseline" }}><span className="kpi-value">{data.coverage.health} %</span><span className="muted small">průměr všech oblastí</span></div>
         <div className="section-gap" />
         <BarList items={data.coverage.pillars.map((p) => ({ key: p.key, label: p.label, value: p.score }))} max={100} format={(v) => `${v} %`} />
       </Card>
-      <Card span={8} i={1} title="Proaktivní upozornění" icon="bell" actions={<Link className="btn btn-sm" to="/podnety?kind=chybejici_data"><Icon name="plus" size={14} /> Nahlásit chybějící data</Link>}>
+      <Card span={8} i={1} title="Kde data chybějí nebo stárnou" icon="bell" actions={<Link className="btn btn-sm" to="/podnety?kind=chybejici_data"><Icon name="plus" size={14} /> Nahlásit chybějící data</Link>}>
         {data.alerts.length === 0 && <Empty icon="check" title="Bez upozornění" />}
         {data.alerts.filter((a) => a.kind !== "pokryti").slice(0, 8).map((a) => (
           <div className="risk-card" key={a.title}><div className="rc-head"><span className="rc-title">{a.title}</span><Severity level={a.level} /></div><p>{a.text}</p></div>
         ))}
-        {data.alerts.filter((a) => a.kind === "pokryti").length > 0 && <p className="small mute">+ {data.alerts.filter((a) => a.kind === "pokryti").length} upozornění na nízké pokrytí v ORP (matice níže).</p>}
+        {data.alerts.filter((a) => a.kind === "pokryti").length > 0 && <p className="small mute">+ {data.alerts.filter((a) => a.kind === "pokryti").length} upozornění na nízké pokrytí v ORP (viz tabulka níže).</p>}
       </Card>
-      <Card span={12} i={2} title="Pokrytí dat: ORP × oblast" icon="grid" actions={<span className="xsmall mute">podíl obcí s daty v posledním roce, snížený za stáří dat</span>}>
+      <Card span={12} i={2} title="Pokrytí dat ve správních obvodech ORP" icon="grid" actions={<span className="xsmall mute">% obcí s daty za poslední rok; starší data se počítají méně</span>}>
         <p className="small mute" style={{ margin: "0 0 14px" }}>{coverageVeta(data.coverage)}</p>
         <div className="table-wrap">
           <div className="matrix" role="table" aria-label="Pokrytí dat"
@@ -245,16 +245,16 @@ Chybí u části obcí: ${c.missing.join(", ")}` : ""}`}
           <span>0 %</span>
           <span className="skala" style={{ background: `linear-gradient(90deg, ${cellColor(0)}, ${cellColor(50)}, ${cellColor(100)})` }} />
           <span>100 %</span>
-          <span style={{ marginLeft: 6 }}><span className="obrys">42</span> odchylka od kraje o {ODCHYLKA} a více bodů</span>
+          <span style={{ marginLeft: 6 }}><span className="obrys">42</span> liší se od kraje o {ODCHYLKA} a více bodů</span>
         </div>
       </Card>
-      <Card span={6} i={3} title="Čerstvost sad Královéhradeckého kraje" icon="refresh" flush>
+      <Card span={6} i={3} title="Aktuálnost sad kraje" icon="refresh" flush>
         <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
-          <table className="table"><thead><tr><th>Oblast</th><th className="r">Sad</th><th className="r">Aktuální</th><th className="r">Po termínu</th><th className="r">Bez periodicity</th></tr></thead>
+          <table className="table"><thead><tr><th>Oblast</th><th className="r">Sad</th><th className="r">Aktuální</th><th className="r">Po termínu</th><th className="r">Termín neuveden</th></tr></thead>
             <tbody>{data.freshness.pillars.filter((p) => p.total).map((p) => <tr key={p.pillar}><td>{p.label}</td><td className="r">{num(p.total)}</td><td className="r">{num(p.fresh)}</td><td className="r">{num(p.stale)}</td><td className="r">{num(p.unknown)}</td></tr>)}</tbody></table>
         </div>
       </Card>
-      <Card span={6} i={4} title="Co model musí nahrazovat předpokladem" icon="alert">
+      <Card span={6} i={4} title="Kde model nemá data a počítá s předpokladem" icon="alert">
         {data.structural.map((s) => <div className="risk-card" key={s.title}><div className="rc-head"><span className="rc-title">{s.title}</span><Pill>{s.pillar_label}</Pill></div><p>{s.text}</p></div>)}
       </Card>
     </div>
@@ -296,7 +296,7 @@ const CESTY: { cesta: string; nazev: string; popis: string; parametry: string }[
 
 const UKAZKY: { popis: string; url: string }[] = [
   { popis: "Počet obyvatel všech obcí od roku 2020, jako CSV do tabulky", url: "/api/v1/hodnoty?ukazatel=110900&uroven=obec&od=2020&format=csv" },
-  { popis: "Všechno, co model ví o jedné obci", url: "/api/v1/hodnoty?uzemi=obec:569810" },
+  { popis: "Všechny hodnoty jedné obce", url: "/api/v1/hodnoty?uzemi=obec:569810" },
   { popis: "Které ukazatele se týkají zdravotnictví", url: "/api/v1/ukazatele?oblast=zdravotnictvi" },
   { popis: "Seznam ORP i s kódy RÚIAN", url: "/api/v1/uzemi?uroven=orp" },
   { popis: "Datové sady o dopravě", url: "/api/v1/katalog?hledat=doprava" },
@@ -321,12 +321,12 @@ function Api() {
 
   return (
     <div className="stack-y">
-      <Card i={0} title="Jedno API na všechna data" icon="database"
+      <Card i={0} title="Všechna data ke stažení" icon="database"
         actions={<a className="btn btn-sm" href="/api/docs" target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Technická dokumentace</a>}>
         <p className="small muted" style={{ margin: "0 0 14px" }}>
-          Data, která KAM posbíral, si můžete stáhnout a použít po svém — bez klíče, bez registrace
-          a bez omezení počtu dotazů. Volat jde i přímo z prohlížeče na cizí stránce; hlavička CORS
-          je na <code>/api/v1</code> schválně.
+          Čísla, území a zařízení, která KAM posbíral, si stáhnete do tabulky nebo vlastní aplikace —
+          bez klíče, bez registrace a bez omezení počtu dotazů. <code>/api/v1</code> má zapnutý CORS,
+          takže jde volat i z prohlížeče na jiném webu.
         </p>
         {r && (
           <div className="facts-list">
@@ -339,12 +339,12 @@ function Api() {
           </div>
         )}
         <p className="xsmall mute" style={{ marginTop: 12 }}>
-          Licence dat se řídí původním zdrojem a je uvedená u každé datové sady v katalogu. Kód aplikace je MIT.
+          Licence dat je ta, kterou určil původní zdroj; najdete ji u každé sady v katalogu. Kód aplikace je pod licencí MIT.
         </p>
       </Card>
 
-      <Card i={1} title="Vyzkoušejte hned" icon="play">
-        <p className="small muted" style={{ marginTop: 0 }}>Odkazy jsou živé — otevřou se v novém panelu s opravdovou odpovědí.</p>
+      <Card i={1} title="Vyzkoušejte si to" icon="play">
+        <p className="small muted" style={{ marginTop: 0 }}>Každý odkaz otevře v nové záložce skutečnou odpověď.</p>
         {UKAZKY.map((u) => (
           <div className="api-ukazka" key={u.url}>
             <span className="api-popis">{u.popis}</span>
@@ -353,16 +353,16 @@ function Api() {
               <button className="icon-btn sm" onClick={() => kopiruj(zaklad + u.url)} aria-label="Kopírovat odkaz" title="Kopírovat odkaz">
                 <Icon name={zkopirovano === zaklad + u.url ? "check" : "copy"} size={15} />
               </button>
-              <a className="icon-btn sm" href={u.url} target="_blank" rel="noopener noreferrer" aria-label="Otevřít" title="Otevřít"><Icon name="external" size={15} /></a>
+              <a className="icon-btn sm" href={u.url} target="_blank" rel="noopener noreferrer" aria-label="Otevřít v nové záložce" title="Otevřít v nové záložce"><Icon name="external" size={15} /></a>
             </span>
           </div>
         ))}
       </Card>
 
-      <Card i={2} title="Všechny cesty" icon="layers" flush>
+      <Card i={2} title="Všechny adresy API" icon="layers" flush>
         <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
           <table className="table">
-            <thead><tr><th>Cesta</th><th>Co vrací</th><th>Parametry</th></tr></thead>
+            <thead><tr><th>Adresa</th><th>Co vrací</th><th>Parametry</th></tr></thead>
             <tbody>
               {CESTY.map((c) => (
                 <tr key={c.cesta}>
@@ -376,23 +376,21 @@ function Api() {
         </div>
       </Card>
 
-      <Card i={3} title="Formáty a stahování po dávkách" icon="download">
+      <Card i={3} title="Formáty" icon="download">
         <div className="facts-list">
-          <div className="fact-row"><span><code>format=json</code></span><span className="mute small">výchozí, se stránkováním a počtem</span></div>
-          <div className="fact-row"><span><code>format=csv</code></span><span className="mute small">pro tabulkový procesor, s BOM kvůli Excelu</span></div>
-          <div className="fact-row"><span><code>format=ndjson</code></span><span className="mute small">řádek = záznam, pro velké dávky</span></div>
+          <div className="fact-row"><span><code>format=json</code></span><span className="mute small">výchozí, po stránkách a s celkovým počtem</span></div>
+          <div className="fact-row"><span><code>format=csv</code></span><span className="mute small">do Excelu a jiných tabulek (s BOM, aby seděla diakritika)</span></div>
+          <div className="fact-row"><span><code>format=ndjson</code></span><span className="mute small">jeden řádek = jeden záznam, pro velké objemy</span></div>
         </div>
         <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
-          CSV a NDJSON se streamují a nemají strop, takže jimi projde i celá databáze najednou.
-          JSON stránkuje po <code>limit</code> položkách a v odpovědi posílá <code>dalsi</code>
-          {" "}s adresou další stránky.
+          CSV a NDJSON se posílají průběžně a nemají strop — stáhne se jimi i celá databáze najednou.
+          JSON vrací po <code>limit</code> položkách a v poli <code>dalsi</code> posílá adresu další stránky.
         </p>
       </Card>
 
       <Card i={4} title="Klient do příkazové řádky" icon="chart">
         <p className="small muted" style={{ marginTop: 0 }}>
-          Ve zdrojovém kódu je <code>scripts/kam.py</code> — klient, který si vystačí se standardní
-          knihovnou Pythonu. Nástroj, kvůli kterému si musí úřad nejdřív něco nainstalovat, se nepoužije.
+          Ve zdrojovém kódu je <code>scripts/kam.py</code>. Stačí mu Python, nic dalšího se neinstaluje.
         </p>
         <pre className="api-kod"><code>{`python kam.py info
 python kam.py ukazatele --hledat lékař
@@ -412,19 +410,19 @@ export function DataPage() {
     <>
       <DataHook oblasti={d?.by_pillar ?? []} overenych={d?.verified} celkem={d?.total} poskytovatelu={d?.publishers}>
         <div className="row" style={{ marginTop: 20 }}>
-          <a className="btn" href="/api/datasets/export.csv"><Icon name="download" size={16} /> Export katalogu (CSV)</a>
+          <a className="btn" href="/api/datasets/export.csv"><Icon name="download" size={16} /> Stáhnout katalog (CSV)</a>
           <Link className="btn btn-primary" to="/data?tab=api"><Icon name="share" size={16} /> Otevřené API</Link>
         </div>
       </DataHook>
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
         <Stat i={0} label="Funkčních datových sad" value={num(d?.verified ?? null)} sub={d ? `z ${num(d.total)} v katalogu` : ""} />
-        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="NKOD, kraje, města, CENIA" />
-        <Stat i={2} label="Kraje a krajské portály" value={num(d?.kraje ?? null)} sub="funkčních sad" />
-        <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="MOS ČSÚ, vrstvy Data KHK" />
-        <Stat i={4} label="Vyřazeno" value={num(d ? d.broken + d.no_link : null)} sub="nedostupný nebo chybějící odkaz" />
+        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="stát, kraje, města a další" />
+        <Stat i={2} label="Funkčních sad od krajů" value={num(d?.kraje ?? null)} sub="včetně krajských portálů" />
+        <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="statistiky ČSÚ a data kraje" />
+        <Stat i={4} label="Nefunkčních" value={num(d ? d.broken + d.no_link : null)} sub="odkaz neodpověděl nebo chybí" />
       </div>
       <Tabs label="Sekce" value={tab} onChange={(v) => setQuery({ tab: v === "katalog" ? null : v, page: null })}
-        tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Datové potřeby", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />
+        tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Chybějící data", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />
       <div style={{ "--i": 0 } as CSSProperties}>
         {tab === "katalog" && <Catalog sources={d} />}
         {tab === "zdroje" && <SourcesTab data={d} />}

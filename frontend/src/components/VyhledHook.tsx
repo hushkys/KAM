@@ -83,11 +83,10 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Budoucnost není čára.<br />Je to kužel.</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Kolik lidí tu bude žít<br />a jak jistě to víme</NadpisHooku>
         <p className="lead">
-          Každé vlákno je jeden běh modelu, který si vylosoval porodnost, úmrtnost a migraci z vlastní
-          historie území. Vlevo splývají, protože minulost je jedna. Doprava se rozestupují — a to
-          rozestoupení je poctivá odpověď na otázku, co bude.
+          Výhled počtu obyvatel podle porodnosti, úmrtnosti a stěhování v tomto území. Není to fakt:
+          každá slabá čára je jeden možný průběh, a čím víc se rozcházejí, tím nejistější je odhad.
         </p>
         <div className="sc-hook-legend">
           <span><i className="sw base" /> Skutečnost</span>
@@ -103,7 +102,7 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
         <div className="sc-pane p1">
           <span className="sc-sheen" />
           <svg className="sc-art vy-art" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
-            role="img" aria-label={art ? `Kužel možných průběhů počtu obyvatel do roku ${art.konecRok}` : "Zatím bez výhledu"}>
+            role="img" aria-label={art ? `Možné průběhy počtu obyvatel do roku ${art.konecRok}` : "Zatím bez výhledu"}>
             <defs>
               <linearGradient id={`${uid}b`} x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="var(--h1)" stopOpacity="0.02" />
@@ -135,7 +134,7 @@ export function VyhledHook({ historie, cesty, pravdepodobny, pasmo, baseYear, te
             <div className="sc-delta glass">
               <Icon name="split" size={14} />
               <strong>{num(art.sirka)}</strong>
-              <span>obyvatel je šířka pásma v roce {art.konecRok}</span>
+              <span>obyvatel je šířka pásma nejistoty v roce {art.konecRok}</span>
             </div>
           )}
         </div>

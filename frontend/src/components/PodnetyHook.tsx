@@ -68,14 +68,14 @@ export function PodnetyHook({ skupiny, prah, hlaseni, children }: {
       <div className="sc-hook-copy">
         <NadpisHooku id={`${uid}-t`}>{art.p} {plural(art.p, "hlášení", "hlášení", "hlášení")},<br />jeden podnět</NadpisHooku>
         <p className="lead">
-          Jedno hlášení je stížnost. {art.p} podobných ze stejné obce je doklad — KAM je spojí, přiloží
-          k nim čísla z modelu a vznikne formální podnět pro krajský úřad.
+          Nahlaste, co ve vaší obci nefunguje nebo jaká data chybí. Od {art.p} podobných hlášení
+          z jedné obce je KAM spojí do formálního podnětu pro krajský úřad a přiloží data o obci.
         </p>
         <div className="sc-hook-legend">
           {art.nejdal > 0
-            ? <span className="mute">nejdál je skupina s {num(art.nejdal)} {plural(art.nejdal, "hlášením", "hlášeními", "hlášeními")}{chybi > 0 ? ` — chybí ${chybi}` : ""}</span>
-            : <span className="mute">zatím bez hlášení — první je vaše</span>}
-          {art.hotove > 0 && <span className="mute">{num(art.hotove)} {plural(art.hotove, "skupina prošla prahem", "skupiny prošly prahem", "skupin prošlo prahem")}</span>}
+            ? <span className="mute">nejdál je skupina s {num(art.nejdal)} {plural(art.nejdal, "hlášením", "hlášeními", "hlášeními")}{chybi > 0 ? `, do prahu chybí ${chybi}` : ""}</span>
+            : <span className="mute">zatím žádné hlášení — první může být vaše</span>}
+          {art.hotove > 0 && <span className="mute">{num(art.hotove)} {plural(art.hotove, "skupina už je podnětem", "skupiny už jsou podnětem", "skupin už je podnětem")}</span>}
         </div>
         {children}
       </div>

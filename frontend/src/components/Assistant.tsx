@@ -115,13 +115,13 @@ export function useChat(territory: string | null) {
           patch(aid, (m) => ({ ...m, done: true, ms: Number(d.ms ?? 0), fallback: Boolean(d.fallback),
                                meta: d.model ? { ...m.meta, model: String(d.model) } : m.meta }));
         } else if (ev.event === "error") {
-          patch(aid, (m) => ({ ...m, done: true, error: true, text: m.text || String(d.text ?? "Chyba asistenta.") }));
+          patch(aid, (m) => ({ ...m, done: true, error: true, text: m.text || String(d.text ?? "Asistent neodpověděl. Zkuste to prosím znovu.") }));
         }
       }
       pendingNav.forEach((p) => navigate(p));
     } catch (e) {
       const aborted = (e as Error).name === "AbortError";
-      patch(aid, (m) => ({ ...m, done: true, error: !aborted, text: m.text || (aborted ? "Zastaveno." : (e as Error).message) }));
+      patch(aid, (m) => ({ ...m, done: true, error: !aborted, text: m.text || (aborted ? "Odpověď jste zastavili." : (e as Error).message) }));
     } finally {
       patch(aid, (m) => ({ ...m, done: true }));
       setBusy(false);
@@ -160,7 +160,7 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
         {m.note && <p className="xsmall mute">{m.note}</p>}
         {m.meta?.simulation && (
           <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={() => navigate(`/scenare?t=${m.meta!.simulation!.territory}&iv=${encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(m.meta!.simulation!.interventions)))))}`)}>
-            <Icon name="split" size={15} /> Otevřít v simulátoru
+            <Icon name="split" size={15} /> Otevřít ve Scénářích
           </button>
         )}
       </div>
@@ -171,7 +171,7 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
               <Icon name={route.tier === "cloud" ? "globe" : route.tier === "rules" ? "wand" : route.tier === "none" ? "shield" : "monitor"} size={13} />
               {route.tier === "rules" ? "Příkaz aplikace" : route.tier === "none" ? "Ochrana" : m.meta?.model ?? "model"}
               {m.ms ? ` · ${(m.ms / 1000).toFixed(1).replace(".", ",")} s` : ""}
-              {m.fallback ? " · bez modelu" : ""}
+              {m.fallback ? " · jen podklady, bez AI" : ""}
             </span>
           )}
           {sources.slice(0, 8).map((s) => (
@@ -185,9 +185,9 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
       )}
       {m.done && m.meta?.territory && m.role === "assistant" && m.meta.route?.intent !== "ACTION" && (
         <div className="chips" style={{ marginTop: 6 }}>
-          <button className="chip-btn" onClick={() => onAsk(`Proč je ${m.meta!.territory!.name} rizikové území?`)}>Proč?</button>
-          <button className="chip-btn" onClick={() => onAsk(`Co se v území ${m.meta!.territory!.name} stane, když nic neuděláme?`)}>Bez zásahu</button>
-          <button className="chip-btn" onClick={() => navigate(`/obce/${m.meta!.territory!.id}`)}>Profil území</button>
+          <button className="chip-btn" onClick={() => onAsk(`Proč je ${m.meta!.territory!.name} rizikové území?`)}>Proč je rizikové</button>
+          <button className="chip-btn" onClick={() => onAsk(`Co se v území ${m.meta!.territory!.name} stane, když nic neuděláme?`)}>Co když se nic neudělá</button>
+          <button className="chip-btn" onClick={() => navigate(`/obce/${m.meta!.territory!.id}`)}>Otevřít profil</button>
         </div>
       )}
     </div>
@@ -195,6 +195,17 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
 }
 
 export type ChatState = ReturnType<typeof useChat>;
+
+/** Příklady otázek pod polem. Nejsou to reklamní návrhy: každá míří na jiný
+ *  druh odpovědi (rizika, rozpočet, scénář, ovládání aplikace), takže
+ *  člověk, který asistenta vidí poprvé, pochopí, co všechno se dá zeptat.
+ *  Jen na stránce asistenta — v šuplíku na telefonu by vytlačily pozdrav. */
+const PRIKLADY = [
+  "Kterým obcím v kraji hrozí vylidnění?",
+  "Jak hospodaří Náchod?",
+  "Co kdyby Jaroměř rozšířila základní školu?",
+  "Přepni na tmavý motiv a otevři mapu",
+];
 
 export function Chat({ territory, compact = false, onClose, header, chat }: {
   territory: string | null; compact?: boolean; onClose?: () => void; header?: ReactNode; chat?: ChatState }) {
@@ -252,7 +263,7 @@ export function Chat({ territory, compact = false, onClose, header, chat }: {
   return (
     <div className={`chat ${compact ? "is-compact" : ""}`} data-stav={uvod ? "uvod" : "chat"}>
       <div className="chat-head">
-        {header ?? <strong>Asistent KAM</strong>}
+        {header ?? <span className="chat-nazev"><Icon name="sparkle" size={15} /> Asistent</span>}
         <span className="navbar-spacer" />
         {!uvod && <button className="icon-btn sm" onClick={reset} aria-label="Nová konverzace" title="Nová konverzace"><Icon name="plus" size={17} /></button>}
         {onClose && <button className="icon-btn sm" onClick={onClose} aria-label="Zavřít asistenta"><Icon name="close" size={17} /></button>}
@@ -261,10 +272,10 @@ export function Chat({ territory, compact = false, onClose, header, chat }: {
       {uvod && <span className="chat-vzduch-horni" aria-hidden="true" />}
       {uvod ? (
         <div className="chat-uvod">
+          <span className="chat-znak" aria-hidden="true"><Icon name="sparkle" size={compact ? 20 : 24} /></span>
           <h2 className="chat-pozdrav">Na co se podíváme?</h2>
           <p className="chat-uvod-text">
-            Odpovídám z dat KAM — profilů území, výhledů a scénářů — a umím aplikaci i ovládat.
-            Každé číslo doložím zdrojem.
+            Zeptejte se vlastními slovy. Čísla spočítá aplikace, já je vysvětlím a u každého uvedu zdroj.
           </p>
         </div>
       ) : (
@@ -275,16 +286,25 @@ export function Chat({ territory, compact = false, onClose, header, chat }: {
 
       <form className="chat-pole" ref={pole} onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <textarea ref={area} rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000}
-          placeholder={uvod ? "Zeptejte se na cokoli o kraji…" : "Napište zprávu nebo příkaz…"} aria-label="Zpráva asistentovi"
+          placeholder={uvod ? "Zeptejte se na obec, rozpočet nebo výhled…" : "Napište další otázku nebo příkaz…"} aria-label="Zpráva asistentovi"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }} />
         {busy
-          ? <button type="button" className="icon-btn send" onClick={stop} aria-label="Zastavit"><Icon name="stop" /></button>
-          : <button type="submit" className="icon-btn send" disabled={!text.trim()} aria-label="Odeslat"><Icon name="send" /></button>}
+          ? <button type="button" className="icon-btn send" onClick={stop} aria-label="Zastavit odpověď"><Icon name="stop" /></button>
+          : <button type="submit" className="icon-btn send" disabled={!text.trim()} aria-label="Odeslat otázku"><Icon name="send" /></button>}
       </form>
 
+      {uvod && !compact && (
+        <div className="chat-priklady" aria-label="Příklady otázek">
+          {PRIKLADY.map((p) => (
+            <button key={p} type="button" className="chat-priklad" onClick={() => send(p)}>
+              <span>{p}</span><Icon name="arrow-right" size={14} />
+            </button>
+          ))}
+        </div>
+      )}
       {uvod && <span className="chat-vzduch" aria-hidden="true" />}
 
-      <div className="disclaimer chat-disclaimer"><Icon name="info" size={13} /><span>Odpovědi generuje AI a mohou být chybné. Čísla ověřte v uvedených zdrojích.</span></div>
+      <div className="disclaimer chat-disclaimer"><Icon name="info" size={13} /><span>Odpověď píše AI a může se mýlit. Čísla ověřte v uvedených zdrojích.</span></div>
     </div>
   );
 }

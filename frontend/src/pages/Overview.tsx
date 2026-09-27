@@ -3,9 +3,9 @@ import { ChartSwitch, Donut, LineChart, Legend, Sparkline, Waterfall } from "../
 import { Icon } from "../components/Icon";
 import { KhkMap, MapLegend } from "../components/maps";
 import { PrehledHook } from "../components/PrehledHook";
-import { Card, ErrorBox, KindTag, LoadingCard, Segmented, Severity } from "../components/ui";
+import { Card, ErrorBox, InfoHint, KindTag, LoadingCard, Segmented, Severity } from "../components/ui";
 import { useApi } from "../lib/api";
-import { ago, date, num, signed, withUnit } from "../lib/format";
+import { date, num, signed, withUnit } from "../lib/format";
 import { Link, navigate } from "../lib/router";
 import type { Forecast, Overview as OverviewT } from "../lib/types";
 import { Erb } from "../components/Erb";
@@ -33,7 +33,7 @@ export function Overview() {
     <>
       <PrehledHook kpis={d?.kpis ?? []} pozorovani={d?.model.observations}>
         <div className="row" style={{ marginTop: 20 }}>
-          <Link className="btn" to="/mapa"><Icon name="map" size={16} /> Mapa</Link>
+          <Link className="btn" to="/mapa"><Icon name="map" size={16} /> Otevřít mapu</Link>
           <Link className="btn btn-primary" to="/scenare"><Icon name="split" size={16} /> Simulovat zásah</Link>
         </div>
       </PrehledHook>
@@ -55,32 +55,32 @@ export function Overview() {
             rizikem natahovala na výšku pulsu s patnácti řádky a pod textem
             měla prázdný rámeček; ve sloupci roste každá podle obsahu. */}
         <div className="span-7 stack-y">
-          <Card i={1} title="Mapa kraje" icon="map" actions={<Segmented size="sm" label="Ukazatel mapy" value={ind} onChange={setInd} options={MAP_OPTS} />}>
+          <Card i={1} title="Mapa obcí" icon="map" actions={<Segmented size="sm" label="Ukazatel mapy" value={ind} onChange={setInd} options={MAP_OPTS} />}>
             {map.data ? (
               <>
                 <KhkMap level="obec" values={map.data.values} breaks={map.data.breaks} polarity={map.data.indicator.polarity} label={map.data.indicator.name}
                   format={(v) => (v === null ? "bez dat" : withUnit(v, map.data!.indicator.unit))} onSelect={(id) => navigate(`/obce/${id}`)} />
                 <div className="row-between">
                   <MapLegend breaks={map.data.breaks} polarity={map.data.indicator.polarity} unit={map.data.indicator.unit} />
-                  <span className="xsmall mute">{map.data.indicator.name} · {map.data.year} · kraj {withUnit(map.data.reference, map.data.indicator.unit)}</span>
+                  <span className="xsmall mute">{map.data.indicator.name} · {map.data.year} · celý kraj {withUnit(map.data.reference, map.data.indicator.unit)}</span>
                 </div>
               </>
             ) : <span className="skeleton" style={{ width: "100%", aspectRatio: "1000/760" }} />}
           </Card>
-          <Card i={3} title="Kam kraj směřuje" icon="trend-up" actions={<><KindTag kind="MODEL" /><Link to="/vyhled" className="btn btn-quiet btn-sm">Výhled</Link></>}>
+          <Card i={3} title="Výhled počtu obyvatel" icon="trend-up" actions={<><KindTag kind="MODEL" /><Link to="/vyhled" className="btn btn-quiet btn-sm">Celý výhled</Link></>}>
             {fc.data?.available ? (
               <ChartSwitch id="prehled-vyhled" views={[
                 {
-                  key: "vyvoj", label: "Vývoj a scénáře", icon: "trend-up", render: () => (
+                  key: "vyvoj", label: "Vývoj a varianty", icon: "trend-up", render: () => (
                     <>
-                      <LineChart ariaLabel="Počet obyvatel kraje a výhled do roku 2040" height={230} nowYear={fc.data!.base_year}
+                      <LineChart ariaLabel="Počet obyvatel kraje: skutečnost a výhled" height={230} nowYear={fc.data!.base_year}
                         series={[
                           { key: "h", label: "Skutečnost", color: "var(--text)", points: fc.data!.history.map((r) => ({ year: r.year, value: r.population })) },
                           { key: "p", label: "Pravděpodobný", color: "var(--accent)", points: [{ year: fc.data!.base_year, value: fc.data!.base_population }, ...fc.data!.scenarios.pravdepodobny.map((r) => ({ year: r.year, value: r.population }))], band: fc.data!.scenarios.pravdepodobny.map((r) => ({ year: r.year, lo: r.lower, hi: r.upper })) },
                           { key: "o", label: "Optimistický", color: "var(--info)", dashed: true, points: fc.data!.scenarios.optimisticky.map((r) => ({ year: r.year, value: r.population })) },
                           { key: "r", label: "Rizikový", color: "var(--warn)", dashed: true, points: fc.data!.scenarios.rizikovy.map((r) => ({ year: r.year, value: r.population })) },
                         ]} />
-                      <Legend items={[{ label: "Skutečnost (ČSÚ)", color: "var(--text)" }, { label: "Pravděpodobný + 90% pásmo", color: "var(--accent)" }, { label: "Optimistický", color: "var(--info)", dashed: true }, { label: "Rizikový", color: "var(--warn)", dashed: true }]} />
+                      <Legend items={[{ label: "Skutečnost (ČSÚ)", color: "var(--text)" }, { label: "Pravděpodobný (90% pásmo)", color: "var(--accent)" }, { label: "Optimistický", color: "var(--info)", dashed: true }, { label: "Rizikový", color: "var(--warn)", dashed: true }]} />
                     </>
                   ),
                 },
@@ -126,26 +126,26 @@ export function Overview() {
               </div>
             )}
           </Card>
-          <Card i={4} title="Puls kraje" icon="refresh" actions={<span className="xsmall mute">{puls.data ? `aktualizováno ${ago(new Date().toISOString())}` : ""}</span>}>
+          <Card i={4} title="Nová data a omezení dopravy" icon="refresh" >
             {!puls.data && <LoadingCard lines={4} />}
             {puls.data?.datasets.slice(0, 6).map((p) => (
               <div className="puls-item" key={p.url + p.title} data-ctx="dataset" data-ctx-label={p.title} data-ctx-url={p.url}>
                 <span className="puls-icon"><Icon name="database" size={15} /></span>
                 <a className="puls-title" href={p.url} target="_blank" rel="noopener noreferrer">{p.title}</a>
-                <span className="puls-sub">Aktualizace dat · {p.publisher} · {p.pillar} · {date(p.date)}</span>
+                <span className="puls-sub">Nová data · {p.publisher} · {p.pillar} · {date(p.date)}</span>
               </div>
             ))}
             {puls.data?.events.slice(0, 3).map((e) => (
               <div className="puls-item" key={e.title}>
                 <span className="puls-icon"><Icon name="bus" size={15} /></span>
                 <a className="puls-title" href={e.url} target="_blank" rel="noopener noreferrer">{e.title}</a>
-                <span className="puls-sub">Omezení dopravy {e.starts} – {e.ends} · zdroj aktualizován {date(e.published)}</span>
+                <span className="puls-sub">Omezení dopravy {e.starts} – {e.ends} · zveřejněno {date(e.published)}</span>
               </div>
             ))}
           </Card>
         </div>
         <div className="span-5 stack-y">
-          <Card i={2} title="Co potřebuje pozornost" icon="alert" actions={<Link to="/obce" className="btn btn-quiet btn-sm">Všechny obce</Link>}>
+          <Card i={2} title="Obce, které potřebují pozornost" icon="alert" actions={<><InfoHint label="Co je riziko">Riziko hlásí pevné pravidlo nad zveřejněnými daty: nepříznivý dlouhodobý trend, opakující se problém nebo stav, který překročil stanovený práh či je výrazně horší než v kraji. Není to odhad ani názor. U malých obcí a krátkých řad je důvěra nižší, protože pár lidí tam pohne jakýmkoli podílem.</InfoHint><Link to="/obce" className="btn btn-quiet btn-sm">Všechny obce</Link></>}>
             {!d && <LoadingCard lines={5} />}
             {d?.risks.map((r) => (
               <Link key={r.territory.id} to={`/obce/${r.territory.id}`} className="risk-row" data-ctx={r.territory.id} data-ctx-label={r.territory.name}>
@@ -156,8 +156,8 @@ export function Overview() {
               </Link>
             ))}
           </Card>
-          <Card i={5} title="Rizika na úrovni kraje" icon="shield">
-            {d?.kraj_risks.length === 0 && <p className="muted small">Pravidla na úrovni kraje nenašla významné riziko.</p>}
+          <Card i={5} title="Rizika kraje jako celku" icon="shield">
+            {d?.kraj_risks.length === 0 && <p className="muted small">Za kraj jako celek pravidla nenašla významné riziko.</p>}
             {d?.kraj_risks.map((r) => (
               <div className="risk-card" key={r.id}>
                 <div className="rc-head"><span className="rc-title">{r.title}</span><Severity level={r.level} label={r.level_label} /></div>
@@ -165,18 +165,18 @@ export function Overview() {
               </div>
             ))}
           </Card>
-          <Card i={6} title="Data v modelu" icon="database" actions={<Link to="/data" className="btn btn-quiet btn-sm">Katalog</Link>}>
+          <Card i={6} title="Data v modelu" icon="database" actions={<Link to="/data" className="btn btn-quiet btn-sm">Katalog dat</Link>}>
             {d && (
               <div className="facts-list">
-                <div className="fact-row"><span>Funkční datové sady</span><span className="num">{num(d.datasets.verified)}</span></div>
-                <div className="fact-row"><span>Poskytovatelé</span><span className="num">{num(d.datasets.publishers)}</span></div>
-                <div className="fact-row"><span>Nedostupné odkazy (vyřazeno)</span><span className="num">{num(d.datasets.broken + d.datasets.no_link)}</span></div>
-                <div className="fact-row"><span>Hodnoty načtené do modelu</span><span className="num">{num(d.datasets.loaded)} sad</span></div>
+                <div className="fact-row"><span>Funkční datové sady (odkaz odpověděl)</span><span className="num">{num(d.datasets.verified)}</span></div>
+                <div className="fact-row"><span>Poskytovatelé dat</span><span className="num">{num(d.datasets.publishers)}</span></div>
+                <div className="fact-row"><span>Nefunkční nebo chybějící odkaz (nezapočteno)</span><span className="num">{num(d.datasets.broken + d.datasets.no_link)}</span></div>
+                <div className="fact-row"><span>Sady, jejichž hodnoty model načetl</span><span className="num">{num(d.datasets.loaded)}</span></div>
                 <div className="fact-row"><span>Ukazatele</span><span className="num">{num(d.model.indicators)}</span></div>
               </div>
             )}
           </Card>
-          <Card i={7} title="Datové potřeby" icon="gauge" actions={<Link to="/data?tab=potreby" className="btn btn-quiet btn-sm">Detail</Link>}>
+          <Card i={7} title="Chybějící data" icon="gauge" actions={<Link to="/data?tab=potreby" className="btn btn-quiet btn-sm">Zobrazit vše</Link>}>
             {gaps.data && (
               <>
                 <div className="row" style={{ alignItems: "baseline", gap: 8 }}>

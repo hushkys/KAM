@@ -37,12 +37,12 @@ function targetRows(el: HTMLElement | null): Item[] {
     return [
       { head: label || ctx },
       ...(isHome ? [
-        { label: "Otevřít živý profil", icon: "arrow-right", run: () => navigate(`/obce/${ctx}`) },
-        { label: "Výhled 2026–2040", icon: "trend-up", run: () => navigate(`/vyhled?t=${ctx}`) },
-        { label: "Simulovat zásah", icon: "split", run: () => navigate(`/scenare?t=${ctx}`) },
-        { label: "Nahlásit podnět", icon: "message", run: () => navigate(`/podnety?t=${ctx}`) },
+        { label: "Otevřít profil", icon: "arrow-right", run: () => navigate(`/obce/${ctx}`) },
+        { label: "Otevřít výhled", icon: "trend-up", run: () => navigate(`/vyhled?t=${ctx}`) },
+        { label: "Sestavit scénář", icon: "split", run: () => navigate(`/scenare?t=${ctx}`) },
+        { label: "Poslat podnět", icon: "message", run: () => navigate(`/podnety?t=${ctx}`) },
       ] as Row[] : [
-        { label: "Otevřená data kraje", icon: "database", run: () => navigate(`/data?region=${ctx.split(":")[1]}`) },
+        { label: "Datové sady kraje", icon: "database", run: () => navigate(`/data?region=${ctx.split(":")[1]}`) },
       ] as Row[]),
       { label: "Zeptat se asistenta", icon: "sparkle", run: () => openAssistant(`Co je nejdůležitější vědět o území ${label}?`, ctx) },
       { label: "Kopírovat kód území", icon: "copy", hint: ctx.split(":")[1], run: () => copy(ctx.split(":")[1] ?? ctx) },
@@ -92,10 +92,10 @@ export function ContextMenu() {
       items.push(
         { label: "Zpět", icon: "arrow-left", hint: "Alt+←", run: () => history.back() },
         { label: "Hledat…", icon: "search", hint: "Ctrl+K", run: () => window.dispatchEvent(new CustomEvent("kam:palette")) },
-        { label: "Asistent", icon: "sparkle", hint: "Ctrl+J", run: () => openAssistant() },
-        { label: dark ? "Světlý režim" : "Tmavý režim", icon: dark ? "sun" : "moon", run: () => setPrefs({ theme: dark ? "light" : "dark" }) },
-        { label: getPrefs().transparency ? "Vypnout průhlednost" : "Zapnout průhlednost", icon: "layers", run: () => setPrefs({ transparency: !getPrefs().transparency }) },
-        { label: "Obnovit data", icon: "refresh", run: () => { invalidate(); window.dispatchEvent(new CustomEvent("kam:refresh")); toast("info", "Data se načítají znovu."); } },
+        { label: "Otevřít asistenta", icon: "sparkle", hint: "Ctrl+J", run: () => openAssistant() },
+        { label: dark ? "Světlý motiv" : "Tmavý motiv", icon: dark ? "sun" : "moon", run: () => setPrefs({ theme: dark ? "light" : "dark" }) },
+        { label: getPrefs().transparency ? "Vypnout průhlednost lišt" : "Zapnout průhlednost lišt", icon: "layers", run: () => setPrefs({ transparency: !getPrefs().transparency }) },
+        { label: "Načíst data znovu", icon: "refresh", run: () => { invalidate(); window.dispatchEvent(new CustomEvent("kam:refresh")); toast("info", "Data se načítají znovu."); } },
         { label: "Kopírovat odkaz na stránku", icon: "link", run: () => copy(location.href) },
       );
       const w = 240, h = Math.min(items.length * 36 + 20, window.innerHeight - 16);

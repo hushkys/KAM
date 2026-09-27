@@ -20,7 +20,7 @@ interface Kraj {
   uzemi: { id: string; name: string; level: string };
   programove: number | null; programove_pocet: number | null;
   individualni: number | null; individualni_pocet: number | null;
-  celkem: number; na_obyvatele: number | null; poradi: number | null; z_celkem: number;
+  celkem: number; obdobi: string; na_obyvatele: number | null; poradi: number | null; z_celkem: number;
   median_na_obyvatele: number | null;
   zebricek: { id: string; name: string; na_obyvatele: number }[];
 }
@@ -71,7 +71,7 @@ export function Dotace() {
     <>
       <DotaceHook cerpani={rada} territory={data?.territory.name}>
         <div className="row" style={{ marginTop: 18 }}>
-          <Link className="btn" to={`/hospodareni?t=${tid}`}><Icon name="coins" size={16} /> Hospodaření</Link>
+          <Link className="btn" to={`/hospodareni?t=${tid}`}><Icon name="coins" size={16} /> Zobrazit hospodaření</Link>
         </div>
       </DotaceHook>
       <div className="stack-y">
@@ -84,15 +84,15 @@ export function Dotace() {
           <>
             <div className="stats-row">
               <Stat i={0} label={data.cerpani_roky ? `Přijaté dotace ${data.cerpani_roky[0]}–${data.cerpani_roky[1]}` : "Přijaté dotace"}
-                value={kc(data.cerpani_celkem)} sub="FAKT · rozpočet území" />
-              <Stat i={1} label={`Na obyvatele ${posledni?.year ?? ""}`} value={posledni?.na_obyvatele !== null && posledni ? `${num(posledni.na_obyvatele)} Kč` : "—"} />
-              <Stat i={2} label={k ? `Dotace kraje do ORP ${k.uzemi.name}` : "Dotace kraje"} value={k ? kc(k.celkem) : "—"} sub="2021–2025" />
-              <Stat i={3} label="Pořadí na obyvatele v kraji" value={k?.poradi ? `${k.poradi}. z ${k.z_celkem}` : "—"}
+                value={kc(data.cerpani_celkem)} sub="FAKT · z rozpočtu území" />
+              <Stat i={1} label={`Dotace na obyvatele ${posledni?.year ?? ""}`} value={posledni?.na_obyvatele !== null && posledni ? `${num(posledni.na_obyvatele)} Kč` : "—"} />
+              <Stat i={2} label={k ? `Dotace od kraje · ${k.uzemi.name}` : "Dotace od kraje"} value={k ? kc(k.celkem) : "—"} sub={k?.obdobi ?? ""} />
+              <Stat i={3} label="Pořadí v kraji (na obyvatele)" value={k?.poradi ? `${k.poradi}. z ${k.z_celkem}` : "—"}
                 sub={k?.median_na_obyvatele ? `medián ${num(k.median_na_obyvatele)} Kč/obyv.` : ""}
                 tone={k?.poradi && k.poradi > k.z_celkem / 2 ? "warn" : undefined} />
             </div>
 
-            <Card i={1} title="Čerpání v čase a srovnání" icon="chart">
+            <Card i={1} title="Dotace po letech a srovnání v kraji" icon="chart">
               <div className="row" style={{ marginBottom: 10 }}><KindTag kind="FAKT" /><span className="muted small">{data.zdroj_dat}</span></div>
               <ChartSwitch id="dotace" views={[
                 {
@@ -116,8 +116,8 @@ export function Dotace() {
                           label: r.id === k.uzemi.id ? <strong>{r.name}</strong> : r.name,
                         }))} />
                       <p className="xsmall mute" style={{ marginTop: 10 }}>
-                        Programové i individuální dotace kraje 2021–2025 dělené počtem obyvatel. Vysoká hodnota může znamenat
-                        jednu velkou akci, ne trvale štědřejší přístup — proto je to popis, ne nárok.
+                        Všechny dotace kraje na jednoho obyvatele. Vysoké číslo může být jedna velká akce,
+                        ne trvale štědřejší kraj. Nárok na dotaci z toho neplyne.
                       </p>
                     </>
                   ),
@@ -126,9 +126,9 @@ export function Dotace() {
             </Card>
 
             {k && (
-              <Card i={2} title={`Co kraj poslal do ORP ${k.uzemi.name}`} icon="coins">
+              <Card i={2} title={`Dotace od kraje podle druhu · ${k.uzemi.name}`} icon="coins">
                 <div className="facts-list">
-                  <div className="fact-row"><span>Programové dotace (vyhlášený program)</span>
+                  <div className="fact-row"><span>Programové dotace (z vyhlášeného programu)</span>
                     <span className="num">{kc(k.programove)}{k.programove_pocet ? <span className="mute"> · {num(k.programove_pocet)} dotací</span> : null}</span></div>
                   <div className="fact-row"><span>Individuální dotace (žádost mimo program)</span>
                     <span className="num">{kc(k.individualni)}{k.individualni_pocet ? <span className="mute"> · {num(k.individualni_pocet)} dotací</span> : null}</span></div>
@@ -139,12 +139,12 @@ export function Dotace() {
               </Card>
             )}
 
-            <Card i={3} title="Kam se obrátit" icon="external">
+            <Card i={3} title="Kdo dotace vyhlašuje" icon="external">
               {data.rizikove_oblasti.length > 0 ? (
-                <p className="muted small">Podle rizikového modelu má území problém v oblastech{" "}
-                  <strong>{data.rizikove_oblasti.join(", ")}</strong>. Tihle vyhlašovatelé do nich dávají peníze.</p>
+                <p className="muted small">Model vidí problém v oblastech{" "}
+                  <strong>{data.rizikove_oblasti.join(", ")}</strong>. Tito vyhlašovatelé na ně dávají peníze.</p>
               ) : (
-                <p className="muted small">Model tu nenašel výraznější riziko, proto je seznam kompletní.</p>
+                <p className="muted small">Model tu nenašel výrazné riziko, proto ukazujeme všechny vyhlašovatele.</p>
               )}
               <div className="zdroje-grid" style={{ marginTop: 12 }}>
                 {data.zdroje.map((z) => <ZdrojKarta key={z.url} z={z} />)}

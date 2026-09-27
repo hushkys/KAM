@@ -56,7 +56,7 @@ export function Reports() {
     try {
       const r = await api<{ joined: boolean; status: string; became_ready: boolean }>("/reports", { body: { territory: tid, category: cat, text, kind } });
       setText("");
-      toast("ok", r.became_ready ? "Podnět dosáhl prahu a je připraven k předání kraji." : r.joined ? "Díky. Přidali jsme vás k podobným hlášením." : "Díky. Podnět je zaznamenán.");
+      toast("ok", r.became_ready ? "Děkujeme. Sešlo se dost podobných hlášení a podnět je připravený k předání kraji." : r.joined ? "Děkujeme. Vaše hlášení jsme připojili k podobným." : "Děkujeme. Hlášení je uložené.");
       refresh();
     } catch (e) { toast("error", (e as Error).message); }
     finally { setSending(false); }
@@ -66,7 +66,7 @@ export function Reports() {
     try {
       const r = await api<{ channel: string; mailto?: string; reference: string }>(`/reports/clusters/${id}/submit`, { method: "POST" });
       if (r.channel === "email" && r.mailto && doc) window.location.href = `mailto:${r.mailto}?subject=${encodeURIComponent(`Podnět ${r.reference}`)}&body=${encodeURIComponent(doc.body)}`;
-      toast("ok", `Podnět ${r.reference} předán (${{ local: "uložen v KAM", webhook: "odeslán webhookem", email: "připraven v e-mailu" }[r.channel] ?? r.channel}).`);
+      toast("ok", `Podnět ${r.reference} je předaný (${{ local: "uložen v KAM", webhook: "odeslán na adresu z nastavení", email: "připraven v e-mailu" }[r.channel] ?? r.channel}).`);
       setDoc(null);
       refresh();
     } catch (e) { toast("error", (e as Error).message); }
@@ -74,7 +74,7 @@ export function Reports() {
   const smazat = async (id: number) => {
     try {
       const r = await api<{ hlaseni: number }>(`/reports/clusters/${id}`, { method: "DELETE" });
-      toast("ok", `Podnět smazán (${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}). Záznam zůstal v provozním logu.`);
+      toast("ok", `Podnět je smazaný (${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}). V provozním logu zůstala jen značka a počet.`);
       setDoc(null);
       setPotvrdit(false);
       refresh();
@@ -89,7 +89,7 @@ export function Reports() {
   const uklidit = async () => {
     try {
       const r = await api<{ skupin: number; hlaseni: number }>("/provoz/podnety/uklid", { body: { stav: uklidStav, starsi_nez_dni: uklidDni } });
-      toast("ok", r.skupin ? `Uklizeno: ${r.skupin} ${plural(r.skupin, "skupina", "skupiny", "skupin")}, ${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}.` : "Nic k úklidu.");
+      toast("ok", r.skupin ? `Smazáno: ${r.skupin} ${plural(r.skupin, "skupina", "skupiny", "skupin")}, ${r.hlaseni} ${plural(r.hlaseni, "hlášení", "hlášení", "hlášení")}.` : "Nebylo co smazat.");
       setUklidOpen(false);
       refresh();
     } catch (e) { toast("error", (e as Error).message); }
@@ -99,7 +99,7 @@ export function Reports() {
 
   const kpis = [
     { icon: "message", label: "Hlášení celkem", value: stats.data?.reports ?? 0 },
-    { icon: "layers", label: "Skupiny podnětů", value: stats.data?.clusters ?? 0 },
+    { icon: "layers", label: "Skupiny podobných hlášení", value: stats.data?.clusters ?? 0 },
     { icon: "alert", label: "Připraveno k předání", value: stats.data?.by_status.pripraveno ?? 0 },
     { icon: "check", label: "Předáno kraji", value: stats.data?.by_status.odeslano ?? 0 },
   ];
@@ -108,7 +108,7 @@ export function Reports() {
     <>
       <PodnetyHook skupiny={clusters.data ?? []} prah={threshold} hlaseni={stats.data?.reports}>
         <div className="row" style={{ marginTop: 20 }}>
-          <button className="btn btn-primary" onClick={() => form.current?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="plus" size={16} /> Nový podnět</button>
+          <button className="btn btn-primary" onClick={() => form.current?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="plus" size={16} /> Podat podnět</button>
         </div>
       </PodnetyHook>
 
@@ -149,15 +149,15 @@ export function Reports() {
             </li>
             <li>
               <span className="rp-step-no">4</span>
-              <label className="rp-step-body field"><span className="field-label">Popis</span>
+              <label className="rp-step-body field"><span className="field-label">Co se děje</span>
                 <textarea className="textarea" value={text} maxLength={1000} rows={4} onChange={(e) => setText(e.target.value)}
                   placeholder={kind === "problem" ? "Např. večer nejede žádný spoj do Hradce Králové…" : "Např. chybí data o kapacitě domů s pečovatelskou službou…"} />
-                <span className="rp-count"><span>{text.length < 10 ? "Alespoň 10 znaků" : "Osobní údaje se automaticky skryjí"}</span><span className="num">{text.length}/1000</span></span>
+                <span className="rp-count"><span>{text.length < 10 ? "Napište aspoň 10 znaků" : "E-maily, telefony a rodná čísla se automaticky skryjí"}</span><span className="num">{text.length}/1000</span></span>
               </label>
             </li>
           </ol>
           <button className="btn btn-primary btn-lg btn-block" disabled={sending || text.trim().length < 10 || !tid} onClick={submit}><Icon name="send" size={16} /> {sending ? "Odesílám…" : "Odeslat podnět"}</button>
-          <p className="disclaimer" style={{ marginTop: 12 }}><Icon name="shield" size={13} /><span>Podnět je anonymní a nezapočítává se jako fakt do dat modelu — slouží jako signál k ověření.</span></p>
+          <p className="disclaimer" style={{ marginTop: 12 }}><Icon name="shield" size={13} /><span>Podnět je anonymní. Do čísel modelu se nepočítá, slouží jako signál k ověření.</span></p>
         </section>
 
         <div className="rp-main">
@@ -167,7 +167,7 @@ export function Reports() {
               {ready.map((c) => (
                 <button className="rp-ready-row" key={c.id} onClick={() => openDoc(c.id)}>
                   <span className="ellipsis"><strong>{c.title}</strong> <span className="mute">· {c.territory.name}</span></span>
-                  <span className="rp-ready-cta">Zobrazit podnět <Icon name="arrow-right" size={14} /></span>
+                  <span className="rp-ready-cta">Otevřít podnět <Icon name="arrow-right" size={14} /></span>
                 </button>
               ))}
             </section>
@@ -176,11 +176,11 @@ export function Reports() {
           <div className="rp-toolbar reveal" style={{ "--i": 3 } as CSSProperties}>
             <div className="input-icon rp-search"><Icon name="search" size={16} /><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat v podnětech…" aria-label="Hledat v podnětech" enterKeyHint="search" /></div>
             <Segmented size="sm" label="Stav" value={status} onChange={setStatus} options={[{ value: "", label: "Vše" }, { value: "sber", label: "Sbírá se" }, { value: "pripraveno", label: "Připraveno" }, { value: "odeslano", label: "Předáno" }]} />
-            <button className="btn btn-sm" onClick={() => setUklidOpen(true)} disabled={!clusters.data?.length}><Icon name="trash" size={15} /> Úklid</button>
+            <button className="btn btn-sm" onClick={() => setUklidOpen(true)} disabled={!clusters.data?.length}><Icon name="trash" size={15} /> Smazat staré</button>
           </div>
 
           <div className="rp-list">
-            {clusters.data && list.length === 0 && <Empty icon="message" title={clusters.data.length ? "Nic neodpovídá filtru" : "Zatím žádné podněty"}>{clusters.data.length ? "Zkuste jiný stav nebo hledaný výraz." : "První hlášení se objeví tady."}</Empty>}
+            {clusters.data && list.length === 0 && <Empty icon="message" title={clusters.data.length ? "Nic neodpovídá filtru" : "Zatím žádné podněty"}>{clusters.data.length ? "Zkuste jiný stav nebo jiné slovo." : "Až někdo podá podnět, objeví se tady."}</Empty>}
             {list.map((c, i) => (
               <button className="rp-item reveal" key={c.id} onClick={() => openDoc(c.id)} style={{ "--i": Math.min(i, 10) } as CSSProperties} data-ctx={c.territory.id} data-ctx-label={c.territory.name}>
                 <span className={`rp-item-icon cat-${c.category}`}><Icon name={PILLAR_ICON[c.category] ?? "info"} size={18} /></span>
@@ -202,7 +202,7 @@ export function Reports() {
       <Modal open={Boolean(doc)} onClose={() => { setDoc(null); setPotvrdit(false); }} title={doc ? (doc.status === "sber" ? "Skupina hlášení" : "Formální podnět") : ""} wide
         footer={doc ? <>
           {doc.status === "sber" && <button className="btn" onClick={() => same(doc)}><Icon name="plus" size={16} /> Mám stejný problém</button>}
-          {doc.status !== "sber" && <button className="btn" onClick={() => window.print()}><Icon name="print" size={16} /> Tisk / PDF</button>}
+          {doc.status !== "sber" && <button className="btn" onClick={() => window.print()}><Icon name="print" size={16} /> Vytisknout / PDF</button>}
           {doc.status === "pripraveno" && <button className="btn btn-primary" onClick={() => deliver(doc.id)}><Icon name="send" size={16} /> Předat kraji</button>}
           <button className={`btn ${potvrdit ? "btn-danger" : "btn-quiet"}`} style={{ marginRight: "auto" }}
             onClick={() => (potvrdit ? smazat(doc.id) : setPotvrdit(true))}>
@@ -220,11 +220,11 @@ export function Reports() {
             </dl>
             {doc.status !== "sber" && <div className="rp-letter-body">{doc.body}</div>}
             {doc.context.length > 0 && (
-              <div className="table-wrap"><table className="table"><thead><tr><th>Související data území</th><th className="r">Hodnota</th><th>Vývoj</th></tr></thead>
+              <div className="table-wrap"><table className="table"><thead><tr><th>Data o území</th><th className="r">Hodnota</th><th>Vývoj</th></tr></thead>
                 <tbody>{doc.context.map((c) => <tr key={c.name}><td>{c.name}</td><td className="r">{num(c.value)} {c.unit} ({c.year})</td><td>{c.trend}</td></tr>)}</tbody></table></div>
             )}
             <div className="rp-timeline">
-              <strong className="small">Anonymizovaná hlášení</strong>
+              <strong className="small">Jednotlivá hlášení</strong>
               {doc.reports.map((r) => (
                 <div className="rp-tl-item" key={r.id}><span className="rp-tl-dot" /><div><p className="small">{r.text}</p><span className="xsmall mute">{date(r.created_at)}{r.kind === "chybejici_data" ? " · chybějící data" : ""}</span></div></div>
               ))}
@@ -234,7 +234,7 @@ export function Reports() {
         )}
       </Modal>
 
-      <Modal open={uklidOpen} onClose={() => setUklidOpen(false)} sheet title="Úklid podnětů"
+      <Modal open={uklidOpen} onClose={() => setUklidOpen(false)} sheet title="Smazat staré podněty"
         footer={<>
           <button className="btn" onClick={() => setUklidOpen(false)}>Zrušit</button>
           <button className="btn btn-danger" disabled={!kUklidu.length} onClick={uklidit}>
@@ -242,11 +242,10 @@ export function Reports() {
           </button>
         </>}>
         <p className="small muted" style={{ marginTop: 0 }}>
-          Smazané podněty nejdou vrátit. V provozním logu po nich zůstane záznam se značkou a počtem
-          hlášení, ne jejich text.
+          Smazání nejde vrátit. V provozním logu zůstane jen značka a počet hlášení, ne jejich text.
         </p>
         <div className="field">
-          <span className="field-label">Které stavy</span>
+          <span className="field-label">Stav</span>
           <select className="select" value={uklidStav} onChange={(e) => setUklidStav(e.target.value)}>
             <option value="odeslano">Jen předané kraji</option>
             <option value="sber">Jen ty, které se sbírají</option>
@@ -255,7 +254,7 @@ export function Reports() {
           </select>
         </div>
         <div className="field" style={{ marginTop: 12 }}>
-          <span className="field-label">Starší než (dní od poslední změny)</span>
+          <span className="field-label">Beze změny aspoň (dní)</span>
           <input className="input" type="number" min={1} max={3650} value={uklidDni}
             onChange={(e) => setUklidDni(Math.max(1, Number(e.target.value) || 1))} />
         </div>
@@ -263,7 +262,7 @@ export function Reports() {
           {kUklidu.length
             ? <>Odpovídá <strong>{kUklidu.length}</strong> {plural(kUklidu.length, "skupina", "skupiny", "skupin")} s celkem{" "}
               <strong>{kUklidu.reduce((a2, c) => a2 + c.count, 0)}</strong> hlášeními.</>
-            : <span className="muted">Tomuhle filtru zatím nic neodpovídá.</span>}
+            : <span className="muted">Takovým podmínkám nic neodpovídá.</span>}
         </p>
       </Modal>
     </>

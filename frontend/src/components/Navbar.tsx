@@ -36,11 +36,11 @@ export function Navbar({ title, modul, sekce, rodic }: { title: string; modul: s
         <kbd>Ctrl K</kbd>
       </button>
       <nav className="navbar-actions" aria-label="Rychlé akce">
-        <button data-assistant-toggle className={`icon-btn ${assistant.open ? "is-on" : ""}`} onClick={toggleAssistant} aria-label="Asistent (Ctrl+J)" aria-pressed={assistant.open} title="Asistent (Ctrl+J)">
+        <button data-assistant-toggle className={`icon-btn ${assistant.open ? "is-on" : ""}`} onClick={toggleAssistant} aria-label="Asistent (Ctrl+J)" aria-pressed={assistant.open} title="Zeptat se asistenta (Ctrl+J)">
           <Icon name="sparkle" size={18} />
         </button>
         <Notifications />
-        <button className="icon-btn hide-sm" onClick={() => setPrefs({ theme: dark ? "light" : "dark" })} aria-label={dark ? "Přepnout na světlý režim" : "Přepnout na tmavý režim"} title={dark ? "Světlý režim" : "Tmavý režim"}>
+        <button className="icon-btn hide-sm" onClick={() => setPrefs({ theme: dark ? "light" : "dark" })} aria-label={dark ? "Přepnout na světlý motiv" : "Přepnout na tmavý motiv"} title={dark ? "Světlý motiv" : "Tmavý motiv"}>
           <Icon name={dark ? "sun" : "moon"} size={18} />
         </button>
         <Link to="/nastaveni" className="icon-btn hide-sm" aria-label="Nastavení" title="Nastavení"><Icon name="settings" size={18} /></Link>

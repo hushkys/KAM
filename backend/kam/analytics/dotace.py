@@ -40,13 +40,13 @@ class Zdroj:
 ZDROJE: tuple[Zdroj, ...] = (
     Zdroj("Dotační portál Královéhradeckého kraje", "Královéhradecký kraj", "https://dotace.khk.cz/",
           ("demografie", "doprava", "skolstvi", "zdravotnictvi", "socialni", "bydleni", "prostredi", "kultura", "finance"),
-          "Programové i individuální dotace kraje. Nejbližší zdroj pro obec v KHK."),
+          "Programové i individuální dotace kraje. Pro obce v kraji první místo, kam se obrátit."),
     Zdroj("IROP — Integrovaný regionální operační program", "Ministerstvo pro místní rozvoj", "https://irop.gov.cz/cs/vyzvy",
           ("doprava", "skolstvi", "zdravotnictvi", "socialni", "bydleni", "kultura"),
           "Evropské peníze na infrastrukturu obcí: školy, sociální služby, doprava, památky."),
     Zdroj("Národní dotace MMR", "Ministerstvo pro místní rozvoj", "https://mmr.gov.cz/cs/narodni-dotace",
           ("bydleni", "demografie", "kultura", "finance"),
-          "Podpora obnovy a rozvoje venkova, bydlení, cestovního ruchu."),
+          "Obnova a rozvoj venkova, bydlení, cestovní ruch."),
     Zdroj("Státní fond životního prostředí", "SFŽP ČR", "https://sfzp.gov.cz/dotace-a-pujcky/",
           ("prostredi",),
           "Voda, odpady, ovzduší, energetické úspory budov, zeleň."),
@@ -76,7 +76,7 @@ ZDROJE: tuple[Zdroj, ...] = (
           "Dostupnost zdravotní péče, prevence."),
     Zdroj("Dotace Ministerstva vnitra", "Ministerstvo vnitra", "https://mv.gov.cz/",
           ("socialni", "bydleni"),
-          "Jednotky sborů dobrovolných hasičů, prevence kriminality."),
+          "Dobrovolní hasiči, prevence kriminality."),
     Zdroj("Podnikání a inovace", "Ministerstvo průmyslu a obchodu", "https://mpo.gov.cz/cz/podnikani/dotace-a-podpora-podnikani/",
           ("socialni", "finance"),
           "Podpora podnikání a zaměstnanosti v území."),
@@ -84,6 +84,10 @@ ZDROJE: tuple[Zdroj, ...] = (
           ("demografie", "doprava", "skolstvi", "zdravotnictvi", "socialni", "bydleni", "prostredi", "kultura", "finance"),
           "Rozcestník všech operačních programů a jejich výzev."),
 )
+
+# Kraj zveřejňuje dotace do území jako souhrn za toto období, uložený k jeho
+# poslednímu roku. Období se proto vydává s částkou, ať ho frontend nepíše sám.
+OBDOBI_KRAJE = "2021–2025"
 
 
 def _rada(tid: str) -> list[dict]:
@@ -127,6 +131,7 @@ def _kraj_dotace(tid: str) -> dict | None:
         "programove": hodnoty["dot_prog_castka"], "programove_pocet": hodnoty["dot_prog_pocet"],
         "individualni": hodnoty["dot_indiv_castka"], "individualni_pocet": hodnoty["dot_indiv_pocet"],
         "celkem": celkem,
+        "obdobi": OBDOBI_KRAJE,
         "na_obyvatele": round(celkem / obyv) if obyv else None,
         "poradi": poradi, "z_celkem": len(radek),
         "median_na_obyvatele": round(sorted(r[2] for r in radek)[len(radek) // 2]) if radek else None,
@@ -162,7 +167,8 @@ def prehled(tid: str) -> dict:
         "rizikove_oblasti": [PILLARS[p] for p in pilire],
         "zdroje": [ven(z, [p for p in pilire if p in z.pilire]) for z in doporucene],
         "dalsi_zdroje": [ven(z, []) for z in ostatni],
-        "zdroj_dat": "ČSÚ MOS (přijaté dotace) · Data KHK (dotace kraje 2021–2025)",
-        "poznamka": ("Seznam vyhlašovatelů je rozcestník, ne živý seznam otevřených výzev. "
-                     "Nárok posuzuje vždy vyhlašovatel podle podmínek konkrétní výzvy."),
+        "zdroj_dat": f"ČSÚ MOS (přijaté dotace) · Data KHK (dotace kraje {OBDOBI_KRAJE})",
+        "poznamka": ("Strojově čitelný registr otevřených výzev pro obce neexistuje, proto je tu jen "
+                     "rozcestník vyhlašovatelů. Zda má obec nárok, posoudí vždy vyhlašovatel podle "
+                     "podmínek konkrétní výzvy."),
     }

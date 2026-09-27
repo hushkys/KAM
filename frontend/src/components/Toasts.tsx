@@ -15,7 +15,7 @@ export function Toasts() {
             <Icon name={ICON[t.kind]} size={18} />
             <span>{t.text}</span>
             {t.action && <button className="btn btn-quiet btn-sm" onClick={() => { t.action!.run(); dismiss(t.id); }}>{t.action.label}</button>}
-            <button className="icon-btn sm" onClick={() => dismiss(t.id)} aria-label="Zavřít"><Icon name="close" size={15} /></button>
+            <button className="icon-btn sm" onClick={() => dismiss(t.id)} aria-label="Zavřít hlášení"><Icon name="close" size={15} /></button>
           </div>
         ))}
       </div>

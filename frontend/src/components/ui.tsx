@@ -145,7 +145,7 @@ export function ErrorBox({ error, retry }: { error: { message: string } | null; 
 }
 
 /** The "i" mark: explanatory copy lives behind it, not in tinted boxes. */
-export function InfoHint({ children, label = "Vysvětlení" }: { children: ReactNode; label?: string }) {
+export function InfoHint({ children, label = "Co to znamená" }: { children: ReactNode; label?: string }) {
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });

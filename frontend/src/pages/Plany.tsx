@@ -162,10 +162,9 @@ function Rozbaleno({ tid }: { tid: string }) {
           </div>
           {inv && (
             <p className="pl-obdobi-pozn">
-              Za roky {inv.od_dat}–{inv.do_dat} poslala obec do majetku <strong>{kc(inv.kapital)}</strong>
-              {inv.podil !== null && <> ({pct(inv.podil * 100, 1)} příjmů)</>}. Je to z rozpočtu, ne z plánu —
-              rozpočtová skladba neříká, co za ty peníze obec pořídila, takže vedle sebe stojí dvě věci ze
-              dvou zdrojů, ne příčina a následek. <Link to={`/hospodareni?t=${tid}`}>Hospodaření obce</Link>
+              Za roky {inv.od_dat}–{inv.do_dat} obec investovala <strong>{kc(inv.kapital)}</strong>
+              {inv.podil !== null && <> ({pct(inv.podil * 100, 1)} příjmů)</>}. Částka je z rozpočtu: neříká,
+              co za ty peníze obec pořídila, ani že šlo o záměry z plánu. <Link to={`/hospodareni?t=${tid}`}>Otevřít hospodaření obce</Link>
             </p>
           )}
         </div>
@@ -174,8 +173,8 @@ function Rozbaleno({ tid }: { tid: string }) {
       {data.upd.length > 0 && (
         <div className="pl-upd">
           <div className="pl-upd-hlava">
-            Územně plánovací dokumentace ({data.upd.length})
-            <span className="mute"> · archivovaný dokument nahradil jiný</span>
+            Územní plán a jeho změny ({data.upd.length})
+            <span className="mute"> · „archiv“ = nahrazeno novějším</span>
           </div>
           <ul className="pl-upd-seznam">
             {upd.map((u) => (
@@ -184,13 +183,13 @@ function Rozbaleno({ tid }: { tid: string }) {
                 <span className="pl-upd-datum">{u.datum ? date(u.datum) : "bez data vydání"}</span>
                 <span className="pl-upd-znacka">{u.stav === "archiv" ? "archiv" : ""}</span>
                 <a className="pl-upd-evidence" href={u.zdroj_url} target="_blank" rel="noopener noreferrer"
-                  title="Záznam v celostátní evidenci"><Icon name="external" size={13} /></a>
+                  title="Otevřít záznam v evidenci"><Icon name="external" size={13} /></a>
               </li>
             ))}
           </ul>
           {data.upd.length > 6 && (
             <button type="button" className="btn btn-sm btn-quiet" onClick={() => setVseUpd(!vseUpd)}>
-              {vseUpd ? "Skrýt" : `Zobrazit všech ${data.upd.length}`}
+              {vseUpd ? "Zobrazit méně" : `Zobrazit všech ${data.upd.length}`}
             </button>
           )}
         </div>
@@ -199,8 +198,8 @@ function Rozbaleno({ tid }: { tid: string }) {
       {data.registry.length > 0 ? (
         <div className="pl-registry">
           <div className="pl-registry-hlava">
-            Kde je obec dohledatelná — odkazy se skládají z IČO {data.ico}
-            {data.ds ? <>, datová schránka {data.ds}</> : null}
+            Obec v registrech · IČO {data.ico}
+            {data.ds ? <> · datová schránka {data.ds}</> : null}
           </div>
           {data.registry.map((r) => (
             <a key={r.klic} className="pl-registr" href={r.url} target="_blank" rel="noopener noreferrer">
@@ -210,8 +209,8 @@ function Rozbaleno({ tid }: { tid: string }) {
         </div>
       ) : (
         <p className="pl-bez-ica">
-          IČO úřadu se pro tuhle obec nepodařilo spárovat s ARESem, takže sem nevede přesný odkaz do
-          registrů. Raději žádný než odkaz naslepo do jiné obce.
+          IČO obce se nepodařilo ověřit v ARES, proto tu odkazy do registrů nejsou. Odkaz naslepo by
+          mohl vést k jiné obci.
         </p>
       )}
     </div>
@@ -285,11 +284,11 @@ export function Plany() {
       <PlanyHook plany={seznam} letos={data?.letos ?? new Date().getFullYear()}>
         <div className="row" style={{ marginTop: 18 }}>
           <a className="btn" href="https://up.khk.cz/upd/seznam" target="_blank" rel="noopener noreferrer">
-            <Icon name="external" size={16} /> Evidence ÚPD kraje
+            <Icon name="external" size={16} /> Územní plány v evidenci kraje
           </a>
           <a className="btn" href={data?.obcepro_url ?? "https://www.obcepro.cz/publikovane-dokumenty"}
             target="_blank" rel="noopener noreferrer">
-            <Icon name="external" size={16} /> Registr MMR
+            <Icon name="external" size={16} /> Programy rozvoje v registru MMR
           </a>
         </div>
       </PlanyHook>
@@ -302,7 +301,7 @@ export function Plany() {
             <div className="pl-pas-cisla">
               <span><strong>{num(data.dokumentu)}</strong> dokumentů</span>
               <span><strong>{num(data.kraj.obci)}</strong> obcí</span>
-              <span><strong>{DRUHY.length}</strong> povinnosti</span>
+              <span><strong>{DRUHY.length}</strong> druhy zveřejnění</span>
               <span><strong>{num(data.s_ds)}</strong> úřadů s datovou schránkou</span>
             </div>
             <div className="input-icon pl-hledat">
@@ -314,7 +313,7 @@ export function Plany() {
 
           <div className="pl-telo">
             <aside className="pl-rail reveal">
-              <h2 className="pl-rail-nadpis">Čtyři povinnosti</h2>
+              <h2 className="pl-rail-nadpis">Co obce zveřejňují</h2>
               {data.povinnosti.map((p) => {
                 const kolik = data.ma_celkem[p.klic] ?? 0;
                 const podil = data.kraj.obci ? kolik / data.kraj.obci : 0;
@@ -343,22 +342,20 @@ export function Plany() {
                     ))}
                   </ul>
                   <p className="pl-pov-zdroj">
-                    Ze {num(dekady.reduce((a, x) => a + x.n, 0))} obcí, u kterých evidence uvádí datum
-                    vydání. Rok je datum vydání nejnovějšího nearchivovaného dokumentu, ne konec
-                    platnosti — ten územní plán nemá.
+                    Obcí s datem vydání: {num(dekady.reduce((a, x) => a + x.n, 0))}. Počítá se vydání
+                    nejnovějšího platného dokumentu; konec platnosti územní plán nemá.
                   </p>
                 </div>
               )}
               <p className="pl-rail-pozn">{data.poznamka}</p>
               <p className="pl-rail-pozn">
-                Co z plánu je hotové, se tu netvrdí. Registr, kde by u jednotlivého záměru stálo
-                „realizováno", v Česku neexistuje — obce plnění vyhodnocují vlastními zprávami v PDF,
-                každá po svém.
+                Kolik z plánu je hotové, se tu neukazuje. Registr splněných záměrů v Česku neexistuje,
+                obce plnění hodnotí vlastními zprávami.
               </p>
             </aside>
 
             <div className="pl-vypis reveal" ref={box}>
-              <div className="pl-filtry" role="group" aria-label="Filtr">
+              <div className="pl-filtry" role="group" aria-label="Filtrovat obce">
                 {FILTRY.map((f) => (
                   <button key={f.key} type="button" className={`pl-filtr${filtr === f.key ? " is-on" : ""}`}
                     aria-pressed={filtr === f.key} onClick={() => { setFiltr(f.key); setLimit(60); }}>

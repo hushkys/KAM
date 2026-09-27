@@ -312,7 +312,7 @@ def plany_uzemi(tid: str) -> dict:
 
 @router.get("/geo/{name}")
 def geo(name: str) -> JSONResponse:
-    if name not in ("cz", "khk", "khk_relief"):
+    if name not in ("cz", "khk"):
         raise HTTPException(404)
     data = load_geo(name)
     if not data:

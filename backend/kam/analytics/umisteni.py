@@ -38,21 +38,21 @@ from ..indicators import PILLARS
 # směr -1: nižší je lepší, obec nad mediánem má mezeru
 PRAVIDLA: dict[str, dict] = {
     "spoj": {"code": "d_zast_1000", "smer": 1, "vaha": "110900",
-             "co": "lidí v obcích s podprůměrnou hustotou zastávek",
-             "pozn": "Vrstva IREDO obsahuje zastávky krajské dopravy, ne městskou hromadnou dopravu. "
-                     "Města s vlastním MHD proto vycházejí hůř, než jak se v nich reálně jezdí."},
+             "co": "lidí v obcích s méně zastávkami, než je obvyklé",
+             "pozn": "Počítají se jen zastávky krajské dopravy IREDO, bez městské hromadné dopravy. "
+                     "Města s vlastní MHD proto vycházejí hůř, než jak se v nich skutečně jezdí."},
     "ordinace": {"code": "d_pl_10k", "smer": 1, "vaha": "110900",
-                 "co": "lidí v obcích s podprůměrnou dostupností praktického lékaře"},
+                 "co": "lidí v obcích s horší dostupností praktického lékaře, než je obvyklé"},
     "domov_seniori": {"code": "d_ds_100_65", "smer": 1, "vaha": "110990",
-                      "co": "seniorů v obcích s podprůměrnou kapacitou pobytových služeb"},
+                      "co": "seniorů v obcích s menší kapacitou domovů pro seniory, než je obvyklé"},
     "zs_mista": {"code": "d_zs_trida", "smer": -1, "vaha": "040510",
-                 "co": "žáků v obcích s nadprůměrně plnými třídami"},
+                 "co": "žáků v obcích s plnějšími třídami ZŠ, než je obvyklé"},
     "ms_mista": {"code": "d_ms_trida", "smer": -1, "vaha": "040310",
-                 "co": "dětí v obcích s nadprůměrně plnými třídami MŠ"},
+                 "co": "dětí v obcích s plnějšími třídami MŠ, než je obvyklé"},
     "byty": {"code": "d_osob_byt", "smer": -1, "vaha": "110900",
-             "co": "lidí v obcích s nadprůměrným počtem osob na byt"},
+             "co": "lidí v obcích s víc lidmi na byt, než je obvyklé"},
     "pracovni_mista": {"code": "d_dlouhodobi", "smer": -1, "vaha": "501000",
-                       "co": "uchazečů o práci v obcích s nadprůměrným podílem dlouhodobě nezaměstnaných"},
+                       "co": "uchazečů o práci v obcích s víc dlouhodobě nezaměstnanými, než je obvyklé"},
 }
 
 # Mezera se ořezává: obec s desetinásobkem mediánu není desetkrát potřebnější,
@@ -135,10 +135,10 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
     """Porovná vybraná místa s nejlepší možnou sadou stejné velikosti."""
     pravidlo = PRAVIDLA.get(zasah)
     if pravidlo is None:
-        return {"available": False, "reason": "Pro tenhle zásah neumíme posoudit umístění — chybí ukazatel dostupnosti."}
+        return {"available": False, "reason": "U tohoto zásahu umístění posoudit nejde: chybí ukazatel dostupnosti."}
     radky, mediany, kraj_med = _kandidati(kraj_code, pravidlo)
     if not radky:
-        return {"available": False, "reason": "Pro tenhle ukazatel nemáme v kraji dost dat."}
+        return {"available": False, "reason": "Pro tento ukazatel nejsou v kraji dostatečná data."}
 
     podle_id = {r["id"]: r for r in radky}
     n = pocet or len(vybrane) or 3
@@ -168,9 +168,9 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
                       "mezera": round(r["mezera"] * 100, 1), "prinos": r["prinos"], "vaha": round(r["vaha"]),
                       "pasmo": r["pasmo_label"]}
                      for r in radky[:20]],
-        "pravidlo": ("Přínos = o kolik je obec horší než medián obcí své velikosti (podíl toho mediánu) × počet lidí, "
-                     "kterých se ukazatel týká. Srovnává se uvnitř velikostního pásma, protože ukazatele na tisíc "
-                     "obyvatel jinak systematicky označí za nejpotřebnější největší město. "
+        "pravidlo": ("Přínos = o kolik procent je obec horší než obvyklá hodnota (medián obcí své velikosti), "
+                     "vynásobeno počtem lidí, kterých se ukazatel týká. Obec se srovnává jen s obcemi podobné "
+                     "velikosti, jinak by ukazatele na tisíc obyvatel vždy vybraly největší město. "
                      "Je to pořadí potřebnosti, ne předpověď dopadu: docházkové vzdálenosti ani kapacity "
-                     "otevřená data neobsahují."),
+                     "v otevřených datech nejsou."),
     }

@@ -97,13 +97,13 @@ export function ObceHook({ obce, loading, onOpen, children }: {
       <div className="sc-hook-copy">
         <NadpisHooku id={`${uid}-t`}>Kraj není jedno místo.{art && <><br />Je jich {num(art.body.length)}.</>}</NadpisHooku>
         <p className="lead">
-          Jedna tečka je jedna obec a její plocha odpovídá počtu obyvatel. Od největšího města po vesnici
-          o pár desítkách lidí — a každá z nich má profil ve všech sledovaných oblastech, rizika i výhled.
+          Každá tečka je obec, její velikost odpovídá počtu obyvatel. Otevřete obec ze seznamu níže
+          a uvidíte její ukazatele po oblastech, rizika a výhled.
         </p>
         {art && (
           <div className="ob-kotvy">
             {odkaz(art.max, "Největší")}
-            {odkaz(art.median, "Medián")}
+            {odkaz(art.median, "Prostřední")}
             {odkaz(art.min, "Nejmenší")}
           </div>
         )}
@@ -132,7 +132,7 @@ export function ObceHook({ obce, loading, onOpen, children }: {
                 <line className="ob-osa" x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b + 14} y2={H - PAD.b + 14} />
 
                 <line className="ob-median" x1={art.median.x} x2={art.median.x} y1={PAD.t - 6} y2={H - PAD.b + 8} />
-                <text className="ob-popis stred" x={art.median.x} y={PAD.t - 12} textAnchor="middle">medián {num(art.median.population)}</text>
+                <text className="ob-popis stred" x={art.median.x} y={PAD.t - 12} textAnchor="middle">prostřední obec: {num(art.median.population)}</text>
 
                 <g className="ob-body">
                   {art.body.map((b, i) => (

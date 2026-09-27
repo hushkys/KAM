@@ -69,7 +69,7 @@ function IndicatorTile({ c, onOpen, i, lead }: { c: IndicatorCard; onOpen: () =>
       <InfoHint label={`Jak to víme: ${c.name}`}>
         <strong>{c.derived ? "Odvozený ukazatel" : c.source}</strong>
         {c.formula && <p>Výpočet: {c.formula}</p>}
-        {c.origin && <p>Původní producent: {c.origin}</p>}
+        {c.origin && <p>Původce: {c.origin}</p>}
         {c.text && <p>{c.text}</p>}
         <p className="mute">Poslední údaj za rok {c.year}.</p>
       </InfoHint>
@@ -148,13 +148,13 @@ function SeriesModal({ tid, card, onClose }: { tid: string; card: IndicatorCard 
       <div className="facts-list">
         <div className="fact-row"><span>Poslední hodnota</span><span>{withUnit(card.value, card.unit)} ({card.year})</span></div>
         <div className="fact-row"><span>Vyhodnocení vývoje</span><span>{t.label}{t.since ? ` od roku ${t.since}` : ""}</span></div>
-        {t.pct_per_year !== undefined && <div className="fact-row"><span>Průměrná změna (Theil–Sen)</span><span>{signed(t.pct_per_year, 2, " % ročně")}</span></div>}
-        {t.p_value !== undefined && <div className="fact-row"><span>Významnost (Mann–Kendall)</span><span>p = {num(t.p_value, 3)}</span></div>}
-        {(t.outliers ?? []).length > 0 && <div className="fact-row"><span>Jednorázové výkyvy</span><span>{t.outliers!.map((o) => `${o.year} (${num(o.z, 1)} σ)`).join(", ")}</span></div>}
+        {t.pct_per_year !== undefined && <div className="fact-row"><span>Průměrná změna</span><span>{signed(t.pct_per_year, 2, " % ročně")}</span></div>}
+        {t.p_value !== undefined && <div className="fact-row"><span>Jak jistý je trend <InfoHint label="Co znamená p">Čím menší číslo, tím méně pravděpodobné je, že by takový vývoj vznikl náhodou. Počítá se testem Mann–Kendall, který si poradí i s malými čísly a výkyvy.</InfoHint></span><span>p = {num(t.p_value, 3)}</span></div>}
+        {(t.outliers ?? []).length > 0 && <div className="fact-row"><span>Jednorázové výkyvy <InfoHint label="Jak se výkyv pozná">Rok, kdy hodnota vybočila z obvyklého kolísání řady. Číslo v závorce říká, o kolik běžných odchylek (σ) vybočila.</InfoHint></span><span>{t.outliers!.map((o) => `${o.year} (${num(o.z, 1)} σ)`).join(", ")}</span></div>}
       </div>
       <div className="row" style={{ marginTop: 14 }}>
-        {card.source_url && <a className="btn btn-sm" href={card.source_url} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Zdroj dat</a>}
-        <button className="btn btn-sm btn-quiet" onClick={() => { onClose(); openAssistant(`Proč se ukazatel „${card.name}“ vyvíjí takto a co to znamená?`, tid); }}><Icon name="sparkle" size={15} /> Vysvětlit</button>
+        {card.source_url && <a className="btn btn-sm" href={card.source_url} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Otevřít zdroj dat</a>}
+        <button className="btn btn-sm btn-quiet" onClick={() => { onClose(); openAssistant(`Proč se ukazatel „${card.name}“ vyvíjí takto a co to znamená?`, tid); }}><Icon name="sparkle" size={15} /> Vysvětlit s asistentem</button>
       </div>
     </Modal>
   );
@@ -181,7 +181,7 @@ function RiskItem({ r }: { r: Risk }) {
       </details>
       {r.interventions.length > 0 && (
         <div className="chips">
-          <button className="chip-btn" onClick={() => navigate(`/scenare?t=${r.id.split(":").slice(0, 2).join(":")}&add=${r.interventions[0]}`)}><Icon name="split" size={14} /> Simulovat řešení</button>
+          <button className="chip-btn" onClick={() => navigate(`/scenare?t=${r.id.split(":").slice(0, 2).join(":")}&add=${r.interventions[0]}`)}><Icon name="split" size={14} /> Vyzkoušet zásah ve scénáři</button>
         </div>
       )}
     </div>
@@ -214,14 +214,15 @@ export function Profile({ id }: { id: string }) {
               {t.population !== null && <span><strong>{num(t.population)}</strong> obyvatel ({t.population_year})</span>}
               {t.area_km2 !== null && <span><strong>{num(t.area_km2, 1)}</strong> km²</span>}
               {t.okres && t.level === "obec" && <span>{t.okres}</span>}
-              <span className="mute">srovnání: {data?.reference.name}</span>
+              <span className="mute">srovnávací území: {data?.reference.name}</span>
+              <InfoHint label="Jak číst profil">Ukazatele jsou rozdělené do oblastí (demografie, doprava, školství…). Kliknutím na oblast zobrazíte jen ji. Stav oblasti shrnuje její ukazatele: kolik se jich zhoršuje nebo je horší než {data?.reference.name} a kolik naopak.</InfoHint>
             </div>
           )}
         </div>
         <div className="page-header-actions">
           <Link className="btn" to={`/vyhled?t=${id}`}><Icon name="trend-up" size={16} /> Výhled</Link>
-          <button className="btn" onClick={() => openAssistant(`Shrň, co se děje v území ${t?.name ?? ""} a co mu hrozí.`, id)}><Icon name="sparkle" size={16} /> Zeptat se</button>
-          <Link className="btn btn-primary" to={`/scenare?t=${id}`}><Icon name="split" size={16} /> Simulovat</Link>
+          <button className="btn" onClick={() => openAssistant(`Shrň, co se děje v území ${t?.name ?? ""} a co mu hrozí.`, id)}><Icon name="sparkle" size={16} /> Zeptat se asistenta</button>
+          <Link className="btn btn-primary" to={`/scenare?t=${id}`}><Icon name="split" size={16} /> Simulovat zásah</Link>
         </div>
       </div>
 
@@ -244,21 +245,21 @@ export function Profile({ id }: { id: string }) {
                 <Card key={p.key} i={pi} title={p.label} icon={PILLAR_ICON[p.key]} actions={<span className="pill"><span className={`status-dot status-${p.status}`} /> {p.status_label}</span>}>
                   {p.cards.length ? (
                     <div className="ind-grid">{p.cards.map((c, i) => <IndicatorTile key={c.code} c={c} i={i} lead={i === 0 && p.cards.length > 2} onOpen={() => setOpen(c)} />)}</div>
-                  ) : <Empty title="Pro tuto oblast nejsou data">Chybějící data sleduje stránka Datové potřeby.</Empty>}
+                  ) : <Empty title="Pro tuto oblast nejsou data">Co chybí, eviduje Data → Chybějící data.</Empty>}
                 </Card>
               ))}
             </div>
             <div className="span-4 stack-y">
-              <Card title="Rizika" icon="alert" i={1} actions={<span className="xsmall mute">pravidla nad daty</span>}>
-                {data.risks.length ? data.risks.slice(0, 6).map((r) => <RiskItem key={r.id} r={r} />) : <Empty icon="check" title="Bez výrazných rizik">Pravidla KAM nenašla v datech významný problém.</Empty>}
+              <Card title="Rizika" icon="alert" i={1} actions={<InfoHint label="Co je riziko">Riziko hlásí pevné pravidlo nad zveřejněnými daty: nepříznivý dlouhodobý trend, opakující se problém nebo stav, který překročil stanovený práh či je výrazně horší než v kraji. Není to odhad ani názor. U malých obcí a krátkých řad je důvěra nižší, protože pár lidí tam pohne jakýmkoli podílem.</InfoHint>}>
+                {data.risks.length ? data.risks.slice(0, 6).map((r) => <RiskItem key={r.id} r={r} />) : <Empty icon="check" title="Bez výrazných rizik">Pravidla v datech nenašla významný problém.</Empty>}
               </Card>
-              <Card title="Kam území směřuje" icon="trend-up" i={2} actions={<KindTag kind="MODEL" />}>
+              <Card title="Výhled počtu obyvatel" icon="trend-up" i={2} actions={<KindTag kind="MODEL" />}>
                 {data.outlook.milestones ? (
                   <div className="facts-list">
                     {data.outlook.milestones.map((m) => (
                       <div className="fact-row" key={m.year}><span>{m.year}</span><span className="num">{num(m.population)} <span className="mute xsmall">({num(m.lower)}–{num(m.upper)})</span></span></div>
                     ))}
-                    <Link to={`/vyhled?t=${id}`} className="btn btn-sm btn-quiet">Scénáře a předpoklady <Icon name="arrow-right" size={14} /></Link>
+                    <Link to={`/vyhled?t=${id}`} className="btn btn-sm btn-quiet">Celý výhled a předpoklady <Icon name="arrow-right" size={14} /></Link>
                   </div>
                 ) : <p className="muted small">{data.outlook.reason}</p>}
               </Card>
@@ -266,13 +267,13 @@ export function Profile({ id }: { id: string }) {
                 <Card title="Služby a infrastruktura" icon="home" i={3}>
                   <div className="facts-list">
                     {data.facts.posta && <div className="fact-row"><span>Pošta</span><span>{data.facts.posta.value}</span></div>}
-                    {data.facts.kanalizace && <div className="fact-row"><span>Kanalizace (domy)</span><span>{data.facts.kanalizace.value}</span></div>}
+                    {data.facts.kanalizace && <div className="fact-row"><span>Domy napojené na kanalizaci</span><span>{data.facts.kanalizace.value}</span></div>}
                     {data.facts.uzemni_plan && <div className="fact-row"><span>Územní plán</span><span>{data.facts.uzemni_plan.value}</span></div>}
                     {data.facts.hsoo && <div className="fact-row"><span>Hospodářsky a sociálně ohrožená oblast</span><span>{data.facts.hsoo.value}</span></div>}
                     {data.facts.isv_kategorie && <div className="fact-row"><span>Index sociálního vyloučení</span><span>kategorie {data.facts.isv_kategorie.value}</span></div>}
                     {(data.pois ?? []).map((p) => <div className="fact-row" key={p.kind}><span>{p.label}</span><span className="num">{num(p.count)}</span></div>)}
                   </div>
-                  <p className="xsmall mute" style={{ marginTop: 8 }}>Zdroj: Data KHK (ArcGIS služby kraje)</p>
+                  <p className="xsmall mute" style={{ marginTop: 8 }}>Zdroj: Data KHK (mapové služby kraje)</p>
                 </Card>
               )}
               {t?.level === "obec" && <PlanyKarta tid={id} i={4} />}

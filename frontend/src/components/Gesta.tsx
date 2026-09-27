@@ -41,7 +41,7 @@ function telefon(): boolean {
 /** Patří vodorovný tah někomu jinému?
  *
  *  Pravidlo je schválně obecné, ne seznam tříd: prvek, který má `touch-action`
- *  bez vodorovné složky, si o vodorovný pohyb řekl sám (mapa, 3D terén,
+ *  bez vodorovné složky, si o vodorovný pohyb řekl sám (mapa,
  *  posuvník), a prvek, který se dá posunout do strany, si ho zaslouží
  *  (tabulka, ukázka kódu, pruh záložek). Nové komponenty se tím řídí samy;
  *  `data-gesto="ne"` je pro případy, o kterých CSS neví.

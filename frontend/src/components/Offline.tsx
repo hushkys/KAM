@@ -60,7 +60,7 @@ export function Offline() {
   if (!venku) return null;
   return (
     <div className={`offline-pruh glass ${maly ? "je-maly" : ""}`} role="status"
-      title="Aplikace čte poslední staženou odpověď. Čísla nemusí být aktuální."
+      title="Server teď nejde zastihnout. Čísla jsou z poslední návštěvy a nemusí být aktuální."
       onPointerEnter={() => setMaly(false)} onClick={() => setMaly((m) => !m)}>
       <span className="off-sheen" aria-hidden="true" />
       <Icon name="alert" size={13} />

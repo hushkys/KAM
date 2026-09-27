@@ -40,11 +40,11 @@ function Seznam({ v, title, tone }: { v: Varianta; title: string; tone?: string 
         {v.obce.map((o) => (
           <li key={o.id}>
             <span className="um-obec"><Erb id={o.id} name={o.name} size={20} /><span>{o.name}</span></span>
-            <span className="um-detail mute">{num(o.hodnota, 2)} · medián pásma {num(o.median_pasma, 2)} · {o.pasmo}</span>
+            <span className="um-detail mute">{num(o.hodnota, 2)} · v obcích {o.pasmo} obvykle {num(o.median_pasma, 2)}</span>
             <span className="um-prinos num">{num(o.prinos)}</span>
           </li>
         ))}
-        {v.obce.length === 0 && <li className="mute">Zatím nic nevybráno.</li>}
+        {v.obce.length === 0 && <li className="mute">Zatím žádná obec.</li>}
       </ul>
     </div>
   );
@@ -64,7 +64,7 @@ export function Umisteni({ kraj = 86 }: { kraj?: number }) {
     try {
       setRes(await api<Vysledek>("/umisteni", { body: { zasah: kod, obce: vyber.map((o) => o.id), kraj } }));
     } catch (e) {
-      setChyba(e instanceof Error ? e.message : "Nepovedlo se spočítat.");
+      setChyba(e instanceof Error ? e.message : "Porovnání se nepodařilo spočítat.");
     } finally {
       setBezi(false);
     }
@@ -93,11 +93,11 @@ export function Umisteni({ kraj = 86 }: { kraj?: number }) {
   }, []);
 
   return (
-    <Card i={4} title="Kde to postavit" icon="pin"
+    <Card i={4} title="Kam zásah umístit" icon="pin"
       actions={res?.available ? <InfoHint label="Podle jakého pravidla">{res.pravidlo}</InfoHint> : undefined}>
       <p className="muted small">
-        Tři zastávky v obci, která jich má nadprůměr, nikomu nepomůžou. Vyberte místa a porovnejte je
-        s nejlepší sadou stejné velikosti.
+        Vyberte obce, kam chcete zásah dát, a porovnejte je s obcemi, kde je ho podle dat nejvíc
+        potřeba. Každá obec se srovnává s obcemi podobné velikosti.
       </p>
 
       <div className="um-ovladani">
@@ -129,7 +129,7 @@ export function Umisteni({ kraj = 86 }: { kraj?: number }) {
         <>
           <div className="row" style={{ margin: "14px 0 10px" }}>
             <KindTag kind="MODEL" />
-            <span className="muted small">{res.ukazatel.name} · {res.co}</span>
+            <span className="muted small">{res.ukazatel.name} · přínos se počítá z počtu {res.co}</span>
           </div>
 
           <div className="um-grid">
@@ -140,14 +140,14 @@ export function Umisteni({ kraj = 86 }: { kraj?: number }) {
           {res.vase && res.vase.obce.length > 0 && (
             <p className="um-zaver">
               {res.rozdil === 0
-                ? "Vybrali jste přesně ta místa, která pravidlo označuje za nejpotřebnější."
-                : <>Nejpotřebnější místa by posloužila o <strong>{num(res.rozdil)}</strong>{" "}
-                  ({num(res.rozdil_podil, 1)} %) víc — {res.co}.</>}
+                ? "Vybrali jste přesně obce, kde je zásah podle tohoto pravidla nejvíc potřeba."
+                : <>V obcích, kde je zásah nejvíc potřeba, by měl přínos o <strong>{num(res.rozdil)}</strong>{" "}
+                  ({num(res.rozdil_podil, 1)} %) vyšší než ve vaší volbě.</>}
             </p>
           )}
 
           <div className="section-gap" />
-          <h4 className="um-pod">Nejpotřebnější obce podle tohoto pravidla</h4>
+          <h4 className="um-pod">Kde je zásah nejvíc potřeba</h4>
           <BarList format={(v) => num(v)}
             items={res.zebricek.slice(0, 10).map((z) => ({
               key: z.id, value: z.prinos,
@@ -156,7 +156,7 @@ export function Umisteni({ kraj = 86 }: { kraj?: number }) {
             }))} />
 
           <p className="xsmall mute" style={{ marginTop: 12 }}>
-            Mediány pásem: {res.mediany_pasem.map((m) => `${m.pasmo} ${num(m.median, 2)}`).join(" · ")}.
+            Obvyklá hodnota (medián) podle velikosti obce: {res.mediany_pasem.map((m) => `${m.pasmo} ${num(m.median, 2)}`).join(" · ")}.
             {res.pozn_dat ? ` ${res.pozn_dat}` : ""}
           </p>
         </>

@@ -73,7 +73,7 @@ export function TerritoryPicker({ value, onChange, label = "Území", levels }: 
       <div className="input-icon">
         <Icon name="pin" size={16} />
         <input ref={input} className="input" role="combobox" aria-expanded={open} aria-autocomplete="list" aria-label={label} aria-controls="picker-listbox"
-          value={open ? q : current ? `${current.name} · ${current.level_label}` : ""} placeholder="Hledat obec, ORP nebo kraj…" autoComplete="off" enterKeyHint="search"
+          value={open ? q : current ? `${current.name} · ${current.level_label}` : ""} placeholder="Napište název obce, ORP nebo okresu…" autoComplete="off" enterKeyHint="search"
           onFocus={() => { setOpen(true); setActive(0); }} onChange={(e) => { setQ(e.target.value); setOpen(true); setActive(0); }}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(rows.length - 1, a + 1)); }
@@ -95,7 +95,7 @@ export function TerritoryPicker({ value, onChange, label = "Území", levels }: 
               <span className="mute small num">{num(t.population)}</span>
             </button>
           ))}
-          {!rows.length && <div className="empty"><strong>Nic nenalezeno</strong></div>}
+          {!rows.length && <div className="empty"><strong>Žádné území tohoto názvu</strong></div>}
         </div>,
         document.body,
       )}

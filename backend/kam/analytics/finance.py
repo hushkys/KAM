@@ -139,15 +139,15 @@ def souhrn(tid: str) -> dict:
     ref = srovnani(level, t.kraj_code if t else 86, roky) if level in ("obec", "orp") else {}
 
     if podil < PRAHY["provozni_podil"][0]:
-        stav, popis = "riziko", "Provoz spotřebuje skoro všechny příjmy — na investice ani na rezervu nezbývá."
+        stav, popis = "riziko", "Provoz spotřebuje skoro všechny příjmy. Na investice ani na rezervu nezbývá."
     elif kryti is None:
-        stav, popis = "neutral", "V posledních letech obec do majetku prakticky neinvestovala."
+        stav, popis = "neutral", "Obec v posledních letech do majetku skoro neinvestovala."
     elif kryti >= PRAHY["kryti"][1]:
-        stav, popis = "dobre", "Investice si obec platí z vlastního provozního přebytku."
+        stav, popis = "dobre", "Investice obec platí z peněz, které jí zbydou z provozu."
     elif kryti >= PRAHY["kryti"][0]:
-        stav, popis = "neutral", "Většinu investic obec utáhne sama, zbytek dotáhnou dotace nebo úvěr."
+        stav, popis = "neutral", "Většinu investic obec zaplatí sama, zbytek pokryjí dotace nebo úvěr."
     else:
-        stav, popis = "pozor", "Investice stojí hlavně na cizích penězích — bez dotace nebo úvěru by se nekonaly."
+        stav, popis = "pozor", "Investice stojí hlavně na dotacích a úvěrech, vlastní peníze na ně nestačí."
 
     return {
         "roky": rady,
@@ -163,9 +163,9 @@ def souhrn(tid: str) -> dict:
             "kraj_kapital_obyv": round(ref["kapital_obyv"]) if ref.get("kapital_obyv") is not None else None,
             "kraj_provozni_obyv": round(ref["provozni_obyv"]) if ref.get("provozni_obyv") is not None else None,
             "stav": stav, "popis": popis,
-            "pravidlo": (f"Dobře: vlastní přebytek pokryje aspoň {PRAHY['kryti'][1]:.0f} % investic. "
-                         f"Pozor: pod {PRAHY['kryti'][0]:.0f} %. "
-                         f"Riziko: provozní přebytek pod {PRAHY['provozni_podil'][0]:.0f} % příjmů."),
+            "pravidlo": (f"Dobře: z toho, co zbyde po zaplacení provozu, obec pokryje aspoň {PRAHY['kryti'][1]:.0f} % investic. "
+                         f"Pozor: méně než {PRAHY['kryti'][0]:.0f} %. "
+                         f"Riziko: po zaplacení provozu zbyde méně než {PRAHY['provozni_podil'][0]:.0f} % příjmů."),
         },
         "zdroj": "ČSÚ MOS (výkaz FIN 2-12 M, MONITOR státní pokladny)",
     }

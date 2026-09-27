@@ -111,8 +111,8 @@ export function MapaHook({ orp, obce, krajCode = KHK, children }: {
       <div className="sc-hook-copy">
         <NadpisHooku id={`${uid}-t`}>Tři měřítka,<br />jedna mapa</NadpisHooku>
         <p className="lead">
-          Česko po krajích, kraj po ORP, ORP po obcích — {num(obce)} hranic z registru ČÚZK.
-          Klepnutí na území vás pustí o patro níž a v pohledu na kraj mapu přepnete do skutečného terénu.
+          Česko po krajích, kraj po ORP a {num(obce)} obcích, s hranicemi z registru ČÚZK.
+          Klepnutím na území zobrazíte jeho údaje.
         </p>
         {children}
       </div>
@@ -121,7 +121,7 @@ export function MapaHook({ orp, obce, krajCode = KHK, children }: {
         <div className="sc-pane p1">
           <span className="sc-sheen" />
           <svg className="sc-art mp-art" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
-            role="img" aria-label={art ? `Česko po krajích, Královéhradecký kraj po ORP a ORP ${art.vybraneOrp.name} po obcích` : "Načítám hranice"}>
+            role="img" aria-label={art ? `Česko po krajích, Královéhradecký kraj po ORP a ORP ${art.vybraneOrp.name} po obcích` : "Hranice se načítají"}>
             {art && (
               <>
                 {/* Kužel přiblížení: z jednoho tvaru vlevo je celý panel vpravo. */}

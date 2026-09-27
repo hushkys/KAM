@@ -21,13 +21,13 @@ import { Modal } from "./ui";
 /** Co otevře „Více" na telefonu. Stránky se berou z NAV, aby místo přidané
  *  tam nemohlo tady chybět. */
 const MORE_SECTIONS: { title: string; items: { path: string; label: string; module: string; desc: string }[] }[] = [
-  { title: "Analýza", items: NAV.filter((n) => n.extra && n.group === "main") },
-  { title: "Nástroje", items: NAV.filter((n) => n.extra && n.group === "tools") },
+  { title: "Analýza kraje", items: NAV.filter((n) => n.extra && n.group === "main") },
+  { title: "Obec, veřejnost a nástroje", items: NAV.filter((n) => n.extra && n.group === "tools") },
   {
     title: "O aplikaci",
     items: [
-      { path: "/o-nas", label: "O nás", module: "onas", desc: "Tým Popojedem. a projekt KAM" },
-      { path: "/pravni", label: "Právní informace", module: "nastaveni", desc: "Podmínky, soukromí, AI" },
+      { path: "/o-nas", label: "O nás", module: "onas", desc: "Kdo KAM postavil a proč" },
+      { path: "/pravni", label: "Právní informace", module: "nastaveni", desc: "Podmínky, soukromí a umělá inteligence" },
     ],
   },
 ];
@@ -123,7 +123,7 @@ export function Dock() {
             <ModuleIcon name="nastaveni" size={20} />
             <span className="sb-label">Nastavení</span>
           </Link>
-          <Link to="/o-nas" className="sb-item" aria-current={current("/o-nas") ? "page" : undefined} title="O nás — tým Popojedem. a projekt KAM">
+          <Link to="/o-nas" className="sb-item" aria-current={current("/o-nas") ? "page" : undefined} title="O nás — kdo KAM postavil a proč">
             <ModuleIcon name="onas" size={20} />
             <span className="sb-label">O nás</span>
           </Link>
@@ -155,7 +155,7 @@ export function Dock() {
       {/* Řádky, ne mřížka čtverců: dva sloupce dlaždic zalomí popisy do různé
           výšky, nic nelícuje a oko nemá po čem jet dolů. Řádek přes celou
           šířku se dá přečíst a je to cíl široký jako obrazovka. */}
-      <Modal open={more} onClose={() => setMore(false)} title="Další" sheet>
+      <Modal open={more} onClose={() => setMore(false)} title="Další stránky" sheet>
         <div className="more-list">
           {MORE_SECTIONS.map((section) => (
             <Fragment key={section.title}>
@@ -187,10 +187,10 @@ function Cerstvost() {
   if (!data) return null;
   const kdy = data.obnoveno ?? data.hodnoty_zapsany;
   const stare = !kdy || Date.now() - new Date(kdy).getTime() > 3 * 864e5;
-  const radek1 = data.obnoveno ? `Obnoveno ${date(data.obnoveno)}` : kdy ? `Sklizeno ${date(kdy)}` : "Data zatím neobnovena";
+  const radek1 = data.obnoveno ? `Data obnovena ${date(data.obnoveno)}` : kdy ? `Data načtena ${date(kdy)}` : "Data se zatím neobnovila";
   const radek2 = data.rok_statistik ? `Statistiky ČSÚ za rok ${data.rok_statistik}` : "";
   return (
-    <Link to="/statistiky" className={`sb-cerstvost${stare ? " je-stare" : ""}`} title={`${radek1}${radek2 ? ` · ${radek2}` : ""}${data.odkazy_overeny ? ` · odkazy ověřeny ${date(data.odkazy_overeny)}` : ""}`}>
+    <Link to="/statistiky" className={`sb-cerstvost${stare ? " je-stare" : ""}`} title={`${radek1}${radek2 ? ` · ${radek2}` : ""}${data.odkazy_overeny ? ` · odkazy zkontrolovány ${date(data.odkazy_overeny)}` : ""}${stare && kdy ? " · obnova neproběhla přes tři dny" : ""}`}>
       <i aria-hidden="true" />
       <span className="sb-label"><b>{radek1}</b>{radek2 && <span>{radek2}</span>}</span>
     </Link>

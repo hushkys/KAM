@@ -62,35 +62,35 @@ INTERVENTIONS: dict[str, dict] = {
 # Krátký popis ke každému zásahu. Nadpis řekne co, tohle řekne, co zásah
 # v modelu opravdu dělá — a tím i co od výsledku čekat a co ne.
 INTERVENTION_HELP: dict[str, str] = {
-    "byty": "Přivede nové obyvatele podle obsazenosti a velikosti bytů. Mezi nimi bývá víc dětí než v současné struktuře.",
-    "zs_mista": "Zvýší kapacitu základních škol. Poptávku nemění — tu určuje počet dětí.",
-    "ms_mista": "Zvýší kapacitu mateřských škol. Poptávku nemění.",
-    "spoj": "Přidá zastávky a provozní náklad na kilometr. Počet obyvatel sám o sobě nemění.",
-    "pracovni_mista": "Část míst obsadí místní uchazeči, část přistěhovalí. Oba podíly jsou předpoklad, který jde přepsat.",
-    "domov_seniori": "Přidá pobytová místa pro seniory a investici na lůžko.",
-    "ordinace": "Zvýší počet ordinací praktického lékaře na 10 000 obyvatel.",
-    "stomatolog": "Zvýší počet zubních ordinací na 10 000 obyvatel.",
+    "byty": "Přivede nové obyvatele podle počtu a obsazenosti bytů. Bývá mezi nimi víc dětí, než má obec dnes.",
+    "zs_mista": "Přidá místa v základních školách. Počet dětí, které do nich chodí, nemění.",
+    "ms_mista": "Přidá místa v mateřských školách. Počet dětí nemění.",
+    "spoj": "Přidá zastávky a náklady na provoz. Počet obyvatel nemění.",
+    "pracovni_mista": "Část míst obsadí místní uchazeči, část lidé, kteří se přistěhují. Oba podíly jsou odhad a dají se změnit.",
+    "domov_seniori": "Přidá lůžka pro seniory a náklady na jejich vybudování.",
+    "ordinace": "Přidá ordinace praktického lékaře a přepočte je na 10 000 obyvatel.",
+    "stomatolog": "Přidá zubní ordinace a přepočte je na 10 000 obyvatel.",
 }
 
 ASSUMPTIONS: dict[str, dict] = {
-    "obsazenost_bytu": {"label": "Obsazenost nových bytů", "value": 0.95, "unit": "podíl", "why": "Část bytů zůstává neobydlená nebo slouží k rekreaci."},
-    "osob_byt_bd": {"label": "Osob na byt v bytovém domě (násobek průměru území)", "value": 0.9, "unit": "×", "why": "Byty v bytových domech jsou menší než průměr (SLDB 2021)."},
-    "osob_byt_rd": {"label": "Osob na byt v rodinném domě (násobek průměru území)", "value": 1.15, "unit": "×", "why": "Rodinné domy obývají častěji rodiny s dětmi."},
-    "osob_byt_najem": {"label": "Osob na obecní nájemní byt (násobek průměru území)", "value": 0.85, "unit": "×", "why": "Obecní nájemní byty bývají menší a častěji v nich bydlí jednotlivci a senioři."},
-    "deti_najem": {"label": "Podíl dětí mezi nájemníky obecních bytů (násobek současného)", "value": 1.0, "unit": "×", "why": "Obecní nájemní bydlení neláká rodiny o nic víc než zbytek obce."},
-    "deti_nasobek": {"label": "Podíl dětí mezi novousedlíky (násobek současného)", "value": 1.35, "unit": "×", "why": "Do nové výstavby se stěhují převážně mladé rodiny."},
-    "seniori_nasobek": {"label": "Podíl seniorů mezi novousedlíky (násobek současného)", "value": 0.5, "unit": "×", "why": "Senioři se stěhují výrazně méně."},
-    "max_zs_trida": {"label": "Maximální počet žáků ve třídě ZŠ", "value": 30, "unit": "žáků", "why": "Vyhláška č. 48/2005 Sb., § 4."},
-    "max_ms_trida": {"label": "Maximální počet dětí ve třídě MŠ", "value": 24, "unit": "dětí", "why": "Vyhláška č. 14/2005 Sb., § 2."},
-    "aut_na_obyvatele": {"label": "Osobních aut na obyvatele", "value": 0.6, "unit": "aut", "why": "Přibližně celostátní úroveň automobilizace."},
-    "cest_na_auto": {"label": "Cest autem za den na auto", "value": 2.2, "unit": "cest", "why": "Obvyklá hodnota dopravních průzkumů."},
-    "naklad_km": {"label": "Provozní náklad autobusu", "value": 55, "unit": "Kč/km", "why": "Orientační hodnota veřejných zakázek regionální dopravy — nastavte dle smlouvy."},
+    "obsazenost_bytu": {"label": "Obsazenost nových bytů", "value": 0.95, "unit": "podíl", "why": "Část bytů zůstane prázdná nebo poslouží k rekreaci."},
+    "osob_byt_bd": {"label": "Lidí na byt v bytovém domě (× průměr území)", "value": 0.9, "unit": "×", "why": "Byty v bytových domech jsou menší než průměr (sčítání lidu 2021)."},
+    "osob_byt_rd": {"label": "Lidí na byt v rodinném domě (× průměr území)", "value": 1.15, "unit": "×", "why": "V rodinných domech bydlí častěji rodiny s dětmi."},
+    "osob_byt_najem": {"label": "Lidí na obecní nájemní byt (× průměr území)", "value": 0.85, "unit": "×", "why": "Obecní byty bývají menší a častěji v nich bydlí jednotlivci a senioři."},
+    "deti_najem": {"label": "Děti mezi nájemníky obecních bytů (× dnešní podíl)", "value": 1.0, "unit": "×", "why": "Obecní byty nepřitahují rodiny s dětmi víc než zbytek obce."},
+    "deti_nasobek": {"label": "Děti mezi nově přistěhovanými (× dnešní podíl)", "value": 1.35, "unit": "×", "why": "Do nové výstavby se stěhují hlavně mladé rodiny."},
+    "seniori_nasobek": {"label": "Senioři mezi nově přistěhovanými (× dnešní podíl)", "value": 0.5, "unit": "×", "why": "Senioři se stěhují mnohem méně."},
+    "max_zs_trida": {"label": "Nejvyšší počet žáků ve třídě ZŠ", "value": 30, "unit": "žáků", "why": "Vyhláška č. 48/2005 Sb., § 4."},
+    "max_ms_trida": {"label": "Nejvyšší počet dětí ve třídě MŠ", "value": 24, "unit": "dětí", "why": "Vyhláška č. 14/2005 Sb., § 2."},
+    "aut_na_obyvatele": {"label": "Osobních aut na obyvatele", "value": 0.6, "unit": "aut", "why": "Zhruba celostátní průměr."},
+    "cest_na_auto": {"label": "Cest za den na jedno auto", "value": 2.2, "unit": "cest", "why": "Obvyklá hodnota z dopravních průzkumů."},
+    "naklad_km": {"label": "Provozní náklad autobusu", "value": 55, "unit": "Kč/km", "why": "Orientační cena z veřejných zakázek na regionální dopravu. Upravte podle své smlouvy."},
     "provozni_dny": {"label": "Provozních dní v roce", "value": 250, "unit": "dní", "why": "Pracovní dny."},
-    "naklad_misto_zs": {"label": "Investice na jedno místo ve škole", "value": 1.2, "unit": "mil. Kč", "why": "Orientační — nahraďte rozpočtem projektu."},
-    "naklad_luzko": {"label": "Investice na jedno lůžko", "value": 2.5, "unit": "mil. Kč", "why": "Orientační — nahraďte rozpočtem projektu."},
-    "mista_nezamestnani": {"label": "Podíl nových míst obsazených místními uchazeči", "value": 0.35, "unit": "podíl", "why": "Část míst obsadí dojíždějící a noví obyvatelé."},
-    "mista_prichozi": {"label": "Podíl nových míst obsazených přistěhovalými", "value": 0.2, "unit": "podíl", "why": "Zbytek obsadí místní a dojíždějící."},
-    "osob_domacnost": {"label": "Osob na přistěhovalou domácnost", "value": 2.3, "unit": "osob", "why": "Průměrná velikost domácnosti."},
+    "naklad_misto_zs": {"label": "Investice na jedno místo ve škole", "value": 1.2, "unit": "mil. Kč", "why": "Orientační. Nahraďte rozpočtem projektu."},
+    "naklad_luzko": {"label": "Investice na jedno lůžko", "value": 2.5, "unit": "mil. Kč", "why": "Orientační. Nahraďte rozpočtem projektu."},
+    "mista_nezamestnani": {"label": "Podíl nových míst pro místní uchazeče o práci", "value": 0.35, "unit": "podíl", "why": "Zbytek obsadí dojíždějící a noví obyvatelé."},
+    "mista_prichozi": {"label": "Podíl nových míst pro lidi, kteří se přistěhují", "value": 0.2, "unit": "podíl", "why": "Zbytek obsadí místní a dojíždějící."},
+    "osob_domacnost": {"label": "Lidí v jedné přistěhované domácnosti", "value": 2.3, "unit": "osob", "why": "Průměrná velikost domácnosti."},
 }
 
 HORIZON = (2030, 2035, 2040)
@@ -248,16 +248,16 @@ def compute(payload: dict) -> dict:
 
     def warnings(rows: list[dict]) -> list[dict]:
         out = []
-        for key, label, cap_key in (("zs_util", "Kapacita základních škol", "zs_capacity"), ("ms_util", "Kapacita mateřských škol", "ms_capacity")):
+        for key, label, cap_key in (("zs_util", "Základní školy", "zs_capacity"), ("ms_util", "Mateřské školy", "ms_capacity")):
             crit = next((r for r in rows if r[key] and r[key] > 1.0), None)
             warn = next((r for r in rows if r[key] and r[key] > 0.9), None)
             if crit:
                 need = crit[key.replace("util", "demand")] - crit[cap_key]
-                out.append({"key": key, "level": "kriticke", "year": crit["year"], "title": f"{label}: překročení v roce {crit['year']}",
-                            "text": f"Poptávka {_fmt(crit[key.replace('util', 'demand')])} míst při kapacitě {_fmt(crit[cap_key])} ({_fmt(100 * crit[key])} %). Chybí asi {_fmt(need)} míst.",
+                out.append({"key": key, "level": "kriticke", "year": crit["year"], "title": f"{label}: v roce {crit['year']} nebudou stačit",
+                            "text": f"Potřeba {_fmt(crit[key.replace('util', 'demand')])} míst, kapacita {_fmt(crit[cap_key])} ({_fmt(100 * crit[key])} %). Chybí asi {_fmt(need)} míst.",
                             "suggest": "zs_mista" if key == "zs_util" else "ms_mista"})
             elif warn:
-                out.append({"key": key, "level": "vysoke", "year": warn["year"], "title": f"{label}: vytížení nad 90 % od roku {warn['year']}",
+                out.append({"key": key, "level": "vysoke", "year": warn["year"], "title": f"{label}: od roku {warn['year']} plné z více než 90 %",
                             "text": f"Vytížení dosáhne {_fmt(100 * warn[key])} %.", "suggest": "zs_mista" if key == "zs_util" else "ms_mista"})
         if ref_gp and ref_gp[1]:
             low = next((r for r in rows if r["gp_10k"] is not None and r["gp_10k"] < 0.7 * ref_gp[1]), None)
@@ -283,8 +283,8 @@ def compute(payload: dict) -> dict:
 
     metrics = []
     for key, label, unit, d in (("population", "Obyvatelé", "osob", 0), ("age_0_14", "Děti 0–14 let", "osob", 0), ("age_65", "Senioři 65+", "osob", 0),
-                                ("zs_util", "Vytížení ZŠ", "%", 1), ("ms_util", "Vytížení MŠ", "%", 1), ("gp_10k", "Ordinace PL na 10 tis.", "", 2), ("zub_10k", "Zubní ordinace na 10 tis.", "", 2),
-                                ("ds_100_65", "Místa DS na 100 seniorů", "", 2), ("unemployed", "Uchazeči o zaměstnání", "osob", 0),
+                                ("zs_util", "Vytížení ZŠ", "%", 1), ("ms_util", "Vytížení MŠ", "%", 1), ("gp_10k", "Praktičtí lékaři na 10 tis. obyvatel", "", 2), ("zub_10k", "Zubní ordinace na 10 tis.", "", 2),
+                                ("ds_100_65", "Místa v domovech pro seniory na 100 seniorů", "", 2), ("unemployed", "Uchazeči o zaměstnání", "osob", 0),
                                 ("stops_1000", "Zastávky na 1 000 obyv.", "", 2), ("tax", "Daňové příjmy obce", "Kč/rok", 0), ("car_trips", "Cesty autem navíc", "za den", 0)):
         row = {"key": key, "label": label, "unit": unit, "values": []}
         for y in HORIZON:
@@ -307,7 +307,7 @@ def compute(payload: dict) -> dict:
         "inputs": {"persons_per_flat": round(persons, 2), "share_0_14": round(100 * share14, 1), "share_65": round(100 * share65, 1),
                    "zs_pupils": zs_pupils, "zs_classes": zs_classes, "ms_children": ms_kids, "ms_classes": ms_classes, "gp": gp0,
                    "ds_places": ds0, "tax_per_capita": round(tax_pc), "stops": stops0, "zub": zub0},
-        "method": "Základní scénář = pravděpodobná varianta výhledu; zásahy přičítají přírůstky od roku realizace. Výsledek je modelový odhad, ne předpověď.",
+        "method": "Bez zásahu = nejpravděpodobnější výhled. Zásahy se k němu přičítají od roku, kdy začnou. Je to modelový odhad, ne předpověď.",
         "kind": "SCÉNÁŘ",
     }
 
@@ -323,11 +323,11 @@ def _chain(payload, base, scen, a, persons, share14, zs_ratio, tax_pc) -> list[d
             kids = new * min(share14 * a["deti_nasobek"], 0.35)
             steps += [
                 {"label": f"+{_fmt(p['pocet'])} bytů ({INTERVENTIONS['byty']['params']['typ']['options'][p['typ']].lower()}) v roce {p['rok']}", "tag": "ZÁSAH"},
-                {"label": f"+{_fmt(new)} obyvatel", "tag": "MODEL", "detail": f"{_fmt(persons, 2)} osob na byt (SLDB 2021) × {mult} × obsazenost {a['obsazenost_bytu']}"},
+                {"label": f"+{_fmt(new)} obyvatel", "tag": "MODEL", "detail": f"{_fmt(persons, 2)} osob na byt (sčítání lidu 2021) × {mult} × obsazenost {a['obsazenost_bytu']}"},
                 {"label": f"+{_fmt(kids)} dětí 0–14 let", "tag": "PŘEDPOKLAD", "detail": f"podíl dětí {_fmt(100 * share14, 1)} % × {a['deti_nasobek']}"},
                 {"label": f"+{_fmt(kids * zs_ratio)} žáků ZŠ", "tag": "MODEL", "detail": f"poměr žáků ZŠ k dětem v území {_fmt(zs_ratio, 2)}"},
                 {"label": f"+{_fmt(new * a['aut_na_obyvatele'] * a['cest_na_auto'])} cest autem denně", "tag": "PŘEDPOKLAD"},
-                {"label": f"+{_fmt(new * tax_pc / 1e6, 1)} mil. Kč daňových příjmů ročně", "tag": "MODEL", "detail": f"{_fmt(tax_pc)} Kč na obyvatele (MF ČR via ČSÚ)"},
+                {"label": f"+{_fmt(new * tax_pc / 1e6, 1)} mil. Kč daňových příjmů ročně", "tag": "MODEL", "detail": f"{_fmt(tax_pc)} Kč na obyvatele (MF ČR, přes ČSÚ)"},
             ]
         elif iv["type"] in ("zs_mista", "ms_mista"):
             steps.append({"label": f"+{_fmt(p['pocet'])} míst v {'ZŠ' if iv['type'] == 'zs_mista' else 'MŠ'} od roku {p['rok']}", "tag": "ZÁSAH"})
@@ -401,12 +401,12 @@ SADY: tuple[dict, ...] = (
      "otazka": "Postavíme 300 bytů. Utáhnou to školy?",
      "ivs": [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}}]},
     {"key": "ctvrt-se-skolou", "label": "Čtvrť i se školou", "pillar": "skolstvi",
-     "otazka": "Stejná výstavba, ale rovnou s rozšířením ZŠ a MŠ.",
+     "otazka": "Stejná výstavba a k ní nová místa v ZŠ a MŠ.",
      "ivs": [{"type": "byty", "params": {"pocet": 300, "rok": 2028, "typ": "bytove_domy"}},
              {"type": "zs_mista", "params": {"pocet": 120, "rok": 2029}},
              {"type": "ms_mista", "params": {"pocet": 48, "rok": 2029}}]},
     {"key": "mladi-zpet", "label": "Přitáhnout mladé", "pillar": "socialni",
-     "otazka": "Práce a startovací bydlení naráz — zastaví to odliv?",
+     "otazka": "Nová práce a obecní byty naráz. Zastaví to odchod mladých?",
      "ivs": [{"type": "pracovni_mista", "params": {"pocet": 400, "rok": 2028}},
              {"type": "byty", "params": {"pocet": 120, "rok": 2029, "typ": "najemni"}}]},
     {"key": "starnouci-obec", "label": "Stárnoucí obec", "pillar": "socialni",
@@ -414,12 +414,12 @@ SADY: tuple[dict, ...] = (
      "ivs": [{"type": "domov_seniori", "params": {"pocet": 60, "rok": 2029}},
              {"type": "ordinace", "params": {"pocet": 1, "rok": 2027}}]},
     {"key": "dostupnost", "label": "Dostupnost služeb", "pillar": "zdravotnictvi",
-     "otazka": "Lékař, zubař a spoj do města. Co to udělá s dostupností?",
+     "otazka": "Lékař, zubař a spoj do města. Jak se zlepší dostupnost?",
      "ivs": [{"type": "ordinace", "params": {"pocet": 1, "rok": 2027}},
              {"type": "stomatolog", "params": {"pocet": 1, "rok": 2028}},
              {"type": "spoj", "params": {"spoje_den": 8, "zastavky": 2, "delka_km": 15, "rok": 2027}}]},
     {"key": "spoj", "label": "Lepší spojení", "pillar": "doprava",
-     "otazka": "Osm spojů denně navíc. Kolik to stojí za rok?",
+     "otazka": "Osm spojů denně navíc. Kolik to ročně stojí?",
      "ivs": [{"type": "spoj", "params": {"spoje_den": 8, "zastavky": 1, "delka_km": 15, "rok": 2027}}]},
 )
 

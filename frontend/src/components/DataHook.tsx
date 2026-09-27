@@ -93,14 +93,14 @@ export function DataHook({ oblasti, overenych, celkem, poskytovatelu, children }
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Katalog není seznam.<br />Je to krajina.</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Otevřená data<br />na jednom místě</NadpisHooku>
         <p className="lead">
-          Každá dlaždice je jedna oblast a její plocha odpovídá počtu datových sad s ověřeným odkazem.
-          {art && <> Největší je {art.nej.label.toLowerCase()} — {num(Math.round((100 * art.nej.count) / art.soucet))} % katalogu.</>}
-          {" "}Co je malé, není zanedbané: prostě to nikdo nepublikuje.
+          Datové sady z celostátního katalogu, portálů krajů a měst a dalších zdrojů — k prohledání a stažení, i přes API.
+          {" "}Plocha dlaždice je počet funkčních sad v oblasti{art && <> (největší je {art.nej.label.toLowerCase()}, {num(Math.round((100 * art.nej.count) / art.soucet))} %)</>}; malá
+          {" "}znamená, že se toho málo publikuje.
         </p>
         <div className="sc-hook-legend">
-          {celkem && overenych ? <span className="mute">{num(overenych)} z {num(celkem)} má ověřený odkaz</span> : null}
+          {celkem && overenych ? <span className="mute">{num(overenych)} z {num(celkem)} sad je funkčních</span> : null}
           {poskytovatelu ? <span className="mute">{num(poskytovatelu)} poskytovatelů</span> : null}
         </div>
         {children}

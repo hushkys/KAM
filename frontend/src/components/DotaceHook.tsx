@@ -79,10 +79,10 @@ export function DotaceHook({ cerpani, territory, children }: {
       <div className="sc-blobs" aria-hidden="true"><i className="sc-blob b1" /><i className="sc-blob b2" /><i className="sc-blob b3" /></div>
 
       <div className="sc-hook-copy">
-        <NadpisHooku id={`${uid}-t`}>Každý rok<br />jeden letokruh</NadpisHooku>
+        <NadpisHooku id={`${uid}-t`}>Kolik dotací<br />doteklo do území</NadpisHooku>
         <p className="lead">
-          Uprostřed je území, kolem něj roky. Tloušťka prstence je částka, která toho roku doopravdy
-          dotekla do rozpočtu — hubený rok tenká linka, silný rok široký pás.
+          Co území dostalo, co mu poslal kraj a kam se obrátit pro další. Každý prstenec je jeden
+          rok a jeho tloušťka částka, která toho roku dotekla do rozpočtu.
         </p>
         <div className="sc-hook-legend">
           {art && <span className="mute">{art.od}–{art.do}{territory ? ` · ${territory}` : ""}</span>}

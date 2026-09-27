@@ -119,15 +119,15 @@ export function Scenarios() {
    *  and the number of capacity warnings the engine raised. */
   const verdict = useMemo(() => {
     if (!res?.available) return "";
-    if (!ivs.length) return `Zatím bez zásahu — níže je samotný výhled území do roku ${lastYear ?? ""}.`;
+    if (!ivs.length) return `Zatím bez zásahu. Čísla níže jsou samotný výhled území do roku ${lastYear ?? ""}.`;
     const w = res.warnings.scenario.length;
     const move = popDelta === null || Math.round(popDelta) === 0
-      ? "na počtu obyvatel se zásah prakticky neprojeví"
-      : `${popDelta > 0 ? "přibude" : "ubude"} ${num(Math.abs(popDelta))} obyvatel proti stavu bez zásahu`;
+      ? `se zásah do roku ${lastYear ?? ""} na počtu obyvatel prakticky neprojeví`
+      : `bude v roce ${lastYear ?? ""} o ${num(Math.abs(popDelta))} obyvatel ${popDelta > 0 ? "víc" : "méně"} než bez zásahu`;
     // "varování" is the same in every Czech plural form, so no plural() here.
-    return `Do roku ${lastYear ?? ""} ${move}. ${w ? `Model přitom hlásí ${w} varování o kapacitách.` : "Žádnou kapacitu to podle modelu nepřetíží."}`;
+    return `Podle modelu ${move}. ${w ? `Hlásí k tomu ${w} varování, najdete je níže.` : "Žádné varování nehlásí."}`;
   }, [res, ivs.length, popDelta, lastYear]);
-  const share = () => { navigator.clipboard?.writeText(location.href).then(() => toast("ok", "Odkaz na scénář zkopírován."), () => toast("warn", "Odkaz se nepodařilo zkopírovat.")); };
+  const share = () => { navigator.clipboard?.writeText(location.href).then(() => toast("ok", "Odkaz na scénář je ve schránce."), () => toast("warn", "Odkaz se nepodařilo zkopírovat.")); };
   const save = async () => {
     try {
       await api("/scenarios", { body: { name, territory: tid, interventions: ivs, assumptions: assume } });
@@ -138,9 +138,10 @@ export function Scenarios() {
     } catch (e) { toast("error", (e as Error).message); }
   };
 
+  const predpoklad = (klic: string) => num(assume[klic] ?? res?.assumptions.find((a) => a.key === klic)?.value ?? null);
   const kapacity = [
-    { key: "zs", label: "Základní školy", cap: "kapacita = třídy × 30 žáků", b: res?.baseline.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [] },
-    { key: "ms", label: "Mateřské školy", cap: "kapacita = třídy × 24 dětí", b: res?.baseline.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [] },
+    { key: "zs", label: "Základní školy", cap: `Kapacita = počet tříd × ${predpoklad("max_zs_trida")} žáků`, b: res?.baseline.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.zs_util !== null ? 100 * r.zs_util : null })) ?? [] },
+    { key: "ms", label: "Mateřské školy", cap: `Kapacita = počet tříd × ${predpoklad("max_ms_trida")} dětí`, b: res?.baseline.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [], s: res?.scenario.map((r) => ({ year: r.year, value: r.ms_util !== null ? 100 * r.ms_util : null })) ?? [] },
   ].filter((k) => k.b.some((p) => p.value !== null));
 
   return (
@@ -149,19 +150,19 @@ export function Scenarios() {
         baseline={res?.baseline.map((r) => ({ year: r.year, value: r.population })) ?? []}
         scenario={res?.scenario.map((r) => ({ year: r.year, value: r.population })) ?? []}>
         <div className="row" style={{ marginTop: 20 }}>
-          <button className="btn" onClick={share} disabled={!ivs.length}><Icon name="link" size={16} /> Sdílet scénář</button>
-          <button className="btn btn-primary" onClick={() => { setName(`${res?.territory.name ?? ""}: ${ivs.map((i) => cat.data?.interventions[i.type]?.label).join(" + ")}`.slice(0, 110)); setSaveOpen(true); }} disabled={!ivs.length}><Icon name="save" size={16} /> Uložit</button>
+          <button className="btn" onClick={share} disabled={!ivs.length}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
+          <button className="btn btn-primary" onClick={() => { setName(`${res?.territory.name ?? ""}: ${ivs.map((i) => cat.data?.interventions[i.type]?.label).join(" + ")}`.slice(0, 110)); setSaveOpen(true); }} disabled={!ivs.length}><Icon name="save" size={16} /> Uložit scénář</button>
         </div>
       </ScenarioHook>
 
       <div className="grid">
         <div className="span-5 stack-y">
-          <Card i={0} title={<span className="step-head"><span className="step-n">1</span> Území</span>} icon="pin">
-            <TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Kde simulujeme" />
+          <Card i={0} title={<span className="step-head"><span className="step-n">1</span> Vyberte území</span>} icon="pin">
+            <TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" />
           </Card>
 
-          <Card i={1} title={<span className="step-head"><span className="step-n">2</span> Začněte hotovým scénářem</span>} icon="sparkle"
-            actions={<InfoHint label="Co to je">Hotové sady nejsou doporučení. Jsou to typická zadání, se kterými obec přichází — kliknutím se nastaví zásahy, které pak jde libovolně přepsat.</InfoHint>}>
+          <Card i={1} title={<span className="step-head"><span className="step-n">2</span> Zvolte hotový scénář…</span>} icon="sparkle"
+            actions={<InfoHint label="Co to je">Typické otázky, se kterými obce přicházejí. Nejsou to doporučení: kliknutím se nastaví zásahy a ty pak můžete libovolně upravit.</InfoHint>}>
             <div className="sada-grid">
               {(cat.data?.sady ?? []).map((s) => (
                 <button key={s.key} className={`sada${aktivniSada === s.key ? " is-on" : ""}`} onClick={() => setIvs(s.ivs.map((i) => ({ type: i.type, params: { ...i.params } })))}>
@@ -172,8 +173,8 @@ export function Scenarios() {
             </div>
           </Card>
 
-          <Card i={2} title={<span className="step-head"><span className="step-n">3</span> Zásahy</span>} icon="split"
-            actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Vymazat</button> : undefined}>
+          <Card i={2} title={<span className="step-head"><span className="step-n">3</span> …nebo sestavte vlastní zásahy</span>} icon="split"
+            actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Odebrat všechny</button> : undefined}>
             <div className="stack-y">
               {ivs.map((iv, i) => {
                 const spec = cat.data?.interventions[iv.type];
@@ -199,7 +200,7 @@ export function Scenarios() {
                   </div>
                 );
               })}
-              {!ivs.length && <p className="muted small">Zatím bez zásahu — vpravo je vidět samotný výhled. Přidejte zásah:</p>}
+              {!ivs.length && <p className="muted small">Zatím žádný zásah, výsledek ukazuje samotný výhled. Přidejte zásah:</p>}
               {skupiny.map((g) => (
                 <div className="iv-skupina" key={g.pillar}>
                   <span className="iv-skupina-nadpis"><Icon name={PILLAR_ICON[g.pillar]} size={14} /> {g.label}</span>
@@ -217,9 +218,9 @@ export function Scenarios() {
           </Card>
 
           {res?.available && (
-            <Card i={3} title={<span className="step-head"><span className="step-n">4</span> Předpoklady</span>} icon="sliders" actions={Object.keys(assume).length ? <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Výchozí</button> : undefined}>
+            <Card i={3} title={<span className="step-head"><span className="step-n">4</span> Zkontrolujte předpoklady</span>} icon="sliders" actions={Object.keys(assume).length ? <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Vrátit výchozí</button> : undefined}>
               <details>
-                <summary className="small strong" style={{ cursor: "pointer" }}>Zobrazit a upravit ({res.assumptions.length})</summary>
+                <summary className="small strong" style={{ cursor: "pointer" }}>Odhady, se kterými model počítá, např. kolik lidí bydlí v novém bytě ({res.assumptions.length})</summary>
                 <div className="stack-y" style={{ marginTop: 12 }}>
                   {res.assumptions.map((a) => (
                     <label className="field" key={a.key}>
@@ -232,10 +233,10 @@ export function Scenarios() {
                     </label>
                   ))}
                   <div className="facts-list small">
-                    <strong>Vstupy z dat území</strong>
-                    <div className="fact-row"><span>Osob na byt (SLDB 2021)</span><span>{num(res.inputs.persons_per_flat, 2)}</span></div>
-                    <div className="fact-row"><span>Žáci ZŠ / třídy</span><span>{num(res.inputs.zs_pupils)} / {num(res.inputs.zs_classes)}</span></div>
-                    <div className="fact-row"><span>Děti v MŠ / třídy</span><span>{num(res.inputs.ms_children)} / {num(res.inputs.ms_classes)}</span></div>
+                    <strong>Údaje o území, ze kterých model vychází</strong>
+                    <div className="fact-row"><span>Osob na byt (sčítání 2021)</span><span>{num(res.inputs.persons_per_flat, 2)}</span></div>
+                    <div className="fact-row"><span>Žáků / tříd v ZŠ</span><span>{num(res.inputs.zs_pupils)} / {num(res.inputs.zs_classes)}</span></div>
+                    <div className="fact-row"><span>Dětí / tříd v MŠ</span><span>{num(res.inputs.ms_children)} / {num(res.inputs.ms_classes)}</span></div>
                     <div className="fact-row"><span>Daňové příjmy na obyvatele</span><span>{kc(res.inputs.tax_per_capita)}</span></div>
                   </div>
                 </div>
@@ -261,7 +262,7 @@ export function Scenarios() {
 
         <div className="span-7 stack-y sim-sticky">
           <ErrorBox error={err} />
-          {res && !res.available && <Card><Empty icon="alert" title="Nelze simulovat">{res.reason}</Empty></Card>}
+          {res && !res.available && <Card><Empty icon="alert" title="Scénář pro toto území spočítat nejde">{res.reason}</Empty></Card>}
           {res?.available && (
             <>
               <div className="sim-result-head">
@@ -269,12 +270,12 @@ export function Scenarios() {
                   <div className="row"><KindTag kind="SCÉNÁŘ" /><h2>{res.territory.name}</h2></div>
                   <p className="sim-verdict">{verdict}</p>
                 </div>
-                <span className="cache-badge" aria-live="polite">{busy ? "Počítám…" : <>{res.cache.hit ? <b>z mezipaměti</b> : "spočítáno"} · {num(res.cache.ms, 1)} ms</>}</span>
+                <span className="cache-badge" aria-live="polite">{busy ? "Počítám…" : ""}</span>
               </div>
 
               <div className="sim-horizont">
                 <span className="field-label">Stav k roku</span>
-                <Segmented size="sm" label="Horizont" value={String(rok)} onChange={(v) => setRok(Number(v))}
+                <Segmented size="sm" label="Stav k roku" value={String(rok)} onChange={(v) => setRok(Number(v))}
                   options={HORIZONTY.map((y) => ({ value: String(y), label: String(y) }))} />
               </div>
               <div className="stats-row">
@@ -296,16 +297,16 @@ export function Scenarios() {
                     <div className={`warn-card lvl-${w.level}`} key={w.key + w.year}>
                       <Icon name="alert" size={18} />
                       <span className="wc-title">{w.title}</span>
-                      <span className="wc-text">{w.text} {w.suggest && !ivs.some((i) => i.type === w.suggest) && <button className="btn btn-sm btn-quiet" onClick={() => add(w.suggest)}>Simulovat řešení <Icon name="arrow-right" size={14} /></button>}</span>
+                      <span className="wc-text">{w.text} {w.suggest && !ivs.some((i) => i.type === w.suggest) && <button className="btn btn-sm btn-quiet" onClick={() => add(w.suggest)}>Přidat řešení do scénáře <Icon name="arrow-right" size={14} /></button>}</span>
                     </div>
                   ))}
                 </div>
               )}
 
-              <Card i={1} title="Obyvatelé: bez zásahu vs. se zásahem" icon="users">
+              <Card i={1} title="Obyvatelé bez zásahu a se zásahem" icon="users">
                 <ChartSwitch id="scenare-obyvatele" views={[
                   {
-                    key: "cesty", label: "Dvě cesty", icon: "trend-up", render: () => (
+                    key: "cesty", label: "Obě křivky", icon: "trend-up", render: () => (
                       <>
                         <LineChart ariaLabel="Obyvatelé bez zásahu a se zásahem" height={240} series={[
                           { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: res.baseline.map((r) => ({ year: r.year, value: r.population })) },
@@ -328,7 +329,7 @@ export function Scenarios() {
                     ),
                   },
                   {
-                    key: "mrizka", label: "Mřížka ukazatelů", icon: "grid", render: () => {
+                    key: "mrizka", label: "Ukazatele po letech", icon: "grid", render: () => {
                       const ms = res.metrics.filter((m) => m.values.some((v) => v.scenario !== null));
                       const years = res.metrics[0]?.values.map((v) => String(v.year)) ?? [];
                       return (
@@ -343,7 +344,7 @@ export function Scenarios() {
               </Card>
 
               {kapacity.length > 0 && (
-                <Card i={2} title="Vytížení kapacit" icon="school">
+                <Card i={2} title="Vytížení škol" icon="school">
                   <ChartSwitch id="scenare-kapacity" views={kapacity.map((k) => ({
                     key: k.key, label: k.label, icon: "school", render: () => (
                       <>
@@ -352,7 +353,7 @@ export function Scenarios() {
                             { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: k.b },
                             { key: "s", label: "Se zásahem", color: "var(--warn)", points: k.s },
                           ]} />
-                        <p className="xsmall mute" style={{ marginTop: 8 }}>{k.cap}. Nad 100 % poptávka přesahuje kapacitu.</p>
+                        <p className="xsmall mute" style={{ marginTop: 8 }}>{k.cap}. Nad 100 % je dětí víc než míst.</p>
                       </>
                     ),
                   }))} />
@@ -360,7 +361,7 @@ export function Scenarios() {
               )}
 
               {res.chain.length > 0 && (
-                <Card i={3} title="Řetězec dopadů" icon="split">
+                <Card i={3} title="Jak zásah působí, krok za krokem" icon="split">
                   <div className="chain">
                     {res.chain.map((s, i) => (
                       <div className={`chain-step ${s.tag === "ZÁSAH" ? "is-zasah" : ""}`} key={i} style={{ "--i": i } as CSSProperties}>
@@ -372,7 +373,7 @@ export function Scenarios() {
                 </Card>
               )}
 
-              <Card i={4} title="Srovnání" icon="chart" flush>
+              <Card i={4} title="Srovnání se stavem bez zásahu" icon="chart" flush>
                 <div className="table-wrap" style={{ margin: 0, padding: "0 var(--card-pad) var(--card-pad)" }}>
                   <table className="table">
                     <thead><tr><th>Ukazatel</th>{HORIZONTY.map((y) => <th key={y} className={`r${y === rok ? " is-on" : ""}`}>{y}</th>)}</tr></thead>
@@ -394,11 +395,11 @@ export function Scenarios() {
               </Card>
 
               {ivs.length > 0 && (
-                <Card i={5} title="Náklady a přínosy" icon="coins" actions={<KindTag kind="PŘEDPOKLAD" />}>
+                <Card i={5} title="Náklady a daně navíc" icon="coins" actions={<KindTag kind="PŘEDPOKLAD" />}>
                   <div className="stats-row">
-                    <div><div className="stat-label">Investice</div><div className="stat-value">{kc(res.costs.capex)}</div></div>
-                    <div><div className="stat-label">Provoz ročně</div><div className="stat-value">{kc(res.costs.opex_year)}</div></div>
-                    <div><div className="stat-label">Daně navíc (2040)</div><div className="stat-value">{kc(res.costs.tax_delta_year)}</div></div>
+                    <div><div className="stat-label">Investice jednorázově</div><div className="stat-value">{kc(res.costs.capex)}</div></div>
+                    <div><div className="stat-label">Provoz za rok</div><div className="stat-value">{kc(res.costs.opex_year)}</div></div>
+                    <div><div className="stat-label">Daně navíc za rok ({lastYear})</div><div className="stat-value">{kc(res.costs.tax_delta_year)}</div></div>
                   </div>
                 </Card>
               )}
@@ -414,9 +415,9 @@ export function Scenarios() {
       </div>
 
       <Modal open={saveOpen} onClose={() => setSaveOpen(false)} title="Uložit scénář"
-        footer={<><button className="btn btn-quiet" onClick={() => setSaveOpen(false)}>Zrušit</button><button className="btn btn-primary" disabled={!name.trim()} onClick={save}>Uložit</button></>}>
-        <label className="field"><span className="field-label">Název</span><input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>
-        <p className="help" style={{ marginTop: 8 }}>Uloží se území, zásahy, předpoklady a výsledek. Skutečná data se nemění.</p>
+        footer={<><button className="btn btn-quiet" onClick={() => setSaveOpen(false)}>Zrušit</button><button className="btn btn-primary" disabled={!name.trim()} onClick={save}>Uložit scénář</button></>}>
+        <label className="field"><span className="field-label">Název scénáře</span><input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>
+        <p className="help" style={{ marginTop: 8 }}>Uloží se území, zásahy, předpoklady a výsledek. Data území zůstanou beze změny.</p>
       </Modal>
       <span hidden>{navigate.name}</span>
     </>

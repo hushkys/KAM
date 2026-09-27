@@ -76,24 +76,23 @@ class Povinnost:
 POVINNOSTI: tuple[Povinnost, ...] = (
     Povinnost("pro", "Program rozvoje obce", "Ministerstvo pro místní rozvoj",
               "zveřejnění dobrovolné",
-              "Co chce obec do kdy postavit a kam dát peníze. Ze zákona povinný není — obec ho "
-              "potřebuje hlavně jako přílohu k žádostem o dotace. Má v názvu období platnosti.",
+              "Co chce obec do kdy udělat a kam dát peníze. Ze zákona povinný není, obec ho "
+              "potřebuje hlavně k žádostem o dotace.",
               "obcepro.cz (MMR)"),
     Povinnost("uzemni_plan", "Územní plán a jeho změny", "Královéhradecký kraj",
               "zákon č. 283/2021 Sb.",
-              "Závazné pravidlo, co se kde smí stavět. Obec bez něj rozhoduje jen podle obecných "
-              "pravidel stavebního zákona. Archivovaný dokument nahradil jiný — je to jediná "
-              "informace o platnosti, kterou evidence strojově dává.",
+              "Závazně říká, co se kde smí stavět. Bez něj obec rozhoduje jen podle obecných "
+              "pravidel stavebního zákona. Archivovaný dokument už nahradil jiný.",
               "Evidence ÚPD Královéhradeckého kraje"),
     Povinnost("rozpocet", "Rozpočet a jeho plnění", "Ministerstvo financí",
               "zákon č. 250/2000 Sb.",
               "Rozpočet, střednědobý výhled i závěrečný účet musí obec schválit a zveřejnit. "
-              "Výkaz FIN 2-12 M je tentýž zdroj, ze kterého čerpá Hospodaření v KAM.",
+              "Ze stejného výkazu čerpá stránka Hospodaření.",
               "MONITOR státní pokladny (MF)"),
     Povinnost("otevrena_data", "Otevřená data obce", "Digitální a informační agentura",
               "zákon č. 106/1999 Sb.",
-              "Povinně zveřejňované informace mají být i ve strojově čitelné podobě v Národním "
-              "katalogu otevřených dat. Publikuje je málokterá obec a je to na číslech vidět.",
+              "Povinně zveřejňované informace mají být i strojově čitelné v Národním katalogu "
+              "otevřených dat. Dělá to málokterá obec.",
               "NKOD"),
 )
 POVINNOST_PODLE = {p.klic: p for p in POVINNOSTI}
@@ -120,20 +119,20 @@ class Registr:
 
 REGISTRY: tuple[Registr, ...] = (
     Registr("monitor", "MONITOR státní pokladny", "Ministerstvo financí",
-            "Rozpočet, jeho plnění a účetní výkazy obce rok po roce. Je to tentýž výkaz "
-            "FIN 2-12 M, ze kterého přes ČSÚ MOS čerpá Hospodaření v KAM.",
+            "Rozpočet obce, jeho plnění a účetní výkazy rok po roce. Stejná čísla "
+            "ukazuje stránka Hospodaření (přebírá je přes ČSÚ).",
             "https://monitor.statnipokladna.gov.cz/ucetni-jednotka/{ico}/rozpocet-obce",
             # Popiska je štítek, ne věta: delší text se v ní zalomí na dva řádky
             # a druhý vyjede z podbarvení. Celou povinnost říká `co` nad ní.
             "Zákon č. 250/2000 Sb. — rozpočtová pravidla"),
     Registr("smlouvy", "Registr smluv", "Ministerstvo vnitra",
             "Každá smlouva obce nad 50 000 Kč bez DPH. Nezveřejněná smlouva je ze zákona "
-            "neúčinná, takže do registru se dostane prakticky všechno.",
+            "neúčinná, takže v registru je prakticky všechno.",
             "https://smlouvy.gov.cz/vyhledavani?subject_idnum={ico}",
             "Zákon č. 340/2015 Sb. — registr smluv"),
     Registr("ares", "ARES — ekonomické subjekty", "Ministerstvo financí",
-            "Identita úřadu: IČO, právní forma, sídlo, datum vzniku. Klíč do všech "
-            "ostatních registrů.",
+            "IČO, právní forma, sídlo a datum vzniku úřadu. Podle IČO se obec dohledá "
+            "ve všech ostatních registrech.",
             "https://ares.gov.cz/ekonomicke-subjekty/res/{ico}",
             "Zákon č. 111/2009 Sb. — základní registry"),
 )
@@ -332,10 +331,10 @@ def _dokumenty(tid: str, ico: str, letos: int, prog: Dokument | None, up: Fact |
 
 
 POZNAMKA = (
-    "Co z plánu je hotové, nezveřejňuje strojově čitelně žádný registr. KAM proto "
-    "ukazuje jen to, co jde doložit: jestli dokument platí, kolik z jeho období "
-    "uplynulo a kolik obec za tu dobu poslala do majetku. Že to jedno způsobilo "
-    "druhé, rozpočtová skladba neví."
+    "Co z plánu je hotové, žádný registr strojově čitelně nezveřejňuje. Ukazujeme "
+    "proto jen to, co jde doložit: zda dokument platí, kolik z jeho období uplynulo "
+    "a kolik obec mezitím investovala. Uplynulý čas neznamená splněný plán a rozpočet "
+    "neřekne, zda investice šly právě na něj."
 )
 
 
@@ -441,8 +440,8 @@ def prehled(kraj: int = HOME_KRAJ) -> dict:
                       "povinnost": r.povinnost} for r in REGISTRY],
         "obcepro_url": OBCEPRO,
         "poznamka": (
-            "Program rozvoje obce není ze zákona povinný — obec ho potřebuje hlavně "
-            "kvůli dotacím. Na obcepro.cz ho navíc zveřejňuje jen část obcí, takže "
-            "„chybí“ tady znamená „není v registru MMR“, ne „obec nic neplánuje“."
+            "Program rozvoje obce není ze zákona povinný a na obcepro.cz ho zveřejňuje "
+            "jen část obcí. „Chybí“ proto znamená „není v registru MMR“, ne „obec nic "
+            "neplánuje“."
         ),
     }

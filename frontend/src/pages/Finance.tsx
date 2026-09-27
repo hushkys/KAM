@@ -53,8 +53,8 @@ export function Finance() {
       <FinanceHook roky={roky.map((r) => ({ year: r.year, provozni: r.provozni, kapital: r.kapital }))}
         kryti={s?.kryti ?? null} territory={data?.territory.name}>
         <div className="row" style={{ marginTop: 18 }}>
-          <Link className="btn" to={`/obce/${tid}`}><Icon name="home" size={16} /> Profil území</Link>
-          <Link className="btn" to={`/dotace?t=${tid}`}><Icon name="coins" size={16} /> Dotace</Link>
+          <Link className="btn" to={`/obce/${tid}`}><Icon name="home" size={16} /> Otevřít profil území</Link>
+          <Link className="btn" to={`/dotace?t=${tid}`}><Icon name="coins" size={16} /> Zobrazit dotace</Link>
         </div>
       </FinanceHook>
       <div className="stack-y">
@@ -68,29 +68,28 @@ export function Finance() {
             <div className="stats-row">
               <Stat i={0} label={`Provozní přebytek ${s.od}–${s.do}`} value={kc(s.provozni)}
                 sub={`${num(s.provozni_podil, 1)} % příjmů`} tone={TONE[s.stav] || undefined} />
-              <Stat i={1} label="Kapitálové výdaje" value={kc(s.kapital)}
-                sub={s.kapital_obyv !== null ? `${num(s.kapital_obyv)} Kč/obyv. ročně` : ""} />
-              <Stat i={2} label="Krytí investic z vlastních peněz" value={s.kryti !== null ? `${num(s.kryti, 1)} %` : "—"}
-                sub={s.kryti !== null && s.kryti >= 100 ? "investice zaplatí provoz" : "zbytek dotáhne dotace nebo úvěr"} />
-              <Stat i={3} label="Kumulované saldo" value={kc(s.kumul)} sub={`od roku ${roky[0]?.year ?? ""}`} />
+              <Stat i={1} label="Investice (kapitálové výdaje)" value={kc(s.kapital)}
+                sub={s.kapital_obyv !== null ? `${num(s.kapital_obyv)} Kč na obyvatele ročně` : ""} />
+              <Stat i={2} label="Investice zaplacené z vlastního" value={s.kryti !== null ? `${num(s.kryti, 1)} %` : "—"}
+                sub={s.kryti !== null && s.kryti >= 100 ? "přebytek stačí na všechny investice" : "zbytek z dotací nebo úvěru"} />
+              <Stat i={3} label="Součet ročních sald" value={kc(s.kumul)} sub={`od roku ${roky[0]?.year ?? ""}`} />
             </div>
 
-            <Card i={1} title="Co z toho plyne" icon="target"
-              actions={<InfoHint label="Podle jakého pravidla">{s.pravidlo}</InfoHint>}>
+            <Card i={1} title="Jak obec hospodaří" icon="target"
+              actions={<InfoHint label="Podle jakého pravidla hodnotíme">{s.pravidlo}</InfoHint>}>
               <div className="row" style={{ marginBottom: 10 }}><KindTag kind="MODEL" /><span className="muted small">{data?.zdroj}</span></div>
               <p className="lead-p">{s.popis}</p>
               <div className="facts-list" style={{ marginTop: 12 }}>
                 <div className="fact-row"><span>Provozní přebytek na obyvatele (ročně)</span>
                   <span className="num">{s.provozni_obyv !== null ? `${num(s.provozni_obyv)} Kč` : "—"}
                     {s.kraj_provozni_obyv !== null && <span className="mute"> · medián obcí v kraji {num(s.kraj_provozni_obyv)} Kč</span>}</span></div>
-                <div className="fact-row"><span>Kapitálové výdaje na obyvatele (ročně)</span>
+                <div className="fact-row"><span>Investice na obyvatele (ročně)</span>
                   <span className="num">{s.kapital_obyv !== null ? `${num(s.kapital_obyv)} Kč` : "—"}
                     {s.kraj_kapital_obyv !== null && <span className="mute"> · medián obcí v kraji {num(s.kraj_kapital_obyv)} Kč</span>}</span></div>
                 <div className="fact-row"><span>Podíl dotací na příjmech</span><span className="num">{s.dotace_podil !== null ? `${num(s.dotace_podil, 1)} %` : "—"}</span></div>
               </div>
               <p className="xsmall mute" style={{ marginTop: 12 }}>
-                Rozpočet říká, kolik se utratilo a z čeho. Co za to obec pořídila a jestli se to vyplatilo,
-                rozpočtová skladba neví — proto tu nenajdete „návratnost investice".
+                Rozpočet ukazuje, kolik se utratilo a z čeho. Co za to obec pořídila a jestli se to vyplatilo, z něj nevyčtete.
               </p>
             </Card>
 
@@ -99,33 +98,33 @@ export function Finance() {
                 {
                   key: "provoz", label: "Provoz a investice", icon: "trend-up", render: () => (
                     <>
-                      <LineChart ariaLabel="Provozní přebytek a kapitálové výdaje" height={280}
+                      <LineChart ariaLabel="Provozní přebytek a investice" height={280}
                         format={(v) => kc(v)}
                         series={[
                           { key: "p", label: "Provozní přebytek", color: "var(--accent)", points: okno.map((r) => ({ year: r.year, value: r.provozni })) },
-                          { key: "k", label: "Kapitálové výdaje", color: "var(--info)", dashed: true, points: okno.map((r) => ({ year: r.year, value: r.kapital })) },
+                          { key: "k", label: "Investice", color: "var(--info)", dashed: true, points: okno.map((r) => ({ year: r.year, value: r.kapital })) },
                         ]} />
-                      <Legend items={[{ label: "Provozní přebytek", color: "var(--accent)" }, { label: "Kapitálové výdaje", color: "var(--info)", dashed: true }]} />
-                      <p className="xsmall mute" style={{ marginTop: 8 }}>Kde je zelená nad modrou, platí si obec investice z vlastního.</p>
+                      <Legend items={[{ label: "Provozní přebytek", color: "var(--accent)" }, { label: "Investice (kapitálové výdaje)", color: "var(--info)", dashed: true }]} />
+                      <p className="xsmall mute" style={{ marginTop: 8 }}>Kde je plná čára nad přerušovanou, platí si obec investice sama.</p>
                     </>
                   ),
                 },
                 {
-                  key: "kryti", label: "Krytí investic", icon: "gauge", render: () => (
+                  key: "kryti", label: "Investice z vlastního", icon: "gauge", render: () => (
                     <>
-                      <Columns ariaLabel="Krytí investic z provozního přebytku" height={250}
+                      <Columns ariaLabel="Kolik procent investic pokryl provozní přebytek" height={250}
                         items={okno.filter((r) => r.kryti !== null).map((r) => ({ label: String(r.year), value: r.kryti as number }))}
                         format={(v) => `${num(v, 0)} %`} />
-                      <p className="xsmall mute" style={{ marginTop: 8 }}>100 % znamená, že roční přebytek přesně pokryl investice toho roku.</p>
+                      <p className="xsmall mute" style={{ marginTop: 8 }}>100 % znamená, že přebytek toho roku pokryl všechny jeho investice.</p>
                     </>
                   ),
                 },
                 {
-                  key: "kumul", label: "Kumulované saldo", icon: "layers", render: () => (
+                  key: "kumul", label: "Součet sald", icon: "layers", render: () => (
                     <>
-                      <LineChart ariaLabel="Kumulované saldo rozpočtu" height={280} format={(v) => kc(v)}
-                        series={[{ key: "c", label: "Kumulované saldo", color: "var(--accent)", points: roky.map((r) => ({ year: r.year, value: r.kumul })) }]} />
-                      <p className="xsmall mute" style={{ marginTop: 8 }}>Součet ročních sald od {roky[0]?.year}. Roste-li, obec si drží rezervu; klesá-li dlouhodobě, žije z podstaty.</p>
+                      <LineChart ariaLabel="Součet ročních sald rozpočtu" height={280} format={(v) => kc(v)}
+                        series={[{ key: "c", label: "Součet sald", color: "var(--accent)", points: roky.map((r) => ({ year: r.year, value: r.kumul })) }]} />
+                      <p className="xsmall mute" style={{ marginTop: 8 }}>Sčítá se od roku {roky[0]?.year}. Když roste, obec si tvoří rezervu; když dlouhodobě klesá, žije z úspor.</p>
                     </>
                   ),
                 },
@@ -137,17 +136,17 @@ export function Finance() {
                         <Waterfall ariaLabel={`Rozpočet ${r.year}`} height={260} format={(v) => kc(v)}
                           steps={[
                             { label: `Příjmy ${r.year}`, value: r.prijmy, total: true },
-                            { label: "Běžné výdaje", value: -r.bezne },
-                            { label: "Kapitálové výdaje", value: -r.kapital },
+                            { label: "Provoz (běžné výdaje)", value: -r.bezne },
+                            { label: "Investice", value: -r.kapital },
                             { label: "Saldo", value: r.prijmy - r.bezne - r.kapital, total: true },
                           ]} />
-                        <p className="xsmall mute" style={{ marginTop: 8 }}>Poslední uzavřený rok. Saldo počítané z těchto tří položek se může o jednotky procent lišit od vykázaného salda, protože rozpočet obsahuje i konsolidační položky.</p>
+                        <p className="xsmall mute" style={{ marginTop: 8 }}>Poslední uzavřený rok. Od vykázaného salda se může o pár procent lišit kvůli vnitřním převodům v rozpočtu (konsolidaci).</p>
                       </>
                     );
                   },
                 },
                 {
-                  key: "zdroje", label: "Odkud peníze jsou", icon: "database", render: () => {
+                  key: "zdroje", label: "Odkud jsou peníze", icon: "database", render: () => {
                     const r = roky[roky.length - 1];
                     const vlastni = Math.max(0, r.prijmy - r.dotace);
                     return (
@@ -157,7 +156,7 @@ export function Finance() {
                             { label: "Vlastní příjmy (daně a nedaňové)", value: vlastni },
                             { label: "Přijaté dotace", value: r.dotace },
                           ]} />
-                        <p className="xsmall mute" style={{ marginTop: 8 }}>Rok {r.year}. Čím vyšší podíl dotací, tím víc je rozpočet závislý na cizím rozhodnutí.</p>
+                        <p className="xsmall mute" style={{ marginTop: 8 }}>Rok {r.year}. Čím víc dotací, tím víc rozpočet závisí na rozhodnutí někoho jiného.</p>
                       </>
                     );
                   },
@@ -166,7 +165,7 @@ export function Finance() {
             </Card>
           </>
         )}
-        {data && !s && <Card><p className="muted">Pro toto území nemáme rozpočtová data.</p></Card>}
+        {data && !s && <Card><p className="muted">Pro toto území nejsou k dispozici údaje z rozpočtu.</p></Card>}
       </div>
     </>
   );

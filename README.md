@@ -98,12 +98,13 @@ Každé riziko má důkaz a odkaz na území, kterého se týká.
 
 <img src="docs/screenshots/prehled.png" alt="Přehled: rizika, puls kraje a výhled" width="100%">
 
-### Mapa v terénu
+### Mapa
 
-Kartogram natažený přes skutečný výškový model z ČÚZK DMR 5G. Převýšení se dá
-nastavit, najetím zjistíte obec, hodnotu i nadmořskou výšku.
+Česko po krajích a kraj po obcích nebo správních obvodech ORP. Barva ukazuje
+vybraný ukazatel, klepnutím na území se otevře jeho detail a mapu jde
+přiblížit tlačítky i dvěma prsty.
 
-<img src="docs/screenshots/mapa-3d.png" alt="3D mapa kraje s výškovým modelem" width="100%">
+<img src="docs/screenshots/mapa.png" alt="Mapa kraje po obcích" width="100%">
 
 ### Obce
 
@@ -272,12 +273,9 @@ lze ho přepsat.
 **Podněty občanů** — anonymizace, seskupování podobných hlášení, formální
 podnět kraji po dosažení prahu.
 
-**Mapa ve dvou rozměrech i ve třech** — kraj po obcích a po ORP, plošně nebo
-jako terén. Ve 3D je stejná kartogramová barva natažená přes skutečný výškový
-model ČÚZK DMR 5G, převýšení si nastavíte posuvníkem, najetím zjistíte obec
-i nadmořskou výšku. Mapa je vlastní kresba — žádné dlaždice, žádný klíč.
+**Mapa** — Česko po krajích, kraj po obcích a po ORP, s přiblížením a detailem vybraného území. Mapa je vlastní kresba — žádné dlaždice, žádný klíč.
 
-**Datové potřeby** — matice pokrytí ORP × oblast, čerstvost sad podle
+**Chybějící data** — matice pokrytí ORP × oblast, čerstvost sad podle
 periodicity, strukturální mezery. Aplikace hlídá i data samotná.
 
 **Asistent** — příkazy aplikace bez modelu („zapni tmavý režim"), router mezi
@@ -343,7 +341,6 @@ odkazy a sady bez odkazu jsou v katalogu vidět zvlášť.
 | ARES (MF) — ekonomické subjekty | IČO úřadů, párované na kód obce z RÚIAN |
 | Registr práv a povinností (MV) — seznam OVM | datové schránky úřadů |
 | ČÚZK RÚIAN | hranice kraje, ORP a obcí |
-| ČÚZK DMR 5G | výškový model kraje pro 3D mapu |
 
 **Pravidla sklizně**, na která se snadno šlápne:
 
@@ -367,10 +364,10 @@ Ruční aktualizace:
 cd backend && python -m kam.ingest all
 ```
 
-Kroky jdou spouštět i jednotlivě: `geo`, `relief`, `catalog`, `eurostat`,
-`mos`, `khk`, `link`, `check`, `rag`. Každý je idempotentní. `relief` běží až
-po `geo`, protože si z hranic bere projekci; `eurostat` trvá kolem deseti
-minut, protože každou sadu ověřuje.
+Kroky jdou spouštět i jednotlivě: `geo`, `catalog`, `eurostat`, `mos`, `khk`,
+`dotace`, `dokumenty`, `link`, `check`, `rag` a `refresh` (denní obnova, viz
+DEPLOY.md). Každý je idempotentní; `eurostat` trvá kolem deseti minut, protože
+každou sadu ověřuje.
 
 ## Testy
 

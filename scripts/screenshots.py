@@ -35,7 +35,7 @@ SCENAR_URL = (
 ZABERY: list[tuple[str, str, int, int, bool]] = [
     ("uvod", "/", 1440, 900, False),
     ("prehled", "/prehled", 1440, 980, False),
-    ("mapa-3d", "/mapa?view=khk&3d=1&ind=d_podil_65", 1440, 1000, False),
+    ("mapa", "/mapa?view=khk&ind=d_podil_65", 1440, 1000, False),
     ("obce", "/obce", 1440, 760, False),
     ("profil", "/obce/obec:569810", 1440, 1080, False),
     ("scenare", SCENAR_URL, 1440, 1180, False),
