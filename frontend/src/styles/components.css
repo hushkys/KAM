@@ -16,12 +16,14 @@
 .page-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .page-header h1 { font-size: clamp(1.4rem, 1.1rem + .8vw, 1.75rem); font-weight: 650; }
 .eyebrow { font-size: .6875rem; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in oklab, var(--m) 72%, var(--text-dim)); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-.eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--m); flex: none; }
+.eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 0; background: var(--m); flex: none; }
 .lead { color: var(--text-dim); margin-top: 8px; font-size: .9375rem; line-height: 1.6; max-width: 72ch; }
 
-/* Stretch, not start: cards in one row share a height, so a short card never
-   leaves a hole under itself next to a tall neighbour. */
-.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); align-items: stretch; }
+/* Karta je vysoká jako její obsah. Natahovat karty v řadě na výšku té
+   nejvyšší znamenalo, že karta s jedním řádkem vedle karty s patnácti měla
+   pod textem půl obrazovky prázdné plochy v rámečku — a prázdný rámeček
+   vypadá jako chyba, kdežto prázdné pozadí stránky pod kratší kartou ne. */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
 .grid > * { min-width: 0; grid-column: span 12; }
 .span-3 { grid-column: span 3 !important; } .span-4 { grid-column: span 4 !important; } .span-5 { grid-column: span 5 !important; }
 .span-6 { grid-column: span 6 !important; } .span-7 { grid-column: span 7 !important; } .span-8 { grid-column: span 8 !important; }
@@ -119,7 +121,7 @@
 .kind-zasah { color: var(--accent-fg); background: var(--accent); border-color: transparent; }
 
 .sev { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
-.sev-dot { width: 8px; height: 8px; border-radius: 2px; background: currentColor; }
+.sev-dot { width: 8px; height: 8px; border-radius: 0; background: currentColor; }
 .sev-nizke { color: var(--text-mute); }
 .sev-sledovat { color: var(--info); }
 .sev-stredni { color: var(--warn); }
@@ -133,7 +135,7 @@
 .pill-bad { background: color-mix(in oklab, var(--bad) 12%, transparent); color: var(--bad); }
 .pill-info { background: color-mix(in oklab, var(--info) 12%, transparent); color: var(--info); }
 
-.status-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex: none; }
+.status-dot { width: 8px; height: 8px; border-radius: 0; display: inline-block; flex: none; }
 .status-dobre { background: var(--ok); } .status-stabilni { background: var(--text-mute); } .status-sledovat { background: var(--warn); } .status-problem { background: var(--bad); } .status-bez_dat { background: var(--border-strong); }
 
 /* ------------------------------------------------------------- forms */
@@ -179,9 +181,9 @@
 .switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 24px; background: transparent; cursor: pointer; }
-input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--p, 50%), color-mix(in oklab, var(--text) 16%, transparent) var(--p, 50%)); }
-input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: color-mix(in oklab, var(--text) 16%, transparent); }
-input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 0; background: linear-gradient(90deg, var(--accent) var(--p, 50%), color-mix(in oklab, var(--text) 16%, transparent) var(--p, 50%)); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 0; background: color-mix(in oklab, var(--text) 16%, transparent); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 0; background: var(--accent); }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: #fff; border: 1px solid var(--border-strong); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
 input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 1px solid var(--border-strong); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
 
@@ -191,7 +193,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .tabs button { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 12px; border: 0; background: none; color: var(--text-dim); font-weight: 600; font-size: .8125rem; cursor: pointer; white-space: nowrap; transition: color var(--t-xs); }
 .tabs button:hover { color: var(--text); }
 .tabs button.is-on { color: var(--text); }
-.tabs button.is-on::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--m); }
+.tabs button.is-on::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 0; background: var(--m); }
 .tab-count { font-size: .6875rem; background: color-mix(in oklab, var(--text) 8%, transparent); border-radius: var(--r-xs); padding: 0 5px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------- data display */
@@ -210,7 +212,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
   .stat-label { font-size: .8125rem; }
 }
 
-.progress { height: 6px; border-radius: 3px; background: color-mix(in oklab, var(--text) 9%, transparent); overflow: hidden; }
+.progress { height: 6px; border-radius: 0; background: color-mix(in oklab, var(--text) 9%, transparent); overflow: hidden; }
 .progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--t-lg) var(--ease-out); }
 .progress.tone-warn > span { background: var(--warn); } .progress.tone-bad > span { background: var(--bad); } .progress.tone-info > span { background: var(--info); }
 /* Utlumený pruh pro dotaženou, ale už neplatnou věc — plný zelený pruh se
@@ -234,15 +236,15 @@ a.list-row:hover .list-title { color: var(--accent); }
 /* display: block, protože `text-overflow: ellipsis` na inline elementu nedělá
    nic. Obojí je <span>, takže bez toho se ořez neuplatnil a dlouhý název
    zdroje na úzké obrazovce vystrčil celou stránku do šířky. */
-.list-title { display: block; font-weight: 600; font-size: .875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color var(--t-xs); }
-.list-sub { display: block; font-size: .78rem; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-title { font-weight: 600; font-size: .875rem; line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; transition: color var(--t-xs); }
+.list-sub { font-size: .78rem; color: var(--text-mute); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .list-side { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 
 .bar-list { display: grid; gap: 10px; }
 .bar-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
-.bar-item .bar-label { font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-item .bar-label { font-size: .8125rem; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .bar-item .bar-value { font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.bar-item .bar-track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: color-mix(in oklab, var(--text) 7%, transparent); overflow: hidden; }
+.bar-item .bar-track { grid-column: 1 / -1; height: 6px; border-radius: 0; background: color-mix(in oklab, var(--text) 7%, transparent); overflow: hidden; }
 .bar-item .bar-fill { height: 100%; border-radius: inherit; background: var(--accent); transform-origin: left; animation: bar-grow var(--t-lg) var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 12) * 30ms); }
 @keyframes bar-grow { from { transform: scaleX(0); } }
 
@@ -276,7 +278,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 
 @media (max-width: 719px) {
   .modal-layer { place-items: end stretch; padding: 0; }
-  .modal { width: 100%; border-radius: 12px 12px 0 0; max-height: 92dvh; animation-name: sheet-in; padding-bottom: env(safe-area-inset-bottom); }
+  .modal { width: 100%; border-radius: 0; max-height: 92dvh; animation-name: sheet-in; padding-bottom: env(safe-area-inset-bottom); }
   @keyframes sheet-in { from { transform: translateY(100%); } }
   /* The grab bar says "this came up from the bottom and goes back down" —
      the affordance every native sheet has, and the thing that stops a sheet
@@ -295,7 +297,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 .toasts { position: fixed; z-index: 500; right: 20px; bottom: calc(var(--dock-h) + 20px + env(safe-area-inset-bottom)); display: grid; gap: 8px; width: min(400px, calc(100vw - 24px)); pointer-events: none; }
 @media (max-width: 719px) { .toasts { right: 12px; left: 12px; width: auto; bottom: calc(var(--dock-h) + 12px + env(safe-area-inset-bottom)); } }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 11px 12px 11px 14px; border-radius: var(--r-lg); font-size: .8125rem; font-weight: 550; animation: toast-in var(--t-md) var(--ease-out) both; position: relative; }
-.toast::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--text-mute); }
+.toast::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0; background: var(--text-mute); }
 .toast-ok::before { background: var(--ok); } .toast-warn::before { background: var(--warn); } .toast-error::before { background: var(--bad); } .toast-info::before { background: var(--info); }
 .toast svg { flex: none; }
 .toast-ok svg { color: var(--ok); } .toast-warn svg { color: var(--warn); } .toast-error svg { color: var(--bad); } .toast-info svg { color: var(--info); }
@@ -349,7 +351,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 :root[data-theme="dark"] .palette-item.is-active .pi-icon { color: var(--accent); }
 .palette-item .pi-text { flex: 1; min-width: 0; }
 .palette-item .pi-title { display: block; font-weight: 600; font-size: .875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.palette-item .pi-title mark { background: color-mix(in oklab, var(--accent) 22%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+.palette-item .pi-title mark { background: color-mix(in oklab, var(--accent) 22%, transparent); color: inherit; border-radius: 0; padding: 0 1px; }
 .palette-item .pi-sub { display: block; margin-top: 1px; font-size: .75rem; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Šipka je vidět až u vybraného řádku: u všech je to dvanáct stejných šipek. */
 .palette-item > svg:last-child { flex: none; opacity: 0; color: var(--text-mute); transition: opacity var(--t-xs); }
@@ -400,10 +402,10 @@ a.list-row:hover .list-title { color: var(--accent); }
 .chart-tip { position: absolute; pointer-events: none; z-index: 5; min-width: 150px; max-width: min(220px, 80%); padding: 8px 10px; border-radius: var(--r-md); font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .chart-tip .tip-year { font-weight: 650; margin-bottom: 3px; }
 .chart-tip .tip-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
-.chart-tip .tip-row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.chart-tip .tip-row i { width: 8px; height: 8px; border-radius: 0; display: inline-block; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .75rem; color: var(--text-dim); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.legend i { width: 14px; height: 3px; border-radius: 0; display: inline-block; }
 .legend i.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px) !important; }
 .spark { display: block; width: 100%; height: 34px; overflow: visible; }
 .spark path.l { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -449,7 +451,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 
 /* A count drawn as marks. Capped, wrapped, never pushed out of the tile. */
 .dots { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; align-content: flex-end; max-width: 58%; justify-content: flex-end; }
-.dots i { width: 7px; height: 7px; border-radius: 2px; display: block; animation: dot-in 320ms var(--ease-out) both; animation-delay: calc(min(var(--i), 20) * 20ms); }
+.dots i { width: 7px; height: 7px; border-radius: 0; display: block; animation: dot-in 320ms var(--ease-out) both; animation-delay: calc(min(var(--i), 20) * 20ms); }
 .dots.is-none { font-size: .75rem; color: var(--text-mute); font-weight: 600; }
 .dots.is-many { font-size: .625rem; letter-spacing: 1px; gap: 0; }
 .dots.is-many em { font-style: normal; font-size: .6875rem; color: var(--text-mute); margin-left: 4px; letter-spacing: 0; }
@@ -458,10 +460,10 @@ a.list-row:hover .list-title { color: var(--accent); }
 
 /* Value against its reference on one track. */
 .bullet { position: relative; height: 6px; }
-.bullet-track { position: absolute; inset: 0; border-radius: 2px; background: var(--surface-3); overflow: hidden; display: block; }
-.bullet-fill { display: block; height: 100%; border-radius: 2px; background: currentColor; opacity: .62; animation: bullet-grow 640ms var(--ease-out) 80ms both; }
+.bullet-track { position: absolute; inset: 0; border-radius: 0; background: var(--surface-3); overflow: hidden; display: block; }
+.bullet-fill { display: block; height: 100%; border-radius: 0; background: currentColor; opacity: .62; animation: bullet-grow 640ms var(--ease-out) 80ms both; }
 @keyframes bullet-grow { from { width: 0; } }
-.bullet-ref { position: absolute; top: -2px; width: 2px; height: 10px; border-radius: 1px; background: var(--text-dim); transform: translateX(-1px);
+.bullet-ref { position: absolute; top: -2px; width: 2px; height: 10px; border-radius: 0; background: var(--text-dim); transform: translateX(-1px);
   animation: chart-fade 300ms var(--ease-out) 600ms both; }
 
 /* ------------------------------------------------------------- maps */
@@ -491,7 +493,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 .map-tip { position: absolute; z-index: 6; pointer-events: none; padding: 8px 11px; border-radius: var(--r-md); font-size: .8125rem; transform: translate(-50%, calc(-100% - 14px)); white-space: nowrap; }
 .map-tip strong { display: block; font-weight: 650; }
 .map-legend { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .75rem; color: var(--text-dim); margin-top: 10px; }
-.map-legend .scale { display: flex; height: 8px; border-radius: 2px; overflow: hidden; width: min(260px, 60%); }
+.map-legend .scale { display: flex; height: 8px; border-radius: 0; overflow: hidden; width: min(260px, 60%); }
 .map-legend .scale span { flex: 1; }
 .map-appear path.region { animation: region-in 600ms var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); }
 @keyframes region-in { from { opacity: 0; } }
@@ -520,6 +522,15 @@ a.list-row:hover .list-title { color: var(--accent); }
   .relief-bar { left: 12px; right: 12px; bottom: 52px; justify-content: space-between; }
   .relief-bar input[type="range"] { flex: 1; height: 28px; }
 }
+
+/* ------------------------------------------------------------- znak území
+   Soubor je čtverec s vycentrovaným, oříznutým znakem (`scripts/erby.py`),
+   takže tady stačí velikost. Náhradní štít pro obec bez znaku je tlumený,
+   aby se nepletl se skutečnými znaky. */
+.erb { display: block; flex: none; object-fit: contain; -webkit-user-select: none; user-select: none; }
+.erb-zadny svg { display: block; }
+.erb-zadny svg path { fill: var(--surface-3); stroke: var(--border-strong); stroke-width: 1.2; }
+.erb-zadny svg text { fill: var(--text-mute); font-family: var(--font); font-size: 13px; font-weight: 650; }
 
 /* ------------------------------------------------------------- misc */
 .kbd-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
@@ -583,7 +594,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 .donut-cap { fill: var(--text-mute); font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .donut-legend { display: grid; gap: 5px; min-width: 0; flex: 1 1 210px; font-size: .8125rem; }
 .donut-legend span { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; }
-.donut-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.donut-legend i { width: 10px; height: 10px; border-radius: 0; }
 .donut-legend .dl-label { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .donut-legend strong { font-variant-numeric: tabular-nums; font-weight: 600; }
 .donut-legend em { font-style: normal; color: var(--text-mute); font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
@@ -604,7 +615,7 @@ a.list-row:hover .list-title { color: var(--accent); }
 .heat-col { justify-content: center; padding-bottom: 2px; }
 .heat-row { padding-right: 9px; white-space: nowrap; }
 .heat-cell {
-  display: grid; place-items: center; min-height: 30px; border-radius: 2px;
+  display: grid; place-items: center; min-height: 30px; border-radius: 0;
   background: var(--surface-2); font-size: .6875rem; font-variant-numeric: tabular-nums;
   animation: chart-fade 340ms var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 40) * 12ms);
 }

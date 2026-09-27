@@ -22,11 +22,12 @@ import { navigate } from "../lib/router";
 import { openAssistant } from "./assistantBus";
 import { Icon } from "./Icon";
 import { NAV } from "./nav";
+import { Erb } from "./Erb";
 
 type Kat = "uzemi" | "data" | "ukazatele" | "stranky" | "prikazy" | "asistent";
 
 interface Hit {
-  key: string; kat: Kat; group: string; title: string; sub?: string; icon: string;
+  key: string; kat: Kat; group: string; title: string; sub?: string; icon: string; erb?: string;
   /** Jak dobře sedí na dotaz; řadí skupiny mezi sebou. */
   skore: number;
   run: () => void;
@@ -245,7 +246,7 @@ export function CommandPalette() {
       remote.territories.forEach((t, i) => out.push({
         key: t.id, kat: "uzemi", group: "Území", title: t.name,
         sub: `${t.level_label}${t.parent ? ` · ${t.parent}` : ""} · ${num(t.population)} obyv.`,
-        icon: "pin", skore: shoda(t.name, "", f) + Math.max(0, 0.08 - i * 0.008), run: () => navigate(`/obce/${t.id}`),
+        icon: "pin", erb: t.id, skore: shoda(t.name, "", f) + Math.max(0, 0.08 - i * 0.008), run: () => navigate(`/obce/${t.id}`),
       }));
       remote.datasets.forEach((d, i) => out.push({
         key: `d${d.id}`, kat: "data", group: "Datové sady", title: d.title, sub: d.snippet, icon: "database",
@@ -378,7 +379,7 @@ export function CommandPalette() {
                   <button key={h.key} id={`ph-${i}`} data-i={i} role="option" aria-selected={i === active}
                     className={`palette-item ${i === active ? "is-active" : ""}`}
                     onMouseEnter={() => setActive(i)} onClick={() => pick(h)}>
-                    <span className="pi-icon"><Icon name={h.icon} size={15} /></span>
+                    {h.erb ? <Erb id={h.erb} name={h.title} size={26} className="pi-erb" /> : <span className="pi-icon"><Icon name={h.icon} size={15} /></span>}
                     <span className="pi-text">
                       <span className="pi-title"><Zvyraznene text={h.title} f={f} /></span>
                       {h.sub && <span className="pi-sub">{h.sub}</span>}

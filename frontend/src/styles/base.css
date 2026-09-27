@@ -18,16 +18,17 @@
   --font-scale: 1;
 
   --lime: #7fd957;
-  /* Poloměry jsou měřítko, ne ozdoba: 4 px ovládací prvky, 6 px tlačítka
-     a pole, 8 px karty, 10 px velké panely. Pilulka zbyla jen přepínači
-     a tečkám — kulaté tlačítko v tabulce vypadá jako hračka. */
-  --r-xs: 3px;
-  --r-sm: 4px;
-  --r-md: 6px;
-  --r-lg: 8px;
-  --r-xl: 10px;
+  /* Rohy jsou ostré. Zaoblení bylo na každém tlačítku, poli, kartě i štítku
+     a aplikace s ním působila jako spotřebitelská hračka, ne jako úřední
+     systém. Tokeny zůstávají, aby šlo zaoblení vrátit na jednom místě;
+     kulaté zůstaly jen přepínače, tečky stavů a portréty. */
+  --r-xs: 0;
+  --r-sm: 0;
+  --r-md: 0;
+  --r-lg: 0;
+  --r-xl: 0;
   --r-pill: 999px;
-  --dock-hl-r: var(--r-md);
+  
 
   /* Bez přeskoku. Pružina s překmitem je hravá a na pracovním nástroji,
      který se otevírá stokrát denně, po třetím dni otravuje. */
@@ -371,7 +372,7 @@ kbd {
   transition: transform var(--t-md) var(--ease-out), background-color var(--t-lg) var(--ease-out), opacity var(--t-sm);
   pointer-events: none;
 }
-.sb-ind::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--m); transition: background-color var(--t-lg) var(--ease-out); }
+.sb-ind::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0; background: var(--m); transition: background-color var(--t-lg) var(--ease-out); }
 .sb-ind[data-prazdno="ano"] { opacity: 0; }
 .sb-foot { flex: none; padding: 8px 10px 12px; border-top: 1px solid var(--border); display: grid; gap: 1px; }
 .sb-foot .sb-item { width: 100%; border: 0; background: none; cursor: pointer; font: inherit; font-size: .875rem; }
@@ -433,7 +434,7 @@ kbd {
 .tb-item[aria-current="page"] svg.module { opacity: 1; filter: none; }
 .tb-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-ind {
-  position: absolute; top: -1px; left: 0; height: 2px; width: 32px; border-radius: 0 0 2px 2px;
+  position: absolute; top: -1px; left: 0; height: 2px; width: 32px; border-radius: 0;
   background: var(--m);
   transform: translateX(var(--x, 0px));
   transition: transform var(--t-md) var(--ease-out), width var(--t-md) var(--ease-out), background-color var(--t-lg);

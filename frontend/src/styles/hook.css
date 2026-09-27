@@ -60,7 +60,7 @@
   border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface-2);
   font-size: .75rem; font-weight: 600; color: var(--text-dim);
 }
-.hp-stitek i { width: 7px; height: 7px; border-radius: 2px; background: var(--lime); }
+.hp-stitek i { width: 7px; height: 7px; border-radius: 0; background: var(--lime); }
 /* Nápis s maskotem má v `viewBox` vlevo 70 z 430 jednotek volných — tudy
    maskot přibíhá. Záporný okraj ten kus vrací, aby K lícovalo s textem
    pod ním; maskot při příchodu klidně přeběhne přes odsazení stránky. */
@@ -245,8 +245,8 @@
 }
 .hp-zdroj:hover { background: var(--surface-2); }
 .hp-zdroj-jmeno { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hp-zdroj-drah { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
-.hp-zdroj-drah i { display: block; height: 100%; border-radius: 3px; background: var(--accent); opacity: .8; }
+.hp-zdroj-drah { height: 6px; border-radius: 0; background: var(--surface-3); overflow: hidden; }
+.hp-zdroj-drah i { display: block; height: 100%; border-radius: 0; background: var(--accent); opacity: .8; }
 .hp-zdroj-pocet { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .hp-zdroj svg { color: var(--text-mute); }
 @media (max-width: 560px) { .hp-zdroj { grid-template-columns: minmax(0, 1fr) 7ch 16px; } .hp-zdroj-drah { display: none; } }

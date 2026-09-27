@@ -9,6 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 import { useApi } from "../lib/api";
 import { fold, num } from "../lib/format";
+import { Erb } from "./Erb";
 import { Icon } from "./Icon";
 
 export interface TerritoryRow { id: string; level: string; level_label: string; name: string; population: number; parent: string | null }
@@ -86,6 +87,7 @@ export function TerritoryPicker({ value, onChange, label = "Území", levels }: 
           {rows.map((t, i) => (
             <button key={t.id} type="button" role="option" aria-selected={t.id === value} className={`picker-item ${i === active ? "is-active" : ""}`}
               onMouseEnter={() => setActive(i)} onPointerDown={(e) => e.preventDefault()} onClick={() => pick(t)}>
+              <Erb id={t.id} name={t.name} size={26} />
               <span className="picker-main">
                 <strong>{t.name}</strong>
                 <span className="picker-sub">{t.level_label}{t.parent && t.level === "obec" ? ` · ORP ${t.parent}` : ""}</span>

@@ -388,14 +388,14 @@ export function ShareBar({ parts }: { parts: { label: string; value: number; col
   const total = parts.reduce((a, p) => a + p.value, 0) || 1;
   return (
     <div>
-      <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", gap: 2 }}>
+      <div style={{ display: "flex", height: 14, overflow: "hidden", gap: 2 }}>
         {parts.map((p, i) => (
           <span key={p.label} className="share-part" title={`${p.label}: ${num((100 * p.value) / total, 1)} %`}
             style={{ width: `${(100 * p.value) / total}%`, background: p.color, ["--i" as string]: i }} />
         ))}
       </div>
       <div className="legend">
-        {parts.map((p) => <span key={p.label}><i style={{ background: p.color, height: 8, width: 8, borderRadius: 2 }} />{p.label} <strong className="num">{num((100 * p.value) / total, 1)} %</strong></span>)}
+        {parts.map((p) => <span key={p.label}><i style={{ background: p.color, height: 8, width: 8 }} />{p.label} <strong className="num">{num((100 * p.value) / total, 1)} %</strong></span>)}
       </div>
     </div>
   );

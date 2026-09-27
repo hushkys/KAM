@@ -158,7 +158,7 @@ export function ObceHook({ obce, loading, onOpen, children }: {
               <span>obcí v kraji</span>
             </div>
           )}
-          {!art && loading && <span className="skeleton" style={{ position: "absolute", inset: 18, borderRadius: 14 }} />}
+          {!art && loading && <span className="skeleton" style={{ position: "absolute", inset: 18 }} />}
         </div>
       </div>
     </section>

@@ -11,6 +11,7 @@ import { ago, date, num } from "../lib/format";
 import { Link, setQuery, useLocation, useNahled } from "../lib/router";
 import { toast } from "../lib/toast";
 import type { SourceRow, Sources } from "../lib/types";
+import { Erb } from "../components/Erb";
 
 interface Ds { id: number; title: string; description: string; publisher: string; source: string; url: string; alt_url: string; download_url: string; formats: string; pillar: string; pillar_label: string; region: string; modified: string; freshness: string; loaded: boolean; usage: string[]; check_status: string; check_code: number }
 interface DsPage { total: number; page: number; size: number; items: Ds[] }
@@ -191,7 +192,7 @@ function Needs() {
   if (!data) return <span className="skeleton" style={{ height: 400, width: "100%" }} />;
   return (
     <div className="grid">
-      <Card span={4} i={0} title="Zdraví dat" icon="gauge">
+      <Card span={4} i={0} title="Zdraví dat" icon="gauge" className="sim-sticky">
         <div className="row" style={{ alignItems: "baseline" }}><span className="kpi-value">{data.coverage.health} %</span><span className="muted small">průměrné pokrytí</span></div>
         <div className="section-gap" />
         <BarList items={data.coverage.pillars.map((p) => ({ key: p.key, label: p.label, value: p.score }))} max={100} format={(v) => `${v} %`} />
@@ -223,7 +224,7 @@ function Needs() {
               const prumer = Math.round(r.cells.reduce((a, c) => a + c.score, 0) / Math.max(1, r.cells.length));
               return (
                 <div className="matrix-row" role="row" key={r.territory.id}>
-                  <Link className="matrix-name" to={`/obce/${r.territory.id}`} role="rowheader">{r.territory.name}</Link>
+                  <Link className="matrix-name" to={`/obce/${r.territory.id}`} role="rowheader"><Erb id={r.territory.id} name={r.territory.name} size={18} /><span>{r.territory.name}</span></Link>
                   {r.cells.map((c) => {
                     const kraj = data.coverage.pillars.find((p) => p.key === c.pillar)?.score ?? c.score;
                     const jina = Math.abs(c.score - kraj) >= ODCHYLKA;

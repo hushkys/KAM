@@ -12,6 +12,7 @@ import { BarList } from "./charts";
 import { Icon } from "./Icon";
 import { TerritoryPicker } from "./TerritoryPicker";
 import { Card, InfoHint, KindTag } from "./ui";
+import { Erb } from "./Erb";
 
 interface Obec { id: string; name: string; hodnota: number; rok: number; vaha: number; mezera: number; prinos: number; pasmo: string; median_pasma: number }
 interface Varianta { obce: Obec[]; prinos: number; lidi: number; chybi: string[] }
@@ -38,7 +39,7 @@ function Seznam({ v, title, tone }: { v: Varianta; title: string; tone?: string 
       <ul className="um-list">
         {v.obce.map((o) => (
           <li key={o.id}>
-            <span className="um-obec">{o.name}</span>
+            <span className="um-obec"><Erb id={o.id} name={o.name} size={20} /><span>{o.name}</span></span>
             <span className="um-detail mute">{num(o.hodnota, 2)} · medián pásma {num(o.median_pasma, 2)} · {o.pasmo}</span>
             <span className="um-prinos num">{num(o.prinos)}</span>
           </li>

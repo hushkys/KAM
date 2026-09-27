@@ -5,6 +5,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { openAssistant, setAssistantTerritory } from "../components/assistantBus";
 import { Bullet, ChartSwitch, Columns, Dots, Gauge, LineChart, Legend, Sparkline, Waterfall } from "../components/charts";
+import { Erb } from "../components/Erb";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { PlanyKarta } from "../components/PlanyKarta";
 import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, Severity } from "../components/ui";
@@ -203,7 +204,10 @@ export function Profile({ id }: { id: string }) {
             <Link to="/obce">Obce</Link>
             {t?.parent && <><Icon name="chevron-right" size={12} /><Link to={`/obce/${t.parent.id}`}>{t.parent.name}</Link></>}
           </div>
-          <h1>{t?.name ?? "…"}</h1>
+          <div className="profile-titul">
+            {t && <Erb id={id} name={t.name} size={60} />}
+            <h1>{t?.name ?? "…"}</h1>
+          </div>
           {t && (
             <div className="profile-facts">
               <span>{{ obec: "Obec", orp: "Správní obvod ORP", okres: "Okres", kraj: "Kraj", cz: "Stát" }[t.level]}</span>
@@ -225,7 +229,7 @@ export function Profile({ id }: { id: string }) {
 
       {data && (
         <>
-          <div className="pillar-strip" role="toolbar" aria-label="Oblasti">
+          <div className="pillar-strip" role="toolbar" aria-label="Oblasti" style={{ "--n": data.pillars.length, "--n2": Math.ceil(data.pillars.length / 2) } as CSSProperties}>
             {data.pillars.map((p, i) => (
               <button key={p.key} className={`pillar-tile reveal ${pillar === p.key ? "is-on" : ""}`} style={{ "--i": i } as CSSProperties} aria-pressed={pillar === p.key} onClick={() => setPillar(pillar === p.key ? null : p.key)}>
                 <span className="pt-top"><Icon name={PILLAR_ICON[p.key]} size={16} /><span className={`status-dot status-${p.status}`} /></span>

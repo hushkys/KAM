@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import { Erb } from "../components/Erb";
 import { Icon } from "../components/Icon";
 import { ObceHook } from "../components/ObceHook";
 import { useTerritories } from "../components/TerritoryPicker";
@@ -47,8 +48,12 @@ export function Territories() {
       <div className="terr-grid">
         {rows.slice(0, limit).map((t, i) => (
           <a key={t.id} href={`/obce/${t.id}`} onClick={(e) => open(e, t.id)} className="terr-card reveal" style={{ "--i": Math.min(i, 14) } as CSSProperties} data-ctx={t.id} data-ctx-label={t.name}>
-            <span className="tc-name">{t.name}</span>
-            <span className="tc-meta"><span>{t.level_label}{t.parent && t.level === "obec" ? ` · ${t.parent}` : ""}</span><span className="num">{num(t.population)} obyv.</span></span>
+            <Erb id={t.id} name={t.name} size={44} />
+            <span className="tc-text">
+              <span className="tc-name">{t.name}</span>
+              <span className="tc-meta">{t.level_label}{t.parent && t.level === "obec" ? ` · ORP ${t.parent}` : ""}</span>
+              <span className="tc-pop num">{num(t.population)} obyv.</span>
+            </span>
           </a>
         ))}
       </div>

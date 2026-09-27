@@ -20,6 +20,7 @@
 // se spárovat nepodařilo, odkazy zmizí, místo aby vedly naslepo.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Erb } from "../components/Erb";
 import { Icon } from "../components/Icon";
 import { PlanyHook } from "../components/PlanyHook";
 import { Empty, ErrorBox, Pill } from "../components/ui";
@@ -387,7 +388,7 @@ export function Plany() {
                       <li key={r.id} className={`pl-r${otev ? " je-otevreno" : ""}`} data-obec={r.id}>
                         <button type="button" className="pl-r-hlava" aria-expanded={otev} onClick={() => prepni(r.id)}>
                           <Icon name={otev ? "chevron-down" : "chevron-right"} size={16} />
-                          <span className="pl-r-jmeno">{r.name}</span>
+                          <span className="pl-r-jmeno"><Erb id={r.id} name={r.name} size={24} /><span>{r.name}</span></span>
                           <span className="pl-r-lidi">{num(r.population)}</span>
                           <span className="pl-r-upd">
                             {r.upd_celkem > 0

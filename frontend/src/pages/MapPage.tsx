@@ -11,6 +11,7 @@ import { useApi } from "../lib/api";
 import { num, withUnit } from "../lib/format";
 import { Link, navigate, setQuery, useLocation } from "../lib/router";
 import type { IndicatorMeta, Profile, Sources } from "../lib/types";
+import { Erb } from "../components/Erb";
 
 // three.js and the elevation grid together outweigh the rest of the app, so
 // the terrain view is a chunk of its own and is fetched only when opened.
@@ -139,6 +140,10 @@ export function MapPage() {
               {sel && !prof.data && <span className="skeleton" style={{ height: 120, width: "100%" }} />}
               {prof.data && (
                 <>
+                  <div className="mapa-uzemi">
+                    <Erb id={prof.data.territory.id} name={prof.data.territory.name} size={48} />
+                    <span className="mute small">{prof.data.territory.okres ?? prof.data.territory.name}{prof.data.territory.area_km2 ? ` · ${num(prof.data.territory.area_km2)} km²` : ""}</span>
+                  </div>
                   <div className="facts-list">
                     <div className="fact-row"><span>Obyvatelé</span><span className="num">{num(prof.data.territory.population)} ({prof.data.territory.population_year})</span></div>
                     {prof.data.territory.parent && <div className="fact-row"><span>Nadřazené území</span><span>{prof.data.territory.parent.name}</span></div>}

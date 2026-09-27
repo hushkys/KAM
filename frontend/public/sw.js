@@ -151,7 +151,9 @@ self.addEventListener("fetch", (e) => {
   // něj se vykreslí holé „401 Unauthorized". Jednou už to celý web zamklo.
   // Dokud je aplikace veřejná, je nejdřív síť a skořápka jako záloha správně.
   if (request.mode === "navigate") { e.respondWith(navigace(request)); return; }
-  if (url.pathname.startsWith("/assets/")) { e.respondWith(zMezipameti(request, SOUBORY)); return; }
+  // Znaky obcí se nemění (a když ano, přegeneruje je `scripts/erby.py`
+  // spolu s novou verzí aplikace), takže z mezipaměti jako hashované soubory.
+  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/erby/")) { e.respondWith(zMezipameti(request, SOUBORY)); return; }
   if (url.pathname.startsWith("/api/")) {
     if (url.pathname === "/api/health") return;
     e.respondWith(api(request));
