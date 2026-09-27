@@ -133,11 +133,16 @@ kontrola odkazů, dotace a dokumenty obcí. Pustit ji jde dvojím způsobem:
   Schedulerem. Job zapisuje rovnou do PostgreSQL; běžící služba si změny
   v `job_state` do deseti minut všimne a vyprázdní mezipaměti sama.
 
+Na produkci obojí existuje od 27. 9. 2026: úloha `kam-obnova` a plánovač
+`kam-obnova-denne` (Cloud Scheduler, europe-west1, 4:30 Europe/Prague, spouští
+se pod výchozím servisním účtem projektu). Příkazy níž jsou pro založení
+znovu, kdyby se projekt stavěl od nuly.
+
 ```bash
 # jednou: job ze stejného image jako služba, se stejnými proměnnými z env.yaml
 gcloud run jobs create kam-obnova --image REGION-docker.pkg.dev/PROJEKT/…/kam:latest \
   --region europe-west1 --env-vars-file env.yaml --cpu 1 --memory 1Gi --task-timeout 3600 \
-  --command python --args=-m,kam.ingest,refresh
+  --max-retries 0 --command sh --args=-c,"cd backend && exec python -m kam.ingest refresh"
 # denně ve 4:30 — úřední data se nemění v řádu hodin a ráno už je obnoveno
 gcloud scheduler jobs create http kam-obnova-denne --location europe-west1 \
   --schedule "30 4 * * *" --time-zone "Europe/Prague" \
@@ -146,6 +151,12 @@ gcloud scheduler jobs create http kam-obnova-denne --location europe-west1 \
 # ručně kdykoli
 gcloud run jobs execute kam-obnova --region europe-west1
 ```
+
+`scripts/deploy.ps1` po každém nasazení služby převede úlohu na nový obraz
+(`gcloud run jobs update kam-obnova --image …`); bez toho by úloha dál
+sklízela kódem z doby, kdy vznikla. Úloha se spouští z `backend/`, stejně
+jako služba (`--app-dir backend` v Dockerfile), a nemá opakování: obnova,
+která spadne, se zopakuje sama další den a dvojí běh by jen pálil kvótu.
 
 Na co myslet: **Neon má na free tieru kvótu na přenesená data.** Statistiky
 se proto nestahují celé (380 tisíc řádků), ale jen od roku před posledním,

@@ -39,6 +39,16 @@ try {
   --env-vars-file $promenne --quiet
 if ($LASTEXITCODE -ne 0) { throw "Nasazení selhalo." }
 
+# Úloha obnovy dat (Cloud Run Job kam-obnova, viz DEPLOY.md „Obnova dat“) běží
+# ze stejného obrazu jako služba. Po nasazení dostane nový, jinak by dál
+# sklízela starým kódem. Když úloha ještě neexistuje, nic se neděje.
+$obraz = & $gcloud run services describe kam --region europe-west1 --format "value(spec.template.spec.containers[0].image)"
+$uloha = & $gcloud run jobs list --region europe-west1 --filter "metadata.name=kam-obnova" --format "value(metadata.name)"
+if ($uloha) {
+  & $gcloud run jobs update kam-obnova --region europe-west1 --image $obraz --env-vars-file $promenne --quiet
+  if ($LASTEXITCODE -ne 0) { throw "Aktualizace úlohy obnovy selhala." }
+}
+
 Write-Output ""
 Write-Output "Hotovo. Ověření:"
 Write-Output "  https://hack-a-ton-hushkys.web.app"
