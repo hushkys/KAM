@@ -28,12 +28,14 @@
 .span-3 { grid-column: span 3 !important; } .span-4 { grid-column: span 4 !important; } .span-5 { grid-column: span 5 !important; }
 .span-6 { grid-column: span 6 !important; } .span-7 { grid-column: span 7 !important; } .span-8 { grid-column: span 8 !important; }
 .span-9 { grid-column: span 9 !important; } .span-12 { grid-column: span 12 !important; }
-@container stranka (max-width: 1040px) {
-  .span-3 { grid-column: span 6 !important; } .span-4, .span-5 { grid-column: span 6 !important; }
-  .span-7, .span-8, .span-9 { grid-column: span 12 !important; } .span-6.keep { grid-column: span 6 !important; }
-  .grid .span-4.stack, .grid .span-5.stack { grid-column: span 12 !important; }
-}
-@container stranka (max-width: 660px) { .grid > [class*="span-"] { grid-column: span 12 !important; } }
+/* Sloupce drží svůj poměr, dokud je obsah širší než 800 px, a pod tím jdou
+   všechny naráz na celou šířku. Mezistupeň tu byl a dělal díry: menší sloupec
+   dvojice šel na polovinu a větší na celou šířku, takže z 5 + 7 bylo 6 + prázdná
+   půlka a výsledek simulace až pod ní — a totéž u 4 + 8 (profil, mapa, data)
+   i u trojice 4 + 4 + 4, kde třetí karta zůstala v řádku sama. Dvojice
+   i trojice v aplikaci vždycky dávají dvanáct, takže stejný poměr na užší
+   ploše díru neudělá nikdy; nejužší sloupec (4/12) má na 800 px pořád 250 px. */
+@container stranka (max-width: 800px) { .grid > [class*="span-"] { grid-column: span 12 !important; } }
 /* `align-content: start`: sloupec ve dvousloupcovém rozvržení je vysoký jako
    ten vyšší z obou, a bez tohohle by se ten rozdíl rozpustil do karet — každá
    by narostla o svůj díl a měla pod obsahem prázdné místo. */
@@ -201,7 +203,17 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .stat-label { font-size: .75rem; color: var(--text-mute); font-weight: 600; margin-bottom: 6px; }
 .stat-value { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.625rem); font-weight: 650; letter-spacing: -.022em; line-height: 1.12; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .stat-sub { font-size: .75rem; color: var(--text-dim); margin-top: 6px; }
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: var(--gap); }
+/* Řada dlaždic se zalamuje jako flex, ne jako mřížka: `auto-fit` z šesti
+   dlaždic na 980 px udělal 5 + 1 a vedle poslední zela prázdná plocha čtyř
+   karet. Ve flexu se poslední řádek roztáhne, takže díra nevznikne, a pro
+   šest dlaždic se navíc vynutí 3 + 3 (nebo všech šest v řadě na široké
+   stránce). Telefon má vlastní vodorovný posuv na konci `pages.css`. */
+.stats-row { display: flex; flex-wrap: wrap; gap: var(--gap); }
+.stats-row > * { flex: 1 1 170px; min-width: 0; }
+@media (min-width: 720px) {
+  .stats-row:has(> :nth-child(6):last-child) > * { flex-basis: calc((100% - 2 * var(--gap)) / 3 - 1px); }
+  @container stranka (min-width: 1180px) { .stats-row:has(> :nth-child(6):last-child) > * { flex-basis: 120px; } }
+}
 /* Řada dlaždic má pevný počet členů, takže se na širokém okně neroztrhne
    do dalšího řádku — jen se roztáhne. Číslo v levém horním rohu půlmetrové
    dlaždice vypadá jako omylem zapomenuté, proto tady dostane velikost

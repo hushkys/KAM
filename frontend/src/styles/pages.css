@@ -316,13 +316,16 @@
 .profile-facts { display: flex; gap: 8px 18px; flex-wrap: wrap; margin-top: 10px; color: var(--text-dim); font-size: .875rem; }
 .profile-facts strong { color: var(--text); font-variant-numeric: tabular-nums; }
 /* Oblastí je devět a `auto-fit` z nich na notebooku udělal sedm a dvě —
-   pod dvěma dlaždicemi pak zela prázdná půlka řádku. Počet sloupců se proto
-   odvozuje z počtu oblastí (`--n`, polovina nahoru `--n2` z komponenty) tak, aby řádky vyšly vyrovnaně: na široké
-   stránce všechny v jedné řadě, na užší ve dvou (5 + 4), na telefonu po třech. */
-.pillar-strip { --n: 9; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 8px; margin-bottom: var(--gap); }
-@container stranka (max-width: 1180px) { .pillar-strip { grid-template-columns: repeat(var(--n2, 5), minmax(0, 1fr)); } }
-@container stranka (max-width: 640px) { .pillar-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@container stranka (max-width: 380px) { .pillar-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+   pod dvěma dlaždicemi pak zela prázdná půlka řádku. Pás je proto flex:
+   šířka dlaždice se odvozuje z počtu oblastí (`--n`, polovina nahoru `--n2`
+   z komponenty), takže na široké stránce stojí všechny v jedné řadě, na užší
+   ve dvou (5 + 4) a na telefonu po třech — a poslední řádek se roztáhne na
+   celou šířku, takže díra nevznikne, ani když počet nejde dělit beze zbytku. */
+.pillar-strip { --n: 9; --k: var(--n); display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--gap); }
+.pillar-strip > * { flex: 1 1 calc((100% - (var(--k) - 1) * 8px) / var(--k) - .5px); min-width: 0; }
+@container stranka (max-width: 1180px) { .pillar-strip { --k: var(--n2, 5); } }
+@container stranka (max-width: 640px) { .pillar-strip { --k: 3; } }
+@container stranka (max-width: 380px) { .pillar-strip { --k: 2; } }
 .pillar-tile { display: grid; gap: 4px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none !important; cursor: pointer; text-align: left; min-width: 0; transition: border-color var(--t-sm), background var(--t-sm); font: inherit; }
 .pillar-tile:hover { border-color: var(--border-strong); }
 .pillar-tile.is-on { border-color: var(--m-line); background: var(--m-soft); box-shadow: inset 0 -2px 0 var(--m); }
@@ -332,11 +335,16 @@
 /* Indicator tiles. `auto-fit` + `dense` so the lead tile can take two columns
    without leaving a hole behind it, and so a pillar with five cards fills the
    row instead of stretching four of them across it. */
-.ind-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 208px), 1fr)); grid-auto-flow: row dense; gap: 10px; }
+/* Dlaždice ukazatelů se zalamují jako flex: v mřížce s `auto-fit` zůstal
+   v posledním řádku skoro každé oblasti prázdný sloupec (osm ukazatelů
+   demografie po třech = 3 + 3 + 2 a vedle dvou díra). Ve flexu se poslední
+   řádek roztáhne. Úvodní dlaždice oblasti je dvakrát širší. */
+.ind-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.ind-grid > .ind { flex: 1 1 208px; min-width: 0; }
 .ind { position: relative; display: grid; gap: 4px; padding: 14px 15px 12px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface-2); min-width: 0; align-content: start; }
-.ind-grid > .ind.is-lead { grid-column: span 2; background: var(--surface); border-color: var(--m-line); box-shadow: inset 3px 0 0 var(--m); }
+.ind-grid > .ind.is-lead { flex: 2 1 426px; background: var(--surface); border-color: var(--m-line); box-shadow: inset 3px 0 0 var(--m); }
 .ind-grid > .ind.is-lead .ind-value { font-size: 1.75rem; }
-@container stranka (max-width: 520px) { .ind-grid { grid-template-columns: minmax(0, 1fr); } .ind-grid > .ind.is-lead { grid-column: span 1; } }
+@container stranka (max-width: 520px) { .ind-grid > .ind, .ind-grid > .ind.is-lead { flex-basis: 100%; } }
 .ind-name { font-size: .8125rem; color: var(--text-dim); font-weight: 650; line-height: 1.3; min-height: 2.1em; padding-right: 22px;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* The number and its shape share a row, so a dial or a row of dots reads as
@@ -444,7 +452,8 @@
 .param { display: grid; gap: 6px; }
 .param-top { display: flex; justify-content: space-between; gap: 8px; font-size: .8125rem; }
 .param-top b { font-variant-numeric: tabular-nums; }
-.iv-add-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.iv-add-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.iv-add-grid > * { flex: 1 1 150px; min-width: 0; }
 .iv-add { display: grid; gap: 8px; justify-items: start; padding: 12px; border-radius: var(--r-md); border: 1px dashed var(--border-strong); background: none; cursor: pointer; text-align: left; color: var(--text-dim); font-weight: 650; font-size: .8125rem; transition: all var(--t-xs); }
 .iv-add:hover { border-style: solid; border-color: var(--accent-line); color: var(--text); background: var(--accent-soft); }
 .chain { display: grid; gap: 0; counter-reset: step; }
@@ -691,7 +700,9 @@
 /* ------------------------------------------------------------- dotace
    Rozcestník vyhlašovatelů. Karta je odkaz, proto celá reaguje na najetí a
    má vlastní hit area — na telefonu se do ní trefí palec, ne jen do nadpisu. */
-.zdroje-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+/* Flex, ne mřížka: poslední řádek odkazů se roztáhne místo prázdných sloupců. */
+.zdroje-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.zdroje-grid > * { flex: 1 1 260px; min-width: 0; }
 .zdroj-karta { display: grid; gap: 6px; padding: 16px; border-radius: var(--r-lg); border: 1px solid var(--border);
   background: var(--surface-2); color: inherit; text-decoration: none; min-height: 44px; transition: border-color var(--t-xs), background var(--t-xs); }
 .zdroj-karta:hover { border-color: var(--accent-line); background: var(--surface-3); }
@@ -1310,7 +1321,7 @@
   /* KPI karty vedle sebe a přejíždí se prstem. Čtyři karty tak zaberou výšku
      jedné, a to, že jich je víc, je vidět z useknuté čtvrté u kraje. */
   .stats-row {
-    display: flex; gap: 10px;
+    display: flex; flex-wrap: nowrap; gap: 10px;
     overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
     /* Odsazení sahá pod okraj stránky, aby první karta začínala zarovnaná
        s textem a poslední nekončila nalepená na hraně. */
