@@ -96,10 +96,6 @@ export function Dock() {
         <Link to="/" className="sb-brand" aria-label="KAM — úvodní stránka">
           <span className="sb-mark"><Mark size={30} /></span>
           <Wordmark />
-          <span className="sb-brand-text">
-            <b>Krajský analytický model</b>
-            <span>Královéhradecký kraj</span>
-          </span>
         </Link>
         <nav className="sb-nav" ref={panel.seznam as React.RefObject<HTMLElement>}>
           <span className="sb-ind" ref={panel.ind} data-prazdno="ano" aria-hidden="true" />

@@ -9,7 +9,7 @@
 // Strategie podle druhu požadavku:
 //   navigace   → nejdřív síť (a krátký časový strop), jinak uložená skořápka
 //   /assets/*  → nejdřív mezipaměť; jméno nese otisk obsahu, takže se nemění
-//   /api/* GET → nejdřív síť, při výpadku poslední známá odpověď
+//   /api/* GET → nejdřív síť bez stropu, při skutečném výpadku poslední známá odpověď
 //   ostatní    → z mezipaměti a na pozadí se obnoví
 //
 // Čísla z mezipaměti jsou pořád čísla z databáze, jen starší — proto aplikace
@@ -122,13 +122,21 @@ async function api(request) {
     return fetch(request);
   }
   try {
-    const r = await sitSeStropem(request, SIT_STROP);
+    // Bez časového stropu. Strop tu byl (4 s) a každá pomalá, ale fungující
+    // odpověď — studený start na Cloud Run, výpočet rizik, simulace — se
+    // počítala jako výpadek: podstrčila se kopie z mezipaměti a všem svítilo
+    // „Bez spojení“, přestože spojení bylo. Na pomalou odpověď si počká
+    // aplikace sama (`lib/api.ts` má vlastní časovač).
+    const r = await fetch(request);
     if (r && r.ok) { cache.put(request, r.clone()); ohlas("online"); }
     return r;
-  } catch {
+  } catch (chyba) {
+    // Dotaz, který stránka zrušila sama (odchod na jinou stránku, vlastní
+    // časovač), není výpadek spojení a nesmí ho ohlásit.
+    if (request.signal && request.signal.aborted) throw chyba;
     const ulozene = await cache.match(request);
-    if (!ulozene) { ohlas("offline"); throw new Error("offline a bez uložené odpovědi"); }
     ohlas("offline");
+    if (!ulozene) throw new Error("offline a bez uložené odpovědi");
     // Hlavička říká aplikaci, že se dívá na poslední staženou podobu.
     const h = new Headers(ulozene.headers);
     h.set("X-KAM-Offline", "1");

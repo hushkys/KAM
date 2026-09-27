@@ -115,7 +115,7 @@ export function Markdown({ text, sources }: { text: string; sources?: Source[] }
         <div className="md-tabulka" key={key()}>
           <table>
             <thead><tr>{hlava.map((c, j) => <th key={j} className={zarovnani[j] === "r" ? "r" : undefined}>{inline(c, sources)}</th>)}</tr></thead>
-            <tbody>{telo.map((r, ri) => <tr key={ri}>{hlava.map((_, j) => <td key={j} className={zarovnani[j] === "r" || jeCislo(r[j] ?? "") ? "r" : undefined}>{inline(r[j] ?? "", sources)}</td>)}</tr>)}</tbody>
+            <tbody>{telo.map((r, ri) => <tr key={ri}>{hlava.map((_, j) => <td key={j} data-label={hlava[j].replace(/\*\*|\[\d+\]/g, "").trim()} className={zarovnani[j] === "r" || jeCislo(r[j] ?? "") ? "r" : undefined}>{inline(r[j] ?? "", sources)}</td>)}</tr>)}</tbody>
           </table>
         </div>,
       );
@@ -353,7 +353,7 @@ export function Chat({ territory, compact = false, onClose, header, chat }: {
   return (
     <div className={`chat ${compact ? "is-compact" : ""}`} data-stav={uvod ? "uvod" : "chat"}>
       <div className="chat-head">
-        {header ?? <span className="chat-nazev"><Icon name="sparkle" size={15} /> Asistent</span>}
+        {header ?? <span className="chat-nazev">Asistent</span>}
         <span className="navbar-spacer" />
         {!uvod && <button className="icon-btn sm" onClick={reset} aria-label="Nová konverzace" title="Nová konverzace"><Icon name="plus" size={17} /></button>}
         {onClose && <button className="icon-btn sm" onClick={onClose} aria-label="Zavřít asistenta"><Icon name="close" size={17} /></button>}
@@ -362,7 +362,6 @@ export function Chat({ territory, compact = false, onClose, header, chat }: {
       {uvod && <span className="chat-vzduch-horni" aria-hidden="true" />}
       {uvod ? (
         <div className="chat-uvod">
-          <span className="chat-znak" aria-hidden="true"><Icon name="sparkle" size={compact ? 20 : 24} /></span>
           <h2 className="chat-pozdrav">Na co se podíváme?</h2>
           <p className="chat-uvod-text">
             Zeptejte se vlastními slovy. Čísla spočítá aplikace, já je vysvětlím a u každého uvedu zdroj.

@@ -175,7 +175,7 @@ describe("markdown odpovědí asistenta", () => {
   it("vykreslí tabulku s čísly zarovnanými vpravo", async () => {
     const h = await html("| Ukazatel | Náchod | Jaroměř |\n|---|---:|---:|\n| Obyvatelé | 19 649 | 12 487 |");
     expect(h).toContain("<table>");
-    expect(h).toContain('<td class="r">19 649</td>');
+    expect(h).toContain('data-label="Náchod" class="r">19 649</td>');
   });
 
   it("nevloží text z modelu jako HTML", async () => {
@@ -192,6 +192,6 @@ describe("markdown: řádky se štítky a čísla v tabulce", () => {
     const { Markdown } = await import("../components/Assistant");
     const h = renderToStaticMarkup(createElement(Markdown, { text: "FAKT: první [1].\nTREND: druhý.\n\n| A | B |\n|---|---|\n| x | **12 487** [1] |", sources: [] }));
     expect((h.match(/<p>/g) ?? []).length).toBe(2);
-    expect(h).toContain('<td class="r"><strong>12 487</strong>');
+    expect(h).toContain('class="r"><strong>12 487</strong>');
   });
 });

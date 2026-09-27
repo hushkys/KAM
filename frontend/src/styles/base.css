@@ -339,10 +339,7 @@ kbd {
   border-bottom: 1px solid var(--border);
 }
 .sb-brand:hover { text-decoration: none; }
-.sb-brand .wordmark { height: 17px; width: auto; flex: none; }
-.sb-brand-text { display: grid; line-height: 1.2; min-width: 0; }
-.sb-brand-text b { font-size: .75rem; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
-.sb-brand-text span { font-size: .6875rem; color: var(--text-mute); white-space: nowrap; }
+.sb-brand .wordmark { height: 21px; width: auto; flex: none; }
 .sb-brand .sb-mark { display: none; }
 
 .sb-nav { position: relative; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 10px 12px; scrollbar-width: thin; overscroll-behavior: contain; }
@@ -391,7 +388,7 @@ kbd {
 /* Jen ikony: tablet vždycky, počítač na přání. Popisky zmizí, nadpisy skupin
    se změní v linky a název místa napoví `title`. */
 @media (min-width: 720px) and (max-width: 1023px) {
-  .sidebar .sb-label, .sidebar .sb-brand-text, .sidebar .sb-brand .wordmark, .sb-sbalit { display: none; }
+  .sidebar .sb-label, .sidebar .sb-brand .wordmark, .sb-sbalit { display: none; }
   .sidebar .sb-brand .sb-mark { display: block; }
   .sidebar .sb-brand { justify-content: center; padding-inline: 0; }
   .sidebar .sb-group { height: 1px; margin: 10px 8px; overflow: hidden; color: transparent; background: var(--border); }
@@ -400,7 +397,6 @@ kbd {
 }
 @media (min-width: 1024px) {
   :root[data-nav="compact"] .sidebar .sb-label,
-  :root[data-nav="compact"] .sidebar .sb-brand-text,
   :root[data-nav="compact"] .sidebar .sb-brand .wordmark { display: none; }
   :root[data-nav="compact"] .sidebar .sb-brand .sb-mark { display: block; }
   :root[data-nav="compact"] .sidebar .sb-brand { justify-content: center; padding-inline: 0; }
