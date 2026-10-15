@@ -1665,3 +1665,18 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .fakta-pocty > div { display: grid; gap: 2px; align-content: start; padding: 10px 12px; background: var(--surface); }
 .fakta-pocty strong { font-size: 1.25rem; font-weight: 700; color: var(--m, var(--text)); }
 .fakta-pocty span { font-size: .75rem; color: var(--text-dim); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Mapa: pořadí krajů podle počtu sad */
+.kraje-seznam { display: grid; gap: 2px; }
+.kraj-radek { display: grid; grid-template-columns: 22px 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-left: 3px solid transparent;
+  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; animation: sc-najezd 360ms var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 14) * 25ms); }
+.kraj-radek:hover { background: color-mix(in oklab, var(--text) 5%, transparent); }
+.kraj-radek.is-on { background: var(--m-soft); border-left-color: var(--m); }
+.kraj-radek.is-domov .kraj-jmeno { font-weight: 700; }
+.kraj-poradi { font-size: .75rem; font-weight: 600; color: var(--text-mute); text-align: right; }
+.kraj-telo { display: grid; gap: 5px; min-width: 0; }
+.kraj-jmeno { font-size: .875rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kraj-drah { display: block; height: 5px; background: color-mix(in oklab, var(--text) 7%, transparent); overflow: hidden; }
+.kraj-drah i { display: block; height: 100%; background: linear-gradient(90deg, color-mix(in oklab, var(--m, var(--accent)) 55%, transparent), var(--m, var(--accent)));
+  transform-origin: left; animation: bar-grow var(--t-lg) var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 14) * 25ms + 120ms); }
+.kraj-pocet { font-size: .9375rem; font-weight: 700; min-width: 4.5ch; text-align: right; }

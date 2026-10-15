@@ -1,7 +1,7 @@
 // Map: Czechia by kraj (open data per kraj, or an indicator), then the home
 // kraj by ORP or obec. Selection opens a side panel with the essentials.
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { Icon } from "../components/Icon";
 import { CzMap, KhkMap, MapLegend } from "../components/maps";
 import { MapaHook } from "../components/MapaHook";
@@ -121,11 +121,15 @@ export function MapPage() {
                 {(() => {
                   const kraje = [...(cz.data?.kraje ?? [])].sort((a, b) => b.datasets - a.datasets);
                   const nejvic = Math.max(1, ...kraje.map((k) => k.datasets));
-                  return kraje.map((k) => (
-                    <button key={k.code} className={`kraj-radek${String(k.code) === sel ? " is-on" : ""}`} onClick={() => setQuery({ sel: String(k.code) })} data-ctx={k.id} data-ctx-label={k.name}>
-                      <Erb id={k.id} name={k.name} size={24} />
-                      <span className="kraj-jmeno">{k.name}</span>
-                      <span className="kraj-drah" aria-hidden="true"><i style={{ width: `${(k.datasets / nejvic) * 100}%` }} /></span>
+                  return kraje.map((k, i) => (
+                    <button key={k.code} className={`kraj-radek${String(k.code) === sel ? " is-on" : ""}${k.code === 86 ? " is-domov" : ""}`} onClick={() => setQuery({ sel: String(k.code) })}
+                      data-ctx={k.id} data-ctx-label={k.name} style={{ "--i": i } as CSSProperties}>
+                      <span className="kraj-poradi num">{i + 1}.</span>
+                      <Erb id={k.id} name={k.name} size={26} />
+                      <span className="kraj-telo">
+                        <span className="kraj-jmeno">{k.name}</span>
+                        <span className="kraj-drah" aria-hidden="true"><i style={{ width: `${(k.datasets / nejvic) * 100}%` }} /></span>
+                      </span>
                       <span className="kraj-pocet num">{num(k.datasets)}</span>
                     </button>
                   ));
