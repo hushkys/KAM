@@ -44,12 +44,30 @@ const KIND_LABEL: Record<string, string> = { FAKT: "Fakt", TREND: "Trend", MODEL
 /** Štítek původu informace (Fakt, Model, Scénář…). S `info` je to zároveň
  *  tlačítko: po najetí nebo klepnutí ukáže, odkud číslo je a jak vzniklo.
  *  Jeden prvek místo štítku a vedle něj „i“, ať je to všude stejné. */
-export function KindTag({ kind, info }: { kind: string; info?: ReactNode }) {
+export interface Zdroj { nazev: string; url: string }
+
+export function KindTag({ kind, info, zdroj }: { kind: string; info?: ReactNode; zdroj?: Zdroj | Zdroj[] }) {
   const k = kind.toUpperCase();
   const cls = { FAKT: "fakt", TREND: "trend", MODEL: "model", "SCÉNÁŘ": "scenar", AI: "ai", "PŘEDPOKLAD": "predpoklad", "ZÁSAH": "zasah" }[k] ?? "fakt";
-  const tag = <span className={`kind kind-${cls}${info ? " has-info" : ""}`}>{KIND_LABEL[k] ?? kind}{info && <Icon name="info" size={11} />}</span>;
-  if (!info) return tag;
-  return <InfoHint label={`${KIND_LABEL[k] ?? kind}: odkud to je`} trigger={tag}>{info}</InfoHint>;
+  const zdroje = zdroj ? (Array.isArray(zdroj) ? zdroj : [zdroj]).filter((z) => z.url) : [];
+  const ma = Boolean(info) || zdroje.length > 0;
+  const tag = <span className={`kind kind-${cls}${ma ? " has-info" : ""}`}>{KIND_LABEL[k] ?? kind}{ma && <Icon name="info" size={11} />}</span>;
+  if (!ma) return tag;
+  return (
+    <InfoHint label={`${KIND_LABEL[k] ?? kind}: odkud to je`} trigger={tag}>
+      {info}
+      {zdroje.length > 0 && (
+        <span className="tip-zdroje">
+          <span className="tip-zdroje-nadpis">Odkud data jsou</span>
+          {zdroje.map((z) => (
+            <a key={z.url} href={z.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+              {z.nazev} <Icon name="external" size={12} />
+            </a>
+          ))}
+        </span>
+      )}
+    </InfoHint>
+  );
 }
 
 const LEVEL: Record<string, string> = { nizke: "Nízké", sledovat: "Nízké", stredni: "Střední", vysoke: "Vysoké", kriticke: "Kritické" };
@@ -155,14 +173,21 @@ export function InfoHint({ children, label = "Co to znamená", trigger }: { chil
   const btn = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const id = useId();
+  const zavrit = useRef<number | undefined>(undefined);
+  const odejdi = () => { zavrit.current = window.setTimeout(() => setOpen(false), 220); };
+  const zustan = () => window.clearTimeout(zavrit.current);
   const show = () => {
+    zustan();
     const r = btn.current?.getBoundingClientRect();
     if (r) setPos({ x: Math.min(Math.max(12, r.left + r.width / 2 - 150), window.innerWidth - 312), y: r.bottom + 8 });
     setOpen(true);
   };
   useEffect(() => {
     if (!open) return;
-    const close = (e: Event) => { if (!btn.current?.contains(e.target as Node)) setOpen(false); };
+    const close = (e: Event) => {
+      const t = e.target as Node;
+      if (!btn.current?.contains(t) && !document.getElementById(id)?.contains(t)) setOpen(false);
+    };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("pointerdown", close);
     window.addEventListener("keydown", esc);
@@ -181,10 +206,11 @@ export function InfoHint({ children, label = "Co to znamená", trigger }: { chil
         onClick={(e) => { e.stopPropagation(); open ? setOpen(false) : show(); }}
         onKeyDown={(e) => e.stopPropagation()}
         onMouseEnter={() => !matchMedia("(hover: none)").matches && show()}
-        onMouseLeave={() => !matchMedia("(hover: none)").matches && setOpen(false)}>
+        onMouseLeave={() => !matchMedia("(hover: none)").matches && odejdi()}>
         {trigger ?? <Icon name="info" size={15} />}
       </button>
-      {open && createPortal(<div id={id} role="tooltip" className="tooltip glass" style={{ left: pos.x, top: pos.y }}>{children}</div>, document.body)}
+      {open && createPortal(<div id={id} role="tooltip" className="tooltip glass" style={{ left: pos.x, top: pos.y }}
+        onMouseEnter={zustan} onMouseLeave={() => !matchMedia("(hover: none)").matches && odejdi()}>{children}</div>, document.body)}
     </>
   );
 }

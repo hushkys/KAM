@@ -81,7 +81,7 @@ export function Stats() {
 
       <div className="grid">
         <Card span={8} i={1} title="Odkud data jsou" icon="layers"
-          actions={<KindTag kind="FAKT" info="Počet funkčních sad podle zdroje: sady, ze kterých jsme stáhli začátek souboru a je v něm skutečný obsah. Plocha dlaždice odpovídá podílu na katalogu." />}>
+          actions={<KindTag kind="FAKT" info="Počet funkčních sad podle zdroje: sady, ze kterých jsme stáhli začátek souboru a je v něm skutečný obsah. Plocha dlaždice odpovídá podílu na katalogu." zdroj={{ nazev: "Národní katalog otevřených dat (data.gov.cz)", url: "https://data.gov.cz/" }} />}>
           <div className="st-mozaika">
             {spicka.map((s, i) => (
               <div key={s.id} className="st-dlazdice" title={`${s.name}: ${num(s.verified)} sad`}
@@ -126,7 +126,7 @@ export function Stats() {
         </div>
 
         <Card span={7} i={4} title="Hodnoty v čase" icon="chart"
-          actions={<KindTag kind="FAKT" info="Kolik zveřejněných hodnot (obec × ukazatel × rok) model drží za každý rok. Poslední rok se teprve plní, protože úřední statistika vychází se zpožděním." />}>
+          actions={<KindTag kind="FAKT" info="Kolik zveřejněných hodnot (obec × ukazatel × rok) model drží za každý rok. Poslední rok se teprve plní, protože úřední statistika vychází se zpožděním." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
           {roky.length > 1
             ? <LineChart ariaLabel="Počet měřených hodnot podle roku" height={420} format={(v) => compact(v)}
                 series={[{ key: "h", label: "Hodnot", color: "var(--m)", width: 2.6, points: roky.map((r) => ({ year: r.year, value: r.count })) }]} />
@@ -151,7 +151,7 @@ export function Stats() {
         </Card>
 
         <Card span={12} i={6} title="Zařízení v datech kraje" icon="pin"
-          actions={<KindTag kind="FAKT" info="Počet míst v mapových službách Královéhradeckého kraje (Data KHK): zastávky, školy, lékaři, knihovny a další. Počítají se místa, ne kapacity." />}>
+          actions={<KindTag kind="FAKT" info="Počet míst v mapových službách Královéhradeckého kraje (Data KHK): zastávky, školy, lékaři, knihovny a další. Počítají se místa, ne kapacity." zdroj={{ nazev: "Data KHK – portál Královéhradeckého kraje", url: "https://www.datakhk.cz/" }} />}>
           <div className="st-zarizeni">
             {(data?.pois ?? []).slice(0, 18).map((p, i) => (
               <div key={p.kind} style={{ "--i": i } as CSSProperties}>

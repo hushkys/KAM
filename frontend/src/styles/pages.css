@@ -1768,3 +1768,10 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .st-mozaika { min-height: 500px; align-items: stretch; }
 .st-zarizeni { gap: 0; background: none; border: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
 .st-zarizeni > div { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+/* Odkazy na zdroj v bublině štítku Fakt/Model */
+.tip-zdroje { display: grid; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.tip-zdroje-nadpis { font-size: .7rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--text-mute); }
+.tip-zdroje a { display: inline-flex; align-items: center; gap: 5px; color: var(--m, var(--accent)); font-weight: 600; text-decoration: none; }
+.tip-zdroje a:hover { text-decoration: underline; }
+.tooltip { pointer-events: auto; }
+.info-hint.is-tag:focus-visible { outline-offset: 3px; }

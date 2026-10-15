@@ -72,7 +72,7 @@ function IndicatorTile({ c, onOpen, i, lead }: { c: IndicatorCard; onOpen: () =>
         {c.origin && <p>Původce: {c.origin}</p>}
         {c.text && <p>{c.text}</p>}
         <p className="mute">Poslední údaj za rok {c.year}.</p>
-      </>} /></span>
+      </>} zdroj={c.source_url ? { nazev: c.source ?? "Zdroj dat", url: c.source_url } : undefined} /></span>
       <div className="ind-body">
         <span className="ind-value">{value}{c.unit && c.unit !== "%" && c.unit !== "ano/ne" && <small>{c.unit}</small>}</span>
         {shape === "gauge" && <Gauge value={c.value} reference={c.compare?.value ?? null} color={color} label={`${c.name}: ${value}`} size={lead ? 92 : 68} />}
@@ -255,7 +255,7 @@ export function Profile({ id }: { id: string }) {
               <Card title="Rizika" icon="alert" i={1} actions={<InfoHint label="Co je riziko">Riziko hlásí pevné pravidlo nad zveřejněnými daty: nepříznivý dlouhodobý trend, opakující se problém nebo stav, který překročil stanovený práh či je výrazně horší než v kraji. Není to odhad ani názor. U malých obcí a krátkých řad je důvěra nižší, protože pár lidí tam pohne jakýmkoli podílem.</InfoHint>}>
                 {data.risks.length ? data.risks.slice(0, 6).map((r) => <RiskItem key={r.id} r={r} />) : <Empty icon="check" title="Bez výrazných rizik">Pravidla v datech nenašla významný problém.</Empty>}
               </Card>
-              <Card title="Výhled počtu obyvatel" icon="trend-up" i={2} actions={<KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). V závorce je rozpětí, ve kterém se skutečnost pravděpodobně pohybuje. Není to fakt." />}>
+              <Card title="Výhled počtu obyvatel" icon="trend-up" i={2} actions={<KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). V závorce je rozpětí, ve kterém se skutečnost pravděpodobně pohybuje. Není to fakt." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
                 {data.outlook.milestones ? (
                   <div className="facts-list">
                     {data.outlook.milestones.map((m) => (
@@ -266,7 +266,7 @@ export function Profile({ id }: { id: string }) {
                 ) : <p className="muted small">{data.outlook.reason}</p>}
               </Card>
               {(Object.keys(data.facts).length > 0 || data.pois) && (
-                <Card title="Služby a infrastruktura" icon="home" i={3} actions={<KindTag kind="FAKT" info="Data KHK: mapové služby Královéhradeckého kraje (pošty, kanalizace, územní plány, zařízení). Počty jsou místa v obci, ne kapacity." />}>
+                <Card title="Služby a infrastruktura" icon="home" i={3} actions={<KindTag kind="FAKT" info="Mapové služby Královéhradeckého kraje: pošty, kanalizace, územní plány, zařízení. Počty jsou místa v obci, ne kapacity." zdroj={{ nazev: "Data KHK – portál Královéhradeckého kraje", url: "https://www.datakhk.cz/" }} />}>
                   <div className="facts-list">
                     {data.facts.posta && <div className="fact-row"><span>Pošta</span><span>{data.facts.posta.value}</span></div>}
                     {data.facts.kanalizace && <div className="fact-row"><span>Domy napojené na kanalizaci</span><span>{data.facts.kanalizace.value}</span></div>}
