@@ -43,6 +43,8 @@ PRAVIDLA: dict[str, dict] = {
                      "Města s vlastní MHD proto vycházejí hůř, než jak se v nich skutečně jezdí."},
     "ordinace": {"code": "d_pl_10k", "smer": 1, "vaha": "110900",
                  "co": "lidí v obcích s horší dostupností praktického lékaře, než je obvyklé"},
+    "stomatolog": {"code": "d_zubni_10k", "smer": 1, "vaha": "110900",
+                   "co": "lidí v obcích s horší dostupností zubního lékaře, než je obvyklé"},
     "domov_seniori": {"code": "d_ds_100_65", "smer": 1, "vaha": "110990",
                       "co": "seniorů v obcích s menší kapacitou domovů pro seniory, než je obvyklé"},
     "zs_mista": {"code": "d_zs_trida", "smer": -1, "vaha": "040510",
@@ -115,6 +117,8 @@ def _kandidati(kraj_code: int, pravidlo: dict) -> tuple[list[dict], dict[int, fl
         r["mezera"] = round(min(max(rel, 0.0), STROP_MEZERY), 4)
         r["prinos"] = round(r["mezera"] * r["vaha"])
     radky.sort(key=lambda r: -r["prinos"])
+    for i, r in enumerate(radky):
+        r["poradi"] = i + 1
     return radky, mediany, kraj_med
 
 
@@ -123,7 +127,7 @@ def _varianta(radky: dict[str, dict], ids: list[str]) -> dict:
     return {
         "obce": [{"id": r["id"], "name": r["name"], "hodnota": round(r["hodnota"], 2), "rok": r["rok"],
                   "vaha": round(r["vaha"]), "mezera": round(r["mezera"] * 100, 1), "prinos": r["prinos"],
-                  "pasmo": r["pasmo_label"], "median_pasma": round(r["median_pasma"], 2)}
+                  "pasmo": r["pasmo_label"], "median_pasma": round(r["median_pasma"], 2), "poradi": r["poradi"]}
                  for r in vybrane],
         "prinos": sum(r["prinos"] for r in vybrane),
         "lidi": round(sum(r["vaha"] for r in vybrane)),
@@ -164,7 +168,8 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
         "nejlepsi": nejlepsi,
         "rozdil": rozdil,
         "rozdil_podil": round(rozdil / nejlepsi["prinos"] * 100, 1) if rozdil is not None and nejlepsi["prinos"] else None,
-        "zebricek": [{"id": r["id"], "name": r["name"], "hodnota": round(r["hodnota"], 2),
+        "z": len(radky),
+        "zebricek": [{"id": r["id"], "name": r["name"], "poradi": r["poradi"], "hodnota": round(r["hodnota"], 2),
                       "mezera": round(r["mezera"] * 100, 1), "prinos": r["prinos"], "vaha": round(r["vaha"]),
                       "pasmo": r["pasmo_label"]}
                      for r in radky[:20]],

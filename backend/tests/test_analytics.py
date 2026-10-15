@@ -194,3 +194,19 @@ def test_umisteni_refuses_what_it_cannot_judge():
 
     r = umisteni.porovnej(86, "neznamy_zasah", [])
     assert r["available"] is False and "ukazatel" in r["reason"]
+
+
+def test_umisteni_vraci_poradi_a_zna_vsechny_zasahy(synthetic_db):
+    """Doporučení „kde“ stojí na pořadí: každá obec v žebříčku má své místo
+    a `z` říká, z kolika. A každý zásah simulátoru, který dává smysl umisťovat,
+    má pravidlo (zubní ordinace dřív chyběla a karta u ní nic nenabídla)."""
+    from kam.analytics import simulate, umisteni
+
+    assert "stomatolog" in umisteni.PRAVIDLA
+    assert set(umisteni.PRAVIDLA) <= set(simulate.INTERVENTIONS)
+    r = umisteni.porovnej(86, "ordinace", ["obec:500001"], 3)
+    if r["available"]:
+        poradi = [m["poradi"] for m in r["zebricek"]]
+        assert poradi == sorted(poradi) and poradi[0] == 1
+        assert r["z"] >= len(r["zebricek"])
+        assert r["vase"]["obce"][0]["poradi"] >= 1
