@@ -415,12 +415,13 @@ export function DataPage() {
         </div>
       </DataHook>
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
-        <Stat i={0} label="Funkčních datových sad" value={num(d?.verified ?? null)}
-          sub={d ? `z ${num(d.total)} v katalogu; zbytek je webová stránka (${num(d.pages)}), nefunkční odkaz (${num(d.broken)}) nebo bez odkazu (${num(d.no_link)})` : ""} />
-        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="úřadů, krajů, měst a portálů, od kterých sady máme" />
-        <Stat i={2} label="Z funkčních sad od jiných krajů" value={num(d?.kraje ?? null)}
-          sub={d ? `zbytek: stát a Královéhradecký kraj ${num(d.core)}, města a další ${num(d.other)}` : ""} />
-        <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="statistiky ČSÚ a data kraje" />
+        <Stat i={0} label="Funkčních sad" value={num(d?.verified ?? null)} sub={d ? `z ${num(d.total)} v katalogu` : ""}
+          hint={d ? `Funkční je sada, u které jsme stáhli začátek souboru a je v něm skutečný obsah. Zbylých ${num(d.total - d.verified)} sad je jen webová stránka (${num(d.pages)}), má nefunkční odkaz (${num(d.broken)}) nebo žádný odkaz (${num(d.no_link)}).` : undefined} />
+        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="zdrojů dat"
+          hint="Úřady, kraje, města a portály, od kterých máme sady. Jedna organizace může být ve dvou zdrojích, například kraj přes NKOD i přes vlastní portál." />
+        <Stat i={2} label="Od jiných krajů" value={num(d?.kraje ?? null)} sub="funkčních sad"
+          hint={d ? `Je to část z funkčních sad, ne další sady navíc. Zbytek: stát a Královéhradecký kraj ${num(d.core)}, města a další ${num(d.other)}.` : undefined} />
+        <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="sad" hint="Sady, ze kterých model čte hodnoty: statistiky ČSÚ, data Královéhradeckého kraje a rozpočty obcí z Výdaje.com." />
       </div>
       <Tabs label="Sekce" value={tab} onChange={(v) => setQuery({ tab: v === "katalog" ? null : v, page: null })}
         tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Chybějící data", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />

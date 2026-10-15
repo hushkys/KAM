@@ -247,10 +247,10 @@ export function Tabs<T extends string>({ value, tabs, onChange, label }: { value
   );
 }
 
-export function Stat({ label, value, sub, tone, i }: { label: string; value: ReactNode; sub?: ReactNode; tone?: string; i?: number }) {
+export function Stat({ label, value, sub, tone, i, hint }: { label: string; value: ReactNode; sub?: ReactNode; tone?: string; i?: number; hint?: ReactNode }) {
   return (
     <div className={`stat reveal ${tone ? `tone-${tone}` : ""}`} style={{ "--i": i ?? 0 } as CSSProperties}>
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">{label}{hint && <InfoHint label={`Co znamená: ${label}`}>{hint}</InfoHint>}</div>
       <div className="stat-value num">{value}</div>
       {sub && <div className="stat-sub">{sub}</div>}
     </div>
