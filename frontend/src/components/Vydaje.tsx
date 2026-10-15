@@ -76,6 +76,7 @@ export function Vydaje({ tid }: { tid: string }) {
             </div>
           ))}
         </div>
+        <p className="xsmall mute" style={{ marginTop: 12 }}>Zdroj: <a href="https://vydaje.com" target="_blank" rel="noreferrer">Výdaje.com</a> (zpracování dat MF ČR, MONITOR státní pokladny, výkaz FIN 2-12 M).</p>
       </Card>
 
       <div className="grid">

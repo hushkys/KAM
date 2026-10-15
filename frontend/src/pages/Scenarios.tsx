@@ -15,6 +15,7 @@ import { ChartSwitch, Heatmap, LineChart, Legend } from "../components/charts";
 import { Erb } from "../components/Erb";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
+import { Pruvodce } from "./Pruvodce";
 import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, PageHeader, Segmented, Stat, Tabs } from "../components/ui";
 import { api, ApiError, invalidate, useApi } from "../lib/api";
 import { date, kc, num, signed } from "../lib/format";
@@ -140,6 +141,9 @@ export function Scenarios() {
   const [zalozka, setZalozka] = useState<Zalozka>("obyvatele");
   const [kamZasah, setKamZasah] = useState<string>("");
   const seq = useRef(0);
+  // Průvodce vede k prvnímu výsledku; z odkazu s hotovým scénářem se rovnou čte výsledek.
+  const [hotovo, setHotovo] = useState(Boolean(query.get("iv") || query.get("add")));
+  const [pridavam, setPridavam] = useState(false);
 
   useEffect(() => {
     const add = query.get("add");
@@ -165,24 +169,10 @@ export function Scenarios() {
   const remove = (i: number) => setIvs((all) => all.filter((_, j) => j !== i));
   const add = (type: string) => { if (cat.data) { setIvs((all) => (all.some((i) => i.type === type) ? all : [...all, defaults(cat.data!, type)]));  } };
 
-  /** Zásahy seskupené podle oblasti — nabídka „přidat zásah“. */
-  const skupiny = useMemo(() => {
-    const out: { pillar: string; label: string; items: [string, Spec][] }[] = [];
-    for (const [k, v] of Object.entries(cat.data?.interventions ?? {})) {
-      const g = out.find((x) => x.pillar === v.pillar);
-      if (g) g.items.push([k, v]);
-      else out.push({ pillar: v.pillar, label: v.pillar_label, items: [[k, v]] });
-    }
-    return out;
-  }, [cat.data]);
-
   const vRoce = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values.find((v) => v.year === rok) ?? m.values[m.values.length - 1]])), [res, rok]);
   const m2040 = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values[m.values.length - 1]])), [res]);
   const popDelta = m2040.population?.delta ?? null;
   const lastYear = res?.scenario[res.scenario.length - 1]?.year;
-  const aktivniSada = useMemo(() => (cat.data?.sady ?? []).find((s) =>
-    s.ivs.length === ivs.length && s.ivs.every((a, i) => a.type === ivs[i]?.type))?.key, [cat.data, ivs]);
-
   /** Jedna věta o tom, co zásah dělá, dřív než jakýkoli graf. Všechno v ní je
    *  z výsledku: rok horizontu, rozdíl obyvatel a počet varování modelu. */
   const verdict = useMemo(() => {
@@ -230,38 +220,30 @@ export function Scenarios() {
         title={<>Scénáře <InfoHint label="Co jsou scénáře">Zvolte území a zásah (nová výstavba, ordinace, spoje…). Model spočítá výhled dvakrát, bez zásahu a se zásahem, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></>}
         actions={
           <>
-            <button className="btn" onClick={share} disabled={!prikazy}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
-            <button className="btn btn-primary" disabled={!prikazy}
+            <button className="btn" onClick={share} disabled={!prikazy} hidden={!hotovo}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
+            <button className="btn btn-primary" disabled={!prikazy} hidden={!hotovo}
               onClick={() => { setName(`${res?.territory.name ?? ""}: ${ivs.map((i) => cat.data?.interventions[i.type]?.label).join(" + ")}`.slice(0, 110)); setSaveOpen(true); }}>
               <Icon name="save" size={16} /> Uložit scénář
             </button>
           </>
         } />
 
+      {!hotovo && cat.data && (
+        <Pruvodce key={pridavam ? "pridat" : "novy"} interventions={cat.data.interventions} help={cat.data.help} sady={cat.data.sady ?? []}
+          ulozene={saved.data ?? []} tid={tid} setTid={setTid} setIvs={setIvs} vytvor={(t) => defaults(cat.data!, t)} pridat={pridavam}
+          onHotovo={() => { setHotovo(true); setPridavam(false); }} onZrus={() => { setPridavam(false); setHotovo(ivs.length > 0); }} />
+      )}
+      {!hotovo && !cat.data && <span className="skeleton" style={{ height: 240, width: "100%" }} />}
+
+      {hotovo && (
+      <>
       <div className="toolbar-card reveal">
         <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" /></div>
       </div>
 
       <div className="stack-y sc-sloupec">
-          <Card i={1} title="Zásahy" icon="split"
-            actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Odebrat vše</button> : undefined}>
-            {!ivs.length && (
-              <>
-                <div className="sc-start-nadpis">
-                  <span>Začněte hotovým scénářem</span>
-                  <InfoHint label="Co to je">Typické otázky, se kterými obce přicházejí. Kliknutím se nastaví zásahy, které pak můžete libovolně upravit.</InfoHint>
-                </div>
-                <div className="sc-sady">
-                  {(cat.data?.sady ?? []).map((s) => (
-                    <button key={s.key} className={`sc-sada${aktivniSada === s.key ? " is-on" : ""}`} title={s.otazka}
-                      onClick={() => setIvs(s.ivs.map((i) => ({ type: i.type, params: { ...i.params } })))}>
-                      <Icon name={PILLAR_ICON[s.pillar]} size={16} /><span>{s.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
+          <Card i={1} title="Váš scénář" icon="split"
+            actions={<button className="btn btn-quiet btn-sm" onClick={() => { setIvs([]); setHotovo(false); setPridavam(false); }}>Začít znovu</button>}>
             <div className="sc-zasahy">
               {ivs.map((iv, i) => {
                 const spec = cat.data?.interventions[iv.type];
@@ -292,21 +274,7 @@ export function Scenarios() {
             </div>
 
             <div className="sc-pridat">
-              <div className="sc-pridat-nadpis">Přidat zásah</div>
-              <div className="sc-pridat-skupiny">
-                {skupiny.map((g) => (
-                  <div key={g.pillar} className="sc-menu-skupina">
-                    <span className="sc-menu-nadpis"><Icon name={PILLAR_ICON[g.pillar]} size={13} /> {g.label}</span>
-                    <div className="sc-pridat-radek">
-                      {g.items.map(([k, v]) => (
-                        <button key={k} className="sc-chip" disabled={ivs.some((x) => x.type === k)} onClick={() => add(k)} title={cat.data?.help[k]}>
-                          <Icon name="plus" size={13} />{v.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <button className="btn btn-sm" onClick={() => { setPridavam(true); setHotovo(false); }}><Icon name="plus" size={15} /> Přidat další zásah</button>
             </div>
           </Card>
 
@@ -496,6 +464,9 @@ export function Scenarios() {
             </Card>
           )}
       </div>
+
+      </>
+      )}
 
       <Modal open={saveOpen} onClose={() => setSaveOpen(false)} title="Uložit scénář"
         footer={<><button className="btn btn-quiet" onClick={() => setSaveOpen(false)}>Zrušit</button><button className="btn btn-primary" disabled={!name.trim()} onClick={save}>Uložit scénář</button></>}>
