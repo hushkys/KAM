@@ -49,7 +49,7 @@ export function Vydaje({ tid }: { tid: string }) {
           <Stat i={1} label="Na obyvatele" value={data.na_obyvatele !== null ? `${num(Math.round(data.na_obyvatele))} Kč` : "—"} sub={data.obyvatele ? `${num(data.obyvatele)} obyvatel` : ""} />
           {data.dotace_celkem !== null && <Stat i={2} label="Přijaté dotace" value={kc(data.dotace_celkem)} sub="stát, kraj, fondy, EU" />}
         </div>
-        <div className="vyd-tabulka" role="table" aria-label="Výdaje podle oblastí">
+        <div className={`vyd-tabulka${data.pasmo ? "" : " bez-srovnani"}`} role="table" aria-label="Výdaje podle oblastí">
           <div className="vyd-radek vyd-hlavicka" role="row">
             <span role="columnheader">Oblast</span><span role="columnheader" className="r">Částka</span>
             <span role="columnheader" className="r vyd-skryt">Na obyvatele</span>
@@ -78,7 +78,7 @@ export function Vydaje({ tid }: { tid: string }) {
 
       <div className="grid">
         <Card span={6} i={5} title="Na co se peníze vydávají" icon="chart" actions={<InfoHint label="Druh výdaje">Totéž, co v tabulce výše, jen jinak rozdělené: ne podle oblasti, ale podle toho, na co se peníze platí (platy, nákupy, investice).</InfoHint>}>
-          <Donut ariaLabel={`Výdaje ${data.rok} podle druhu`} size={220} caption={kc(data.celkem)}
+          <Donut ariaLabel={`Výdaje ${data.rok} podle druhu`} size={220} caption={kc(data.celkem)} format={kc}
             parts={data.druh.map((d) => ({ label: d.label, value: d.castka }))} />
         </Card>
         {data.dotace.length > 0 && (

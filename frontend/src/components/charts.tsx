@@ -466,15 +466,24 @@ export interface Part { label: string; value: number; color?: string }
 /** Series colours, separated by hue rather than by lightness so the slices
  *  stay apart for a reader with a colour-vision difference and in print. */
 export const SERIES_COLORS = [
-  "var(--accent)", "var(--info)", "var(--warn)", "#9b8cf0", "var(--ok)",
-  "var(--bad)", "#4bb8a9", "#d98ab5", "#b0a26a", "var(--text-mute)",
+  "var(--accent)", "var(--info)", "var(--warn)", "#9b8cf0", "#d98ab5",
+  "#4bb8a9", "var(--bad)", "#b0a26a", "var(--ok)", "var(--text-mute)",
 ];
 
 /** Composition as a ring. A ring rather than a full pie: the hole is where the
  *  total goes — the number people look for first — and comparing arc lengths
  *  is easier than comparing wedge areas. */
-export function Donut({ parts, size = 176, caption, ariaLabel }: {
-  parts: Part[]; size?: number; caption?: string; ariaLabel: string;
+/** Krátký zápis velkého čísla do středu koláče: 21 356 511 057 → „21,4 mld.“. */
+function kratce(v: number): string {
+  const a = Math.abs(v);
+  if (a >= 1e9) return `${num(v / 1e9, 1)} mld.`;
+  if (a >= 1e6) return `${num(v / 1e6, 1)} mil.`;
+  if (a >= 1e4) return `${num(v / 1e3, 0)} tis.`;
+  return num(v);
+}
+
+export function Donut({ parts, size = 176, caption, ariaLabel, format }: {
+  parts: Part[]; size?: number; caption?: string; ariaLabel: string; format?: (v: number) => string;
 }) {
   const items = parts.filter((p) => p.value > 0).sort((a, b) => b.value - a.value);
   const total = items.reduce((a, p) => a + p.value, 0);
@@ -498,15 +507,19 @@ export function Donut({ parts, size = 176, caption, ariaLabel }: {
               style={{ ["--i" as string]: i }} />
           ))}
         </g>
-        <text className="donut-total" x="70" y="69" textAnchor="middle">{num(total)}</text>
-        <text className="donut-cap" x="70" y="85" textAnchor="middle">{caption ?? "celkem"}</text>
+        {(() => {
+          const stred = caption ?? kratce(total);
+          const velikost = stred.length > 11 ? 12 : stred.length > 8 ? 15 : 20;
+          return <text className="donut-total" x="70" y="71" textAnchor="middle" style={{ fontSize: velikost }}>{stred}</text>;
+        })()}
+        <text className="donut-cap" x="70" y="88" textAnchor="middle">celkem</text>
       </svg>
       <div className="donut-legend">
         {arcs.map(({ p, i, frac }) => (
           <span key={p.label}>
             <i style={{ background: p.color ?? SERIES_COLORS[i % SERIES_COLORS.length] }} />
             <span className="dl-label">{p.label}</span>
-            <strong className="num">{num(p.value)}</strong>
+            <strong className="num">{format ? format(p.value) : num(p.value)}</strong>
             <em>{num(frac * 100, 1)} %</em>
           </span>
         ))}

@@ -1694,3 +1694,9 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .sc-resi.is-obecne { font-size: .8125rem; color: var(--text-dim); }
 .sc-kde.is-dost .sc-kde-nadpis { color: var(--text-dim); }
 .sc-kde.is-dost { border-left-color: var(--border-strong); }
+/* Pruh v seznamu je <span>: bez display:block se mu šířka nepoužije a zbyla jen šedá dráha. */
+.bar-item .bar-fill { display: block; }
+/* Kraj, ORP a okres nemají srovnání s pásmem: čtvrtý sloupec by nesl jen pomlčky. */
+.vyd-tabulka.bez-srovnani .vyd-radek { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .9fr); }
+.vyd-tabulka.bez-srovnani .vyd-radek > :nth-child(4) { display: none; }
+.donut-legend .dl-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
