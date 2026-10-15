@@ -135,7 +135,6 @@ export function Scenarios() {
   const [err, setErr] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [name, setName] = useState("");
   const [rok, setRok] = useState<number>(2040);
   const [zalozka, setZalozka] = useState<Zalozka>("obyvatele");
@@ -164,7 +163,7 @@ export function Scenarios() {
 
   const update = (i: number, key: string, v: number | string) => setIvs((all) => all.map((iv, j) => (j === i ? { ...iv, params: { ...iv.params, [key]: v } } : iv)));
   const remove = (i: number) => setIvs((all) => all.filter((_, j) => j !== i));
-  const add = (type: string) => { if (cat.data) { setIvs((all) => (all.some((i) => i.type === type) ? all : [...all, defaults(cat.data!, type)])); setMenu(false); } };
+  const add = (type: string) => { if (cat.data) { setIvs((all) => (all.some((i) => i.type === type) ? all : [...all, defaults(cat.data!, type)]));  } };
 
   /** Zásahy seskupené podle oblasti — nabídka „přidat zásah“. */
   const skupiny = useMemo(() => {
@@ -243,10 +242,7 @@ export function Scenarios() {
         <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" /></div>
       </div>
 
-      <div className="sc">
-        {/* ------------------------------------------------------ stavba */}
-        <div className="sc-stavba stack-y">
-
+      <div className="stack-y sc-sloupec">
           <Card i={1} title="Zásahy" icon="split"
             actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Odebrat vše</button> : undefined}>
             {!ivs.length && (
@@ -280,7 +276,7 @@ export function Scenarios() {
                     </div>
                     {Object.entries(spec.params).map(([k, p]) => p.options ? (
                       <label className="param" key={k}><span className="param-top"><span>{p.label}</span></span>
-                        <select className="select" value={String(iv.params[k])} onChange={(e) => update(i, k, e.target.value)}>{Object.entries(p.options).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                        <Vyber value={String(iv.params[k])} options={Object.entries(p.options).map(([v, l]) => ({ value: v, label: l }))} onChange={(v) => update(i, k, v)} label={p.label} />
                       </label>
                     ) : (
                       <label className="param" key={k}>
@@ -296,67 +292,25 @@ export function Scenarios() {
             </div>
 
             <div className="sc-pridat">
-              <button className="btn btn-sm" aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="plus" size={15} /> Přidat zásah</button>
-              {menu && (
-                <div className="sc-menu" role="menu">
-                  {skupiny.map((g) => (
-                    <div key={g.pillar} className="sc-menu-skupina">
-                      <span className="sc-menu-nadpis"><Icon name={PILLAR_ICON[g.pillar]} size={13} /> {g.label}</span>
+              <div className="sc-pridat-nadpis">Přidat zásah</div>
+              <div className="sc-pridat-skupiny">
+                {skupiny.map((g) => (
+                  <div key={g.pillar} className="sc-menu-skupina">
+                    <span className="sc-menu-nadpis"><Icon name={PILLAR_ICON[g.pillar]} size={13} /> {g.label}</span>
+                    <div className="sc-pridat-radek">
                       {g.items.map(([k, v]) => (
-                        <button key={k} role="menuitem" className="sc-menu-polozka" disabled={ivs.some((x) => x.type === k)} onClick={() => add(k)} title={cat.data?.help[k]}>
-                          {v.label}
+                        <button key={k} className="sc-chip" disabled={ivs.some((x) => x.type === k)} onClick={() => add(k)} title={cat.data?.help[k]}>
+                          <Icon name="plus" size={13} />{v.label}
                         </button>
                       ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
 
-          {res?.available && (
-            <Card i={2} title="Předpoklady" icon="sliders"
-              actions={<>
-                <InfoHint label="Co jsou předpoklady">Čísla, se kterými model počítá, např. kolik lidí bydlí v novém bytě. Každé má vysvětlení a můžete ho přepsat.</InfoHint>
-                {Object.keys(assume).length > 0 && <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Výchozí</button>}
-              </>}>
-              <details className="sc-rozbal">
-                <summary>Zobrazit a upravit ({res.assumptions.length})</summary>
-                <div className="stack-y" style={{ marginTop: 12 }}>
-                  {res.assumptions.map((a) => (
-                    <label className="field" key={a.key}>
-                      <span className="field-label">{a.label} <InfoHint label={`Proč: ${a.label}`}>{a.why}</InfoHint></span>
-                      <div className="row" style={{ flexWrap: "nowrap" }}>
-                        <input className="input" type="number" step="any" value={assume[a.key] ?? a.value} onChange={(e) => setAssume((s) => ({ ...s, [a.key]: Number(e.target.value) }))} style={{ maxWidth: 140 }} />
-                        <span className="small mute">{a.unit}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </details>
-            </Card>
-          )}
 
-          {(saved.data?.length ?? 0) > 0 && (
-            <Card i={3} title="Uložené scénáře" icon="save">
-              <details className="sc-rozbal">
-                <summary>Zobrazit ({saved.data!.length})</summary>
-                <div className="list" style={{ marginTop: 8 }}>
-                  {saved.data!.map((s) => (
-                    <div className="list-row" key={s.id}>
-                      <button className="list-main" style={{ background: "none", border: 0, textAlign: "left", cursor: "pointer", padding: 0 }} onClick={() => { setTid(s.territory); setIvs(s.interventions); }}>
-                        <span className="list-title">{s.name}</span><span className="list-sub">{s.territory_name} · {date(s.created_at)}</span>
-                      </button>
-                      <button className="icon-btn sm" aria-label="Smazat scénář" onClick={async () => { await api(`/scenarios/${s.id}`, { method: "DELETE" }); invalidate("/scenarios"); saved.reload(); }}><Icon name="trash" size={15} /></button>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            </Card>
-          )}
-        </div>
-
-        {/* ----------------------------------------------------- výsledek */}
         <div className="sc-vysledek stack-y">
           <ErrorBox error={err} />
           {res && !res.available && <Card><Empty icon="alert" title="Scénář pro toto území spočítat nejde">{res.reason}</Empty></Card>}
@@ -501,6 +455,46 @@ export function Scenarios() {
           )}
           {!res && !err && <span className="skeleton" style={{ height: 420, width: "100%" }} />}
         </div>
+          {res?.available && (
+            <Card i={2} title="Předpoklady" icon="sliders"
+              actions={<>
+                <InfoHint label="Co jsou předpoklady">Čísla, se kterými model počítá, např. kolik lidí bydlí v novém bytě. Každé má vysvětlení a můžete ho přepsat.</InfoHint>
+                {Object.keys(assume).length > 0 && <button className="btn btn-quiet btn-sm" onClick={() => setAssume({})}>Výchozí</button>}
+              </>}>
+              <details className="sc-rozbal">
+                <summary>Zobrazit a upravit ({res.assumptions.length})</summary>
+                <div className="stack-y" style={{ marginTop: 12 }}>
+                  {res.assumptions.map((a) => (
+                    <label className="field" key={a.key}>
+                      <span className="field-label">{a.label} <InfoHint label={`Proč: ${a.label}`}>{a.why}</InfoHint></span>
+                      <div className="row" style={{ flexWrap: "nowrap" }}>
+                        <input className="input" type="number" step="any" value={assume[a.key] ?? a.value} onChange={(e) => setAssume((s) => ({ ...s, [a.key]: Number(e.target.value) }))} style={{ maxWidth: 140 }} />
+                        <span className="small mute">{a.unit}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </details>
+            </Card>
+          )}
+
+          {(saved.data?.length ?? 0) > 0 && (
+            <Card i={3} title="Uložené scénáře" icon="save">
+              <details className="sc-rozbal">
+                <summary>Zobrazit ({saved.data!.length})</summary>
+                <div className="list" style={{ marginTop: 8 }}>
+                  {saved.data!.map((s) => (
+                    <div className="list-row" key={s.id}>
+                      <button className="list-main" style={{ background: "none", border: 0, textAlign: "left", cursor: "pointer", padding: 0 }} onClick={() => { setTid(s.territory); setIvs(s.interventions); }}>
+                        <span className="list-title">{s.name}</span><span className="list-sub">{s.territory_name} · {date(s.created_at)}</span>
+                      </button>
+                      <button className="icon-btn sm" aria-label="Smazat scénář" onClick={async () => { await api(`/scenarios/${s.id}`, { method: "DELETE" }); invalidate("/scenarios"); saved.reload(); }}><Icon name="trash" size={15} /></button>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </Card>
+          )}
       </div>
 
       <Modal open={saveOpen} onClose={() => setSaveOpen(false)} title="Uložit scénář"
@@ -508,6 +502,35 @@ export function Scenarios() {
         <label className="field"><span className="field-label">Název scénáře</span><input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>
       </Modal>
     </>
+  );
+}
+
+/** Vlastní seznam hodnot místo nativního <select>: stejný vzhled ve všech prohlížečích i v tmavém motivu. */
+function Vyber({ value, options, onChange, label }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const zavri = (e: Event) => { if (!(e.target instanceof Node) || !box.current?.contains(e.target)) setOpen(false); };
+    const klavesa = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", zavri); document.addEventListener("keydown", klavesa);
+    return () => { document.removeEventListener("pointerdown", zavri); document.removeEventListener("keydown", klavesa); };
+  }, [open]);
+  const akt = options.find((o) => o.value === value);
+  return (
+    <div className="vyber" ref={box}>
+      <button type="button" className="vyber-tlacitko" aria-haspopup="listbox" aria-expanded={open} aria-label={label} onClick={() => setOpen((o) => !o)}>
+        <span>{akt?.label ?? value}</span><Icon name="chevron-down" size={15} />
+      </button>
+      {open && (
+        <ul className="vyber-seznam" role="listbox" aria-label={label}>
+          {options.map((o) => (
+            <li key={o.value} role="option" aria-selected={o.value === value} className={o.value === value ? "is-on" : ""}
+              onClick={() => { onChange(o.value); setOpen(false); }}>{o.label}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
