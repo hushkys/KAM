@@ -80,23 +80,78 @@ class Provider:
             headers["X-Title"] = "KAM - Krajsky analyticky model"
             body["reasoning"] = {"effort": "low", "exclude": True}
             modely = [self.model, *[m for m in settings.openrouter_models if m != self.model]]
-            chyby: list[str] = []
-            for m in modely:
-                psal = False
-                try:
-                    for kus in self._openai_stream(url, {**body, "model": m}, headers, timeout, retry=False):
-                        psal = True
-                        yield kus
-                except Exception as e:  # noqa: BLE001 — 429, 503 i výpadek spojení znamenají „zkus další“
-                    if psal:
-                        raise
-                    chyby.append(f"{m}: {str(e)[:80]}")
-                    continue
-                if psal:
-                    return
-                chyby.append(f"{m}: prázdná odpověď")
-            raise RuntimeError(f"{self.name}: žádný model neodpověděl ({'; '.join(chyby)[:300]})")
+            yield from self._zavod(url, body, headers, timeout, modely)
+            return
         yield from self._openai_stream(url, body, headers, timeout, retry=self.is_local_server)
+
+    # Kolik bezplatných modelů běží naráz. Dva stačí: první slovo přijde od
+    # rychlejšího a za každý, který selže, hned nastoupí další ze seznamu.
+    ZAVOD = 2
+
+    def _zavod(self, url: str, body: dict, headers: dict, timeout: float, modely: list[str]) -> Iterator[str]:
+        """Závod bezplatných modelů: odpověď dá ten, kdo první začne psát.
+
+        Bezplatné modely na OpenRouteru stojí ve sdílené frontě; změřeno na
+        podkladu asistenta: první slovo za 7 až 80 s, a polovina modelů vrací
+        429. Postupné zkoušení tak sčítalo čekání. Tady se osloví dva naráz,
+        uživatel dostane text vítěze a ostatní se při dalším kousku tiše
+        ukončí. Model, který selže nebo neodpoví nic, uvolní místo dalšímu."""
+        import queue
+        import threading
+
+        fronta: queue.Queue = queue.Queue()
+        stop = threading.Event()
+        zamek = threading.Lock()
+        vitez: list[str | None] = [None]
+
+        def bez(m: str) -> None:
+            psal = False
+            try:
+                for kus in self._openai_stream(url, {**body, "model": m}, headers, timeout, retry=False):
+                    with zamek:
+                        if vitez[0] is None:
+                            vitez[0] = m
+                        moje = vitez[0] == m
+                    if not moje or stop.is_set():
+                        fronta.put(("odstoupil", m, ""))
+                        return
+                    psal = True
+                    fronta.put(("kus", m, kus))
+                fronta.put(("konec", m, "" if psal else "prázdná odpověď"))
+            except Exception as e:  # noqa: BLE001 — 429, 503 i výpadek spojení: místo pro další model
+                fronta.put(("chyba", m, str(e)[:120]))
+
+        cekajici = list(modely)
+        bezi: set[str] = set()
+        chyby: list[str] = []
+
+        def spust() -> None:
+            while cekajici and len(bezi) < self.ZAVOD and vitez[0] is None:
+                m = cekajici.pop(0)
+                bezi.add(m)
+                threading.Thread(target=bez, args=(m,), daemon=True, name=f"or-{m}").start()
+
+        spust()
+        try:
+            while bezi:
+                druh, m, data = fronta.get(timeout=timeout + 10)
+                if druh == "kus":
+                    yield data
+                    continue
+                bezi.discard(m)
+                if druh == "odstoupil":
+                    continue
+                if m == vitez[0]:
+                    if druh == "konec" and not data:
+                        return
+                    raise RuntimeError(f"{self.name}: odpověď se přerušila ({data[:80]})")
+                chyby.append(f"{m}: {data[:80]}")
+                spust()
+        except queue.Empty:
+            raise RuntimeError(f"{self.name}: žádný model neodpověděl včas") from None
+        finally:
+            stop.set()
+        raise RuntimeError(f"{self.name}: žádný model neodpověděl ({'; '.join(chyby)[:300]})")
 
     def _openai_stream(self, url: str, body: dict, headers: dict, timeout: float, retry: bool) -> Iterator[str]:
         in_think = False
@@ -288,16 +343,23 @@ def seed_defaults() -> None:
         # se smaže, aby se nenabízel ani v přehledu modelů.
         for r in s.scalars(select(ModelProvider).where(ModelProvider.tier == "local")):
             s.delete(r)
+        studio = [k for k in settings.gemini_api_keys if not k.startswith("AQ.")]
+        if studio:
+            for r in s.scalars(select(ModelProvider).where(ModelProvider.tier == "cloud")):
+                r.is_default = r.kind == "gemini"
         if settings.openrouter_api_key and settings.openrouter_models:
             orow = s.scalar(select(ModelProvider).where(ModelProvider.base_url.like("%openrouter.ai%")).order_by(ModelProvider.id))
             if orow is None:
                 # OpenRouter dostane přednost: Gemini klíče z Vertexu mají vypnuté
                 # API a každý dotaz by napřed čekal na jejich odmítnutí.
-                for g in s.scalars(select(ModelProvider).where(ModelProvider.tier == "cloud")):
-                    g.is_default = False
+                if not studio:
+                    for g in s.scalars(select(ModelProvider).where(ModelProvider.tier == "cloud")):
+                        g.is_default = False
                 s.add(ModelProvider(name="OpenRouter (bezplatné modely)", kind="openai", base_url="https://openrouter.ai/api/v1",
                                     model=settings.openrouter_models[0], api_key_enc=encrypt(settings.openrouter_api_key),
-                                    tier="cloud", enabled=True, is_default=True, temperature=0.2, max_tokens=1200))
+                                    tier="cloud", enabled=True, is_default=not studio, temperature=0.2, max_tokens=1200))
+            elif orow.model != settings.openrouter_models[0]:
+                orow.model = settings.openrouter_models[0]
         if not settings.gemini_api_keys:
             return
         row = s.scalar(select(ModelProvider).where(ModelProvider.kind == "gemini").order_by(ModelProvider.id))

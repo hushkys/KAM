@@ -74,7 +74,7 @@ class Settings:
     openrouter_api_key: str = os.environ.get("OPENROUTER_API_KEY", "")
     openrouter_models: list[str] = field(default_factory=lambda: [m.strip() for m in os.environ.get(
         "OPENROUTER_MODELS",
-        "google/gemma-4-31b-it:free,dots-studio/dots-3-note-preview:free,nvidia/nemotron-3-ultra-550b-a55b:free,google/gemma-4-26b-a4b-it:free",
+        "cohere/north-mini-code:free,dots-studio/dots-3-note-preview:free,nvidia/nemotron-3-ultra-550b-a55b:free,google/gemma-4-31b-it:free",
     ).split(",") if m.strip()])
 
     mos_first_year: int = _int("KAM_MOS_FIRST_YEAR", 2005)
