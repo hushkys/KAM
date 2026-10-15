@@ -40,7 +40,7 @@ export function Vydaje({ tid }: { tid: string }) {
 
   return (
     <>
-      <Card i={4} title="Za co utrácí" icon="coins" actions={<KindTag kind="FAKT" info={data.pozn} zdroj={[{ nazev: "Výdaje.com – rozpočty obcí", url: "https://vydaje.com/" }, { nazev: "MF ČR – MONITOR státní pokladny", url: "https://monitor.statnipokladna.gov.cz/" }]} />}>
+      <Card i={4} title="Za co utrácí" icon="coins" actions={<KindTag kind="FAKT" puvod={{ kody: ["vyd_celkem"], rok: data.rok, uzemi: tid }} info={data.pozn} zdroj={[{ nazev: "Výdaje.com – rozpočty obcí", url: "https://vydaje.com/" }, { nazev: "MF ČR – MONITOR státní pokladny", url: "https://monitor.statnipokladna.gov.cz/" }]} />}>
         <div className="vyd-hlava">
           <Segmented label="Rok" value={String(data.rok)} onChange={(v) => setRok(Number(v))} options={posledni.map((y) => ({ value: String(y), label: String(y) }))} />
         </div>

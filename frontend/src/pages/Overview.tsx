@@ -21,6 +21,8 @@ const MAP_OPTS = [
   { value: "500020", label: "Nezaměstnanost" },
 ];
 
+const KPI_KOD: Record<string, string> = { pop: "110900", s65: "d_podil_65", un: "500020", byty: "121800" };
+
 const MOS_ZDROJ = { nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" };
 
 const ZDROJ_KPI: Record<string, string> = {
@@ -52,7 +54,7 @@ export function Overview() {
         {(d?.kpis ?? Array.from({ length: 4 }, () => null)).map((k, i) => k ? (
           <div className="kpi reveal" key={k.key} style={{ "--i": i } as CSSProperties}>
             <div className="kpi-top"><span className="kpi-label">{k.label}</span>
-              <KindTag kind="FAKT" info={<>Skutečná zveřejněná hodnota za rok {k.year}, ne odhad modelu. Zdroj: {ZDROJ_KPI[k.key] ?? "Český statistický úřad"}. Čára ukazuje vývoj{k.since ? ` od roku ${k.since}` : ""}.</>}
+              <KindTag kind="FAKT" puvod={{ kody: [KPI_KOD[k.key] ?? "110900"], rok: k.year }} info={<>Skutečná zveřejněná hodnota za rok {k.year}, ne odhad modelu. Zdroj: {ZDROJ_KPI[k.key] ?? "Český statistický úřad"}. Čára ukazuje vývoj{k.since ? ` od roku ${k.since}` : ""}.</>}
                 zdroj={k.key === "un" ? [{ nazev: "MPSV – otevřená data o nezaměstnanosti", url: "https://data.mpsv.cz/web/data" }, MOS_ZDROJ] : MOS_ZDROJ} /></div>
             <span className="kpi-value">{withUnit(k.value, k.unit)}</span>
             <span className="kpi-sub">{k.change !== null ? `${signed(k.change, 2, k.unit === "%" ? " p. b." : " %")} od ${k.since}` : "za rok"} · {k.year}</span>
@@ -78,7 +80,7 @@ export function Overview() {
               </>
             ) : <span className="skeleton" style={{ width: "100%", aspectRatio: "1000/760" }} />}
           </Card>
-          <Card i={3} title="Výhled počtu obyvatel" icon="trend-up" actions={<><KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /><Link to="/vyhled" className="btn btn-quiet btn-sm">Celý výhled</Link></>}>
+          <Card i={3} title="Výhled počtu obyvatel" icon="trend-up" actions={<><KindTag kind="MODEL" puvod={{ kody: ["110900", "110200", "110300", "110400", "110500"] }} info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /><Link to="/vyhled" className="btn btn-quiet btn-sm">Celý výhled</Link></>}>
             {fc.data?.available ? (
               <ChartSwitch id="prehled-vyhled" views={[
                 {

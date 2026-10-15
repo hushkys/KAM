@@ -466,6 +466,14 @@ def data_gaps() -> dict:
             "alerts": gaps.alerts(), "structural": gaps.structural()}
 
 
+@router.get("/puvod")
+def puvod(kody: str, rok: int | None = None, uzemi: str | None = None) -> dict:
+    """Odkazy na konkrétní datové sady, ze kterých ukazatele pocházejí (štítek Fakt / Model)."""
+    from ..analytics import puvod as puvod_mod
+    seznam = [k.strip() for k in kody.split(",") if k.strip()][:12]
+    return {"odkazy": puvod_mod.pro_vice(seznam, rok, uzemi)}
+
+
 @router.get("/stats")
 def stats() -> dict:
     counts = dataset_counts()

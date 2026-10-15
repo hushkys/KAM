@@ -290,7 +290,7 @@ for _k, _z in ZARIZENI.items():
         _scale = 1000
     _z["scale"], _z["ratio_unit"] = _scale, _jedn if _k != "komunikace" else "km na 1 000 obyvatel"
     if _z["derived"] == f"d_zar_{_k}":
-        DERIVED = DERIVED + (Derived(_z["derived"], _z["metrika"] + " " + _z["ratio_unit"], _z["ratio_unit"], _z["pillar"], 1, _z["codes"][0], _den, _scale, _z["metrika"] + " / " + _den),)
+        DERIVED = DERIVED + (Derived(_z["derived"], _z["metrika"] + " " + _z["ratio_unit"], _z["ratio_unit"], _z["pillar"], 1, _z["codes"][0], _den, _scale, _z["metrika"] + " / " + {"110900": "obyvatelé", "110930": "děti 0–14 let", "110990": "obyvatelé 65+"}[_den]),)
 
 # Extra MOS codes needed only as denominators.
 AUX_MOS = ("420101",)

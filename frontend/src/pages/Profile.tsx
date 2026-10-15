@@ -53,6 +53,11 @@ function shapeOf(c: IndicatorCard): Shape {
   return !c.derived && jitter > 0.24 ? "bars" : "area";
 }
 
+const FAKTA_NAZEV: Record<string, string> = {
+  posta: "Pošta v obcích", kanalizace: "Napojení domů na kanalizaci", uzemni_plan: "Územní plány obcí",
+  hsoo: "Hospodářsky a sociálně ohrožené oblasti", isv_kategorie: "Index sociálního vyloučení",
+};
+
 const TREND_COLOR = { zhorseni: "var(--bad)", zlepseni: "var(--ok)" } as Record<string, string>;
 
 function IndicatorTile({ c, onOpen, i, lead }: { c: IndicatorCard; onOpen: () => void; i: number; lead?: boolean }) {
@@ -66,7 +71,7 @@ function IndicatorTile({ c, onOpen, i, lead }: { c: IndicatorCard; onOpen: () =>
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen())}
       style={{ "--i": i, cursor: "pointer" } as CSSProperties} data-ctx={`indicator:${c.code}`} data-ctx-label={c.name} data-ctx-value={`${c.name}: ${withUnit(c.value, c.unit)} (${c.year})`}>
       <span className="ind-name">{c.name}</span>
-      <span className="ind-tag"><KindTag kind="FAKT" info={<>
+      <span className="ind-tag"><KindTag kind="FAKT" puvod={{ kody: [c.code], rok: c.year }} info={<>
         <strong>{c.derived ? "Odvozený ukazatel" : c.source}</strong>
         {c.formula && <p>Výpočet: {c.formula}</p>}
         {c.origin && <p>Původce: {c.origin}</p>}
@@ -106,7 +111,7 @@ function SeriesModal({ tid, card, onClose }: { tid: string; card: IndicatorCard 
   return (
     <Modal open={Boolean(card)} onClose={onClose} title={card.name} wide>
       <div className="row" style={{ marginBottom: 12 }}>
-        <KindTag kind="FAKT" />{t.kind === "trend" && <KindTag kind="TREND" />}
+        <KindTag kind="FAKT" puvod={{ kody: [card.code], rok: card.year }} />{t.kind === "trend" && <KindTag kind="TREND" />}
         <span className="muted small">{card.derived ? `Výpočet: ${card.formula}` : `${card.source}${card.origin ? ` · ${card.origin}` : ""}`}</span>
       </div>
       {data ? (
@@ -255,7 +260,7 @@ export function Profile({ id }: { id: string }) {
               <Card title="Rizika" icon="alert" i={1} actions={<InfoHint label="Co je riziko">Riziko hlásí pevné pravidlo nad zveřejněnými daty: nepříznivý dlouhodobý trend, opakující se problém nebo stav, který překročil stanovený práh či je výrazně horší než v kraji. Není to odhad ani názor. U malých obcí a krátkých řad je důvěra nižší, protože pár lidí tam pohne jakýmkoli podílem.</InfoHint>}>
                 {data.risks.length ? data.risks.slice(0, 6).map((r) => <RiskItem key={r.id} r={r} />) : <Empty icon="check" title="Bez výrazných rizik">Pravidla v datech nenašla významný problém.</Empty>}
               </Card>
-              <Card title="Výhled počtu obyvatel" icon="trend-up" i={2} actions={<KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). V závorce je rozpětí, ve kterém se skutečnost pravděpodobně pohybuje. Není to fakt." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
+              <Card title="Výhled počtu obyvatel" icon="trend-up" i={2} actions={<KindTag kind="MODEL" puvod={{ kody: ["110900", "110200", "110300", "110400", "110500"] }} info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). V závorce je rozpětí, ve kterém se skutečnost pravděpodobně pohybuje. Není to fakt." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
                 {data.outlook.milestones ? (
                   <div className="facts-list">
                     {data.outlook.milestones.map((m) => (
@@ -266,7 +271,10 @@ export function Profile({ id }: { id: string }) {
                 ) : <p className="muted small">{data.outlook.reason}</p>}
               </Card>
               {(Object.keys(data.facts).length > 0 || data.pois) && (
-                <Card title="Služby a infrastruktura" icon="home" i={3} actions={<KindTag kind="FAKT" info="Mapové služby Královéhradeckého kraje: pošty, kanalizace, územní plány, zařízení. Počty jsou místa v obci, ne kapacity." zdroj={{ nazev: "Data KHK – portál Královéhradeckého kraje", url: "https://www.datakhk.cz/" }} />}>
+                <Card title="Služby a infrastruktura" icon="home" i={3} actions={<KindTag kind="FAKT" puvod={{ kody: (data.pois ?? []).map((p) => p.kind) }} info="Mapové služby Královéhradeckého kraje: pošty, kanalizace, územní plány, zařízení. Počty jsou místa v obci, ne kapacity." zdroj={[
+                  ...Object.entries(data.facts).filter(([, f]) => f.source_url).map(([k, f]) => ({ nazev: `${FAKTA_NAZEV[k] ?? k} (Data KHK)`, url: f.source_url })),
+                  { nazev: "Data KHK – portál Královéhradeckého kraje", url: "https://www.datakhk.cz/" },
+                ]} />}>
                   <div className="facts-list">
                     {data.facts.posta && <div className="fact-row"><span>Pošta</span><span>{data.facts.posta.value}</span></div>}
                     {data.facts.kanalizace && <div className="fact-row"><span>Domy napojené na kanalizaci</span><span>{data.facts.kanalizace.value}</span></div>}

@@ -65,7 +65,7 @@ export function Outlook() {
               <Stat i={2} label={`Podíl seniorů 65+ v roce ${y40?.year ?? ""}`} value={pct(y40?.share_65 ?? null)} sub={last?.age_65 ? `dnes ${pct((100 * last.age_65) / last.population)}` : ""} />
               <Stat i={3} label="Zpětný test" value={ok.backtest.available ? `${num(ok.backtest.mape!, 2)} %` : "—"} sub="o kolik se model v minulosti spletl" />
             </div>
-            <Card i={2} title={label} icon="trend-up" actions={<KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
+            <Card i={2} title={label} icon="trend-up" actions={<KindTag kind="MODEL" puvod={{ kody: ["110900", "110200", "110300", "110400", "110500"], rok: ok?.base_year }} info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} />}>
               <ChartSwitch id={`vyhled-${metric}`} views={[
                 {
                   key: "vyvoj", label: "Vývoj v čase", icon: "trend-up", render: () => (
@@ -137,9 +137,9 @@ export function Outlook() {
               <Card span={4} i={4} title="Věková struktura" icon="users">
                 {last && last.age_0_14 && last.age_65 && y40?.age_0_14 && y40.age_65 ? (
                   <div className="stack-y">
-                    <div><div className="small strong" style={{ marginBottom: 6 }}>{ok.base_year} <KindTag kind="FAKT" info="Skutečné věkové složení území za poslední zveřejněný rok." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /></div>
+                    <div><div className="small strong" style={{ marginBottom: 6 }}>{ok.base_year} <KindTag kind="FAKT" puvod={{ kody: ["110930", "110990", "110900"], rok: ok.base_year }} info="Skutečné věkové složení území za poslední zveřejněný rok." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /></div>
                       <ShareBar parts={[{ label: "0–14", value: last.age_0_14, color: "var(--info)" }, { label: "15–64", value: last.population - last.age_0_14 - last.age_65, color: "var(--accent)" }, { label: "65+", value: last.age_65, color: "var(--warn)" }]} /></div>
-                    <div><div className="small strong" style={{ marginBottom: 6 }}>{y40?.year} <KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /></div>
+                    <div><div className="small strong" style={{ marginBottom: 6 }}>{y40?.year} <KindTag kind="MODEL" puvod={{ kody: ["110900", "110200", "110300", "110400", "110500"], rok: ok?.base_year }} info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." zdroj={{ nazev: "ČSÚ – Městská a obecní statistika", url: "https://csu.gov.cz/produkty/databaze-mos-otevrena-data" }} /></div>
                       <ShareBar parts={[{ label: "0–14", value: y40.age_0_14, color: "var(--info)" }, { label: "15–64", value: y40.population - y40.age_0_14 - y40.age_65, color: "var(--accent)" }, { label: "65+", value: y40.age_65, color: "var(--warn)" }]} /></div>
                   </div>
                 ) : <p className="muted small">Pro toto území chybí údaje o věku.</p>}

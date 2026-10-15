@@ -226,3 +226,14 @@ def test_zarizeni_ze_scenaru_maji_dostupnost_naklady_a_umisteni(synthetic_db):
         assert r["costs"]["capex"] == int(2 * ZARIZENI["knihovna"]["capex"] * 1e6)
         klice = {a["key"] for a in r["assumptions"]}
         assert "naklad_zar_knihovna" in klice and "naklad_zar_kulturni_dum" not in klice
+
+
+def test_puvod_odvozeneho_ukazatele_vede_na_vstupy():
+    """Štítek Fakt u odvozeného ukazatele musí ukázat výpočet a odkazy obou
+    vstupů, ne prázdno; neznámý kód nevrátí nic vymyšleného."""
+    from kam.analytics import puvod
+
+    odkazy = puvod.odkazy("d_index_stari", 2025)
+    assert odkazy and odkazy[0]["druh"] == "vypocet"
+    assert any(o["url"] for o in odkazy[1:])
+    assert puvod.odkazy("neexistuje") == []

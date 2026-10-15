@@ -5,6 +5,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
+import { useApi } from "../lib/api";
 
 export function PageHeader({ title, lead, actions, titleStyle }: { eyebrow?: string; title: ReactNode; lead?: ReactNode; actions?: ReactNode; titleStyle?: CSSProperties }) {
   return (
@@ -45,20 +46,49 @@ const KIND_LABEL: Record<string, string> = { FAKT: "Fakt", TREND: "Trend", MODEL
  *  tlačítko: po najetí nebo klepnutí ukáže, odkud číslo je a jak vzniklo.
  *  Jeden prvek místo štítku a vedle něj „i“, ať je to všude stejné. */
 export interface Zdroj { nazev: string; url: string }
+/** Které ukazatele (a za jaký rok) číslo nese: štítek si k nim dotáhne konkrétní datové sady. */
+export interface Puvod { kody: string[]; rok?: number | null; uzemi?: string | null }
+interface Odkaz { nazev: string; url: string; druh: string; ukazatel?: string }
 
-export function KindTag({ kind, info, zdroj }: { kind: string; info?: ReactNode; zdroj?: Zdroj | Zdroj[] }) {
+/** Odkazy na konkrétní datové sady (`/api/puvod`). Načítají se, až když se
+ *  bublina otevře: na stránce obce je padesát štítků a nikdo nečte všechny. */
+function PuvodOdkazy({ puvod }: { puvod: Puvod }) {
+  const q = new URLSearchParams({ kody: puvod.kody.join(",") });
+  if (puvod.rok) q.set("rok", String(puvod.rok));
+  if (puvod.uzemi) q.set("uzemi", puvod.uzemi);
+  const { data, loading } = useApi<{ odkazy: Odkaz[] }>(`/puvod?${q}`);
+  if (loading && !data) return <span className="tip-zdroje"><span className="tip-zdroje-nadpis">Datové sady</span><span className="mute">Načítám…</span></span>;
+  const odkazy = data?.odkazy ?? [];
+  if (!odkazy.length) return null;
+  const vypocet = odkazy.filter((o) => o.druh === "vypocet");
+  const ostatni = odkazy.filter((o) => o.druh !== "vypocet");
+  return (
+    <span className="tip-zdroje">
+      {vypocet.map((o) => <span key={o.nazev} className="tip-vypocet">{o.nazev}</span>)}
+      <span className="tip-zdroje-nadpis">Datové sady, ze kterých číslo je</span>
+      {ostatni.map((o) => (
+        <a key={o.url} href={o.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`is-${o.druh}`}>
+          {o.nazev} <Icon name="external" size={12} />
+        </a>
+      ))}
+    </span>
+  );
+}
+
+export function KindTag({ kind, info, zdroj, puvod }: { kind: string; info?: ReactNode; zdroj?: Zdroj | Zdroj[]; puvod?: Puvod }) {
   const k = kind.toUpperCase();
   const cls = { FAKT: "fakt", TREND: "trend", MODEL: "model", "SCÉNÁŘ": "scenar", AI: "ai", "PŘEDPOKLAD": "predpoklad", "ZÁSAH": "zasah" }[k] ?? "fakt";
   const zdroje = zdroj ? (Array.isArray(zdroj) ? zdroj : [zdroj]).filter((z) => z.url) : [];
-  const ma = Boolean(info) || zdroje.length > 0;
+  const ma = Boolean(info) || zdroje.length > 0 || Boolean(puvod?.kody.length);
   const tag = <span className={`kind kind-${cls}${ma ? " has-info" : ""}`}>{KIND_LABEL[k] ?? kind}{ma && <Icon name="info" size={11} />}</span>;
   if (!ma) return tag;
   return (
     <InfoHint label={`${KIND_LABEL[k] ?? kind}: odkud to je`} trigger={tag}>
       {info}
+      {puvod && puvod.kody.length > 0 && <PuvodOdkazy puvod={puvod} />}
       {zdroje.length > 0 && (
         <span className="tip-zdroje">
-          <span className="tip-zdroje-nadpis">Odkud data jsou</span>
+          <span className="tip-zdroje-nadpis">{puvod ? "Další zdroje" : "Odkud data jsou"}</span>
           {zdroje.map((z) => (
             <a key={z.url} href={z.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
               {z.nazev} <Icon name="external" size={12} />

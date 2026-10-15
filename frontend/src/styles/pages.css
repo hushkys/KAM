@@ -1775,3 +1775,7 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .tip-zdroje a:hover { text-decoration: underline; }
 .tooltip { pointer-events: auto; }
 .info-hint.is-tag:focus-visible { outline-offset: 3px; }
+.tip-vypocet { font-size: .78rem; color: var(--text-dim); font-style: italic; }
+.tip-zdroje a.is-soubor, .tip-zdroje a.is-sluzba { font-weight: 550; }
+.tip-zdroje a.is-puvodce { color: var(--text-dim); }
+.tip-zdroje + .tip-zdroje { margin-top: 6px; }
