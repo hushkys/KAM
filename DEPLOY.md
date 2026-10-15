@@ -117,6 +117,61 @@ curl -u kam:HESLO -X PUT -H "Content-Type: application/json" \
   pro hlavní dokument, ne pro `fetch` — stránka se načte a API volání vrátí
   401. Skutečný uživatel dostane nativní dialog a pak už to funguje všude.
 
+## Azure: jeden virtuální stroj se SQLite (den soutěže)
+
+15. 10. 2026 ráno přestala odpovídat databáze na Neonu — bezplatný tarif
+vyčerpal kvótu na přenesená data („Your account or project has exceeded the
+quota“) a aplikace vracela 500. Proto varianta bez vzdálené databáze:
+**virtuální stroj, Docker, SQLite na disku stroje, Caddy s HTTPS.** Žádná
+kvóta, čtení bez sítě, žádný studený start, plánovač má celý procesor.
+
+**Velikost** (změřeno: jeden proces aplikace zvládne kolem 150 požadavků za
+sekundu, načtení stránky jich stojí 5–8, po zahřátí drží ~400 MB paměti):
+
+| | doporučeno | minimum |
+|---|---|---|
+| stroj | **Standard_D4as_v5** — 4 vCPU, 16 GB RAM | Standard_D2as_v5 — 2 vCPU, 8 GB |
+| procesy (`KAM_WORKERS`) | 4 | 2 |
+| disk | **64 GB Premium SSD (P6)** | 32 GB Standard SSD |
+| systém | Ubuntu Server 24.04 LTS | |
+| oblast | Poland Central nebo Germany West Central (nejblíž ČR) | |
+
+Čtyři procesy dají kolem 600 požadavků za sekundu — stovky lidí, kteří
+naskenují QR kód během pár minut, se ani nepoznají. Úzké místo je jinde:
+**asistent na bezplatném klíči Gemini** (desítky dotazů za minutu); nad
+limitem odpoví podkladem bez AI, takže nespadne, ale pro soutěž je lepší
+klíč s fakturací.
+
+**Síť:** veřejná IP s DNS jménem (např. `kam-khk`), příchozí porty 22 (jen
+z vaší IP), 80 a 443. Přihlášení SSH klíčem.
+
+```bash
+KAM_SSH=azureuser@<ip> KAM_KLIC=~/.ssh/kam_azure KAM_DOMENA=kam-khk.polandcentral.cloudapp.azure.com KAM_WORKERS=4 bash scripts/deploy_azure.sh --s-daty
+```
+
+Skript připraví stroj (`deploy/azure/setup-vm.sh`: Docker, swap, cron),
+nahraje kód, z `.env` vezme jen `GEMINI_*`, s `--s-daty` nahraje konzistentní
+kopii `data/kam.db` i šifrovací klíč, sestaví obraz na stroji a počká, až
+`https://<doména>/api/health` hlásí `ok`. Další nasazení kódu je tentýž
+příkaz **bez** `--s-daty` — jinak by se přepsaly podněty a konverzace, které
+mezitím vznikly na serveru.
+
+**Obnova dat** na stroji běží cronem ve 3:30 jako samostatný proces;
+procesy serveru mají `KAM_OBNOVA_V_SERVERU=0`, jinak by každý z nich spustil
+vlastní sklizeň a čtyři by běžely naráz.
+
+**Adresa z QR kódu** (`hack-a-ton-hushkys.web.app`) míří přes Firebase
+Hosting na Cloud Run. Firebase neumí přeposílat na cizí server, umí ale
+přesměrovat — do `firebase.json` místo `rewrites`:
+
+```json
+"redirects": [{ "source": "/:cesta*", "destination": "https://kam-khk.polandcentral.cloudapp.azure.com/:cesta", "type": 302 }]
+```
+
+a `firebase deploy --only hosting --project hack-a-ton-hushkys`. 302, ne 301:
+prohlížeče si trvalé přesměrování pamatují a cesta zpátky na Cloud Run by
+pak nefungovala.
+
 ## Obnova dat
 
 Obnovu dělá jedna funkce, `kam/refresh.py::obnov` — denně katalog, vrstvy

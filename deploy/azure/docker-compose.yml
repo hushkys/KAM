@@ -1,0 +1,58 @@
+# KAM na jednom virtuálním stroji v Azure: aplikace + Caddy (HTTPS).
+#
+# Databáze je SQLite na disku stroje (/srv/kam/data), ne vzdálený PostgreSQL:
+# žádná kvóta na přenesená data, která by dnes v poledne došla (Neon přesně
+# tohle udělal), a čtení bez sítě. Zapisuje se málo (podněty, historie
+# asistenta, provozní log) a SQLite ve WAL to zvládne i z více procesů.
+#
+# Spouští scripts/deploy_azure.sh; ručně:
+#   cd /srv/kam/app/deploy/azure && docker compose up -d --build
+
+services:
+  kam:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: kam:latest
+    restart: always
+    env_file: ./kam.env
+    environment:
+      # Jeden proces = jedno jádro. Nastavuje se v kam.env podle velikosti stroje.
+      KAM_WORKERS: "${KAM_WORKERS:-4}"
+      # Obnovu dat pouští cron jednou za noc; procesy si jí jen všimnou.
+      KAM_OBNOVA_V_SERVERU: "0"
+    volumes:
+      - /srv/kam/data:/app/data
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  caddy:
+    image: caddy:2
+    restart: always
+    depends_on: [kam]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      KAM_DOMENA: "${KAM_DOMENA:?Nastav KAM_DOMENA v deploy/azure/.env}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}

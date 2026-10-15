@@ -1,0 +1,2 @@
+*.sh text eol=lf
+deploy/azure/* text eol=lf

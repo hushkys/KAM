@@ -32,11 +32,7 @@
   transition: background-color var(--t-md) var(--ease-out), border-color var(--t-md) var(--ease-out);
 }
 .hp-nav.je-dole { background: var(--surface); border-bottom-color: var(--border); }
-:root[data-transparency="on"] .hp-nav.je-dole {
-  background: color-mix(in oklab, var(--surface) 86%, transparent);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-}
+/* Žádné rozostření ani průsvitnost — úvod je plochý jako zbytek aplikace. */
 .hp-nav-vnitrek { height: 100%; display: flex; align-items: center; gap: 20px; max-width: calc(var(--hp-max) + 2 * var(--hp-pad)); margin: 0 auto; padding-inline: var(--hp-pad); }
 .hp-nav-znak { display: flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none !important; flex: none; }
 .hp-nav-znak .wordmark { height: 18px; width: auto; }
@@ -97,7 +93,6 @@
 .kv-scena {
   position: relative; border-radius: var(--r-xl); padding: clamp(14px, 2vw, 26px);
   border: 1px solid var(--border); background: var(--surface-2);
-  box-shadow: var(--shadow-md);
   overflow: hidden;
   aspect-ratio: 1000 / 820;
 }
@@ -299,3 +294,16 @@
 /* --------------------------------------------------------- vypnutý pohyb */
 :root[data-motion="reduce"] [data-vjezd] { opacity: 1; transform: none; transition: none; }
 :root[data-motion="reduce"] .od-pas { transition: none; }
+
+/* ------------------------------------------------------- bez skla a hloubky
+   Obrázek kraje je plochý: plná světlá výplň ORP místo průsvitného přechodu,
+   žádná stínová vrstva, žádné mizení do ztracena a žádný posun vrstev pod
+   kurzorem. Průsvitné vrstvy nad sebou působily jako „liquid glass“, který
+   z aplikace odešel; tady zbyl jako poslední. */
+.kv-vrstva.je-mapa, .kv-vrstva.je-graf, .kv-stitky { transform: none; transition: none; }
+.kv-vrstva.je-mapa { mask-image: none; -webkit-mask-image: none; }
+.kv-stin { display: none; }
+.kv-orp, :root:not([data-theme="dark"]) .kv-orp { fill: color-mix(in oklab, var(--accent) 13%, var(--surface-2)); stroke: color-mix(in oklab, var(--accent) 55%, var(--surface-2)); }
+.kv-orp:hover { fill: color-mix(in oklab, var(--accent) 24%, var(--surface-2)); }
+.kv-obrys { stroke: var(--accent); }
+.kv-plocha { fill: color-mix(in oklab, var(--accent) 9%, transparent); }

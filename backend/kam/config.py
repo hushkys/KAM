@@ -61,6 +61,10 @@ class Settings:
 
     # Background jobs (catalogue refresh, embeddings). Off in tests.
     background_jobs: bool = os.environ.get("KAM_BACKGROUND", "1") != "0"
+    # Smí server obnovu dat spustit sám? S více procesy (uvicorn --workers)
+    # má plánovač každý z nich a všechny by sklízely naráz; tam se obnova
+    # pouští cronem jednou a server si ji jen všimne (KAM_OBNOVA_V_SERVERU=0).
+    refresh_in_server: bool = os.environ.get("KAM_OBNOVA_V_SERVERU", "1") != "0"
 
     # Deployment. Aplikace je veřejná a žádné heslo nemá; Fernet klíč se
     # drží mimo disk, aby redeploy kontejneru nezneplatnil API klíče uložené

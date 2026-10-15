@@ -37,4 +37,6 @@ EXPOSE 8000
 RUN useradd --create-home --uid 10001 kam && chown -R kam:kam /app
 USER kam
 
-CMD ["sh", "-c", "exec python -m uvicorn kam.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+# KAM_WORKERS = počet procesů. Jeden proces drží jedno jádro (Python má GIL),
+# takže na stroji se čtyřmi jádry patří čtyři. Cloud Run jede s jedním.
+CMD ["sh", "-c", "exec python -m uvicorn kam.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8000} --workers ${KAM_WORKERS:-1} --proxy-headers --forwarded-allow-ips='*'"]

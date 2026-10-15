@@ -38,3 +38,6 @@ deploy-key.json
 # Nástroje
 firebase-debug.log
 *.log
+
+# Tajemství pro Azure (generuje scripts/deploy_azure.sh, nikdy necommitovat)
+deploy/azure/kam.env

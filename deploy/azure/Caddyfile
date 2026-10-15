@@ -1,0 +1,20 @@
+# HTTPS zdarma a automaticky (Let's Encrypt) pro jméno stroje v Azure,
+# např. kam-khk.polandcentral.cloudapp.azure.com. Porty 80 a 443 musí být
+# v síťové skupině otevřené, jinak certifikát nedostane.
+{$KAM_DOMENA} {
+	encode zstd gzip
+
+	reverse_proxy kam:8000 {
+		# Asistent odpovídá proudem (SSE); bez okamžitého odeslání by
+		# Caddy odpověď držel a text by naskočil až celý najednou.
+		flush_interval -1
+		transport http {
+			read_timeout 180s
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}

@@ -100,7 +100,7 @@ def _scheduler() -> None:
         time.sleep(600)
         try:
             cfg = prefs.get("data")
-            if cfg["auto_refresh"] and refresh.je_cas(cfg["refresh_hours"]):
+            if settings.refresh_in_server and cfg["auto_refresh"] and refresh.je_cas(cfg["refresh_hours"]):
                 refresh.obnov("plán", v_serveru=True)
                 videno = refresh.naposledy()
                 log.info("Plánovaná aktualizace dat dokončena")
