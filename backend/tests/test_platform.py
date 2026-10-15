@@ -234,3 +234,19 @@ def test_log_filtruje_a_uklid_respektuje_nulu():
 def test_log_orizne_dlouhy_detail():
     logs.zapis("test_dlouhy", {"chyba": "x" * 5000})
     assert len(logs.seznam(hledat="test_dlouhy")["polozky"][0]["detail"]["chyba"]) <= 400
+
+
+def test_hlas_mam_stejny_problem_pricita_k_podnetu():
+    """Tlačítko „Mám stejný problém“ přidá hlas bez psaní textu: počet skupiny
+    roste, hlas ji může dostat přes práh a předaná skupina už hlasy nebere."""
+    r = crowd.submit("obec:500001", "skolstvi", "Ve školce chybí místa pro děti ze sídliště, rodiče nemají kam dát děti.")
+    cid = r["cluster_id"]
+    pred = crowd.document(cid)["count"]
+    h = crowd.hlas(cid)
+    assert h["count"] == pred + 1
+    assert any(x["kind"] == "hlas" for x in crowd.document(cid)["reports"])
+    while crowd.hlas(cid)["status"] == "sber":
+        pass
+    crowd.deliver(cid)
+    with pytest.raises(ValueError):
+        crowd.hlas(cid)

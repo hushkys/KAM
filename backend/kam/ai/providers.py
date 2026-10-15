@@ -49,6 +49,10 @@ class Provider:
         return THINK.sub("", "".join(self.stream(messages, temperature, max_tokens, timeout))).strip()
 
     @property
+    def is_openrouter(self) -> bool:
+        return "openrouter.ai" in self.base_url
+
+    @property
     def is_local_server(self) -> bool:
         return any(h in self.base_url for h in ("localhost", "127.0.0.1", "0.0.0.0", "[::1]"))
 
@@ -67,6 +71,31 @@ class Provider:
             # reject it, so we retry once without it.
             body["reasoning_effort"] = "none"
         url = self.base_url.rstrip("/") + "/chat/completions"
+        if self.is_openrouter:
+            # Bezplatné modely na OpenRouteru jsou sdílené: jeden vrátí 429
+            # („přetíženo“), druhý 503, třetí odpoví prázdně, protože celý
+            # rozpočet utratil přemýšlením. Zkouší se proto jeden po druhém,
+            # dokud některý opravdu napíše text; prázdná odpověď je selhání.
+            headers["HTTP-Referer"] = "https://hack-a-ton-hushkys.web.app"
+            headers["X-Title"] = "KAM - Krajsky analyticky model"
+            body["reasoning"] = {"effort": "low", "exclude": True}
+            modely = [self.model, *[m for m in settings.openrouter_models if m != self.model]]
+            chyby: list[str] = []
+            for m in modely:
+                psal = False
+                try:
+                    for kus in self._openai_stream(url, {**body, "model": m}, headers, timeout, retry=False):
+                        psal = True
+                        yield kus
+                except Exception as e:  # noqa: BLE001 — 429, 503 i výpadek spojení znamenají „zkus další“
+                    if psal:
+                        raise
+                    chyby.append(f"{m}: {str(e)[:80]}")
+                    continue
+                if psal:
+                    return
+                chyby.append(f"{m}: prázdná odpověď")
+            raise RuntimeError(f"{self.name}: žádný model neodpověděl ({'; '.join(chyby)[:300]})")
         yield from self._openai_stream(url, body, headers, timeout, retry=self.is_local_server)
 
     def _openai_stream(self, url: str, body: dict, headers: dict, timeout: float, retry: bool) -> Iterator[str]:
@@ -240,6 +269,8 @@ def _row_to_provider(r: ModelProvider) -> Provider:
         # Klíče z prostředí mají přednost před uloženým: uložený zašifroval
         # jiný klíč (jiný stroj) nebo už byl zrušen.
         key = settings.gemini_api_keys[0]
+    if r.kind == "openai" and "openrouter.ai" in (r.base_url or "") and settings.openrouter_api_key:
+        key = settings.openrouter_api_key
     return Provider(r.id, r.name, r.kind, r.base_url, r.model, key, r.tier, r.temperature, r.max_tokens)
 
 
@@ -255,6 +286,16 @@ def seed_defaults() -> None:
         if s.scalar(select(ModelProvider.id).where(ModelProvider.tier == "local").limit(1)) is None:
             s.add(ModelProvider(name="Gemma 4 (LM Studio)", kind="openai", base_url=settings.local_llm_url, model=settings.local_chat_model,
                                 tier="local", enabled=True, is_default=True, temperature=0.2, max_tokens=900))
+        if settings.openrouter_api_key and settings.openrouter_models:
+            orow = s.scalar(select(ModelProvider).where(ModelProvider.base_url.like("%openrouter.ai%")).order_by(ModelProvider.id))
+            if orow is None:
+                # OpenRouter dostane přednost: Gemini klíče z Vertexu mají vypnuté
+                # API a každý dotaz by napřed čekal na jejich odmítnutí.
+                for g in s.scalars(select(ModelProvider).where(ModelProvider.tier == "cloud")):
+                    g.is_default = False
+                s.add(ModelProvider(name="OpenRouter (bezplatné modely)", kind="openai", base_url="https://openrouter.ai/api/v1",
+                                    model=settings.openrouter_models[0], api_key_enc=encrypt(settings.openrouter_api_key),
+                                    tier="cloud", enabled=True, is_default=True, temperature=0.2, max_tokens=1200))
         if not settings.gemini_api_keys:
             return
         row = s.scalar(select(ModelProvider).where(ModelProvider.kind == "gemini").order_by(ModelProvider.id))

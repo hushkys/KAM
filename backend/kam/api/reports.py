@@ -58,6 +58,19 @@ def submit(cid: int) -> dict:
         raise HTTPException(502, f"Odeslání selhalo: {e}") from e
 
 
+@router.post("/clusters/{cid}/hlas")
+def hlas(cid: int, request: Request) -> dict:
+    """Mám stejný problém: přidá hlas ke skupině hlášení."""
+    if not write_limiter.allow(request.client.host if request.client else "?"):
+        raise HTTPException(429, "Příliš mnoho hlasů za minutu.")
+    try:
+        return crowd.hlas(cid)
+    except KeyError as e:
+        raise HTTPException(404) from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
 @router.delete("/clusters/{cid}")
 def smaz(cid: int, request: Request) -> dict:
     """Smaže skupinu i hlášení pod ní. Jediná operace v API, po které data

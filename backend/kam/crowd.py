@@ -101,6 +101,40 @@ def submit(territory_id: str, category: str, text: str, kind: str = "problem") -
     return result
 
 
+def hlas(cluster_id: int) -> dict:
+    """„Mám stejný problém“: jeden hlas k existující skupině, bez psaní textu.
+
+    Hlas je hlášení jako každé jiné (kind „hlas“), takže se počítá do počtu
+    skupiny a může ji posunout přes práh k formálnímu podnětu. Předaná skupina
+    hlasy nebere — to, co odešlo kraji, se už nemění."""
+    import uuid
+    cfg = prefs.get("destinations")
+    with session_scope() as s:
+        c = s.get(Cluster, cluster_id)
+        if c is None:
+            raise KeyError(cluster_id)
+        if c.status == "odeslano":
+            raise ValueError("Podnět už byl předán kraji, hlas se k němu nepřidává.")
+        s.add(Report(territory_id=c.territory_id, category=c.category, kind="hlas", text="Mám stejný problém.",
+                     cluster_id=c.id, fingerprint=f"hlas|{c.id}|{uuid.uuid4().hex}"))
+        c.count += 1
+        c.updated_at = now()
+        became_ready = False
+        if c.status == "sber" and c.count >= cfg["threshold"]:
+            c.status = "pripraveno"
+            c.reference = f"KAM-P-{datetime.now(UTC).year}-{c.id:05d}"
+            became_ready = True
+        cid, status, count = c.id, c.status, c.count
+    result = {"cluster_id": cid, "count": count, "status": status, "became_ready": became_ready}
+    if became_ready and cfg["auto_submit"]:
+        try:
+            deliver(cid)
+            result["status"] = "odeslano"
+        except Exception as e:
+            result["delivery_error"] = str(e)[:200]
+    return result
+
+
 def document(cluster_id: int) -> dict:
     with session_scope() as s:
         c = s.get(Cluster, cluster_id)

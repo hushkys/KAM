@@ -95,7 +95,20 @@ export function Reports() {
     } catch (e) { toast("error", (e as Error).message); }
   };
 
-  const same = (c: Cluster) => { setTid(c.territory.id); setCat(c.category); setDoc(null); form.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  // Komu už v tomhle prohlížeči hlas dal: tlačítko se pak nenabízí znovu.
+  // Je to pohodlí, ne ochrana — skutečný strop dělá limit na serveru.
+  const [hlasy, setHlasy] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem("kam.hlasy") ?? "[]"); } catch { return []; } });
+  const same = async (c: Cluster) => {
+    try {
+      const r = await api<{ count: number; status: string; became_ready: boolean }>(`/reports/clusters/${c.id}/hlas`, { method: "POST" });
+      const dal = [...hlasy, c.id];
+      setHlasy(dal);
+      try { localStorage.setItem("kam.hlasy", JSON.stringify(dal)); } catch { /* bez úložiště jen nezapamatujeme */ }
+      toast("ok", r.became_ready ? `Díky. Podnět má ${r.count} hlášení a je připravený k předání kraji.` : `Díky, hlas je zaznamenaný. Podnět má teď ${r.count} ${plural(r.count, "hlášení", "hlášení", "hlášení")}.`);
+      refresh();
+      openDoc(c.id);
+    } catch (e) { toast("error", (e as Error).message); }
+  };
 
   const kpis = [
     { icon: "message", label: "Hlášení celkem", value: stats.data?.reports ?? 0 },
@@ -201,7 +214,9 @@ export function Reports() {
 
       <Modal open={Boolean(doc)} onClose={() => { setDoc(null); setPotvrdit(false); }} title={doc ? (doc.status === "sber" ? "Skupina hlášení" : "Formální podnět") : ""} wide
         footer={doc ? <>
-          {doc.status === "sber" && <button className="btn" onClick={() => same(doc)}><Icon name="plus" size={16} /> Mám stejný problém</button>}
+          {doc.status !== "odeslano" && (hlasy.includes(doc.id)
+            ? <button className="btn" disabled><Icon name="check" size={16} /> Váš hlas je zaznamenaný</button>
+            : <button className={`btn${doc.status === "sber" ? " btn-primary" : ""}`} onClick={() => same(doc)}><Icon name="plus" size={16} /> Mám stejný problém</button>)}
           {doc.status !== "sber" && <button className="btn" onClick={() => window.print()}><Icon name="print" size={16} /> Vytisknout / PDF</button>}
           {doc.status === "pripraveno" && <button className="btn btn-primary" onClick={() => deliver(doc.id)}><Icon name="send" size={16} /> Předat kraji</button>}
           <button className={`btn ${potvrdit ? "btn-danger" : "btn-quiet"}`} style={{ marginRight: "auto" }}

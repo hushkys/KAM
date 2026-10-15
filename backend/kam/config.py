@@ -68,6 +68,14 @@ class Settings:
     gemini_api_keys: list[str] = field(default_factory=lambda: _klice_gemini())
     gemini_api_key: str = field(default_factory=lambda: (_klice_gemini() or [""])[0])
     gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    # OpenRouter (OpenAI-kompatibilní). Bezplatné modely jsou sdílené a občas
+    # přetížené, proto se posílá celý seznam: OpenRouter zkusí další, když
+    # první vrátí 429. Klíč bez kreditu umí jen modely s příponou :free.
+    openrouter_api_key: str = os.environ.get("OPENROUTER_API_KEY", "")
+    openrouter_models: list[str] = field(default_factory=lambda: [m.strip() for m in os.environ.get(
+        "OPENROUTER_MODELS",
+        "google/gemma-4-31b-it:free,dots-studio/dots-3-note-preview:free,nvidia/nemotron-3-ultra-550b-a55b:free,google/gemma-4-26b-a4b-it:free",
+    ).split(",") if m.strip()])
 
     mos_first_year: int = _int("KAM_MOS_FIRST_YEAR", 2005)
     mos_last_year: int = _int("KAM_MOS_LAST_YEAR", 2025)
