@@ -1510,3 +1510,26 @@ html:has(#main[data-page="asistent"]), html:has(#main[data-page="asistent"]) bod
   .page-header-actions::-webkit-scrollbar { display: none; }
   .page-header-actions > * { flex: none; }
 }
+
+/* ------------------------------------------------------- Scénáře: vzhled
+   Zaoblení a měkké povrchy platí jen na této stránce; ostatní stránky mají
+   ostré rohy dál. Poloměry jdou z tokenů, takže se přepíšou na jednom místě. */
+#main[data-page="scenare"] {
+  --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+}
+#main[data-page="scenare"] .card { border-color: transparent; box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 6px 20px -8px rgba(16, 24, 40, .14); }
+#main[data-page="scenare"] .sc-zasah { background: var(--surface-2); border-radius: var(--r-lg); padding: 16px; }
+#main[data-page="scenare"] .sc-sada,
+#main[data-page="scenare"] .sc-chip { border-radius: var(--r-pill); }
+#main[data-page="scenare"] .sc-kam-seznam li.is-tady { border-radius: var(--r-md); }
+#main[data-page="scenare"] .sc-kam-drah, #main[data-page="scenare"] .sc-kam-drah i { border-radius: var(--r-pill); }
+#main[data-page="scenare"] .sc-menu { border-radius: var(--r-lg); }
+#main[data-page="scenare"] .sc-verdikt { font-size: 1.0625rem; font-weight: 500; color: var(--text-dim); }
+.sc-dlazdice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.sc-dlazdice-bunka { display: grid; gap: 4px; align-content: start; padding: 18px 20px; background: var(--surface); border-radius: var(--r-lg); box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 6px 20px -8px rgba(16, 24, 40, .14); }
+.sc-dlazdice-popis { font-size: .8125rem; color: var(--text-mute); font-weight: 550; }
+.sc-dlazdice-bunka strong { font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem); font-weight: 650; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.sc-pilulka { justify-self: start; padding: 2px 10px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-mute); font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sc-pilulka.je-plus { background: color-mix(in oklab, var(--ok, #16a34a) 16%, transparent); color: var(--ok, #15803d); }
+.sc-pilulka.je-minus { background: color-mix(in oklab, var(--bad, #dc2626) 14%, transparent); color: var(--bad, #b91c1c); }
+@container stranka (max-width: 640px) { .sc-dlazdice { grid-template-columns: minmax(0, 1fr); } }

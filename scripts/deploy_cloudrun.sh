@@ -62,9 +62,20 @@ for tajne in ("env.yaml", ".env", "secrets.env", "data/secret.key"):
 PY
 
 echo "== 3/3 Cloud Run"
+# Proměnné jdou přes dočasný YAML, ne přes příkazovou řádku: klíče ke Gemini
+# jsou oddělené čárkou a `gcloud.cmd` na Windows bere `|` i `^` jako příkazy
+# shellu. Základ je env.yaml (mimo git) bez DATABASE_URL — databáze je v obrazu.
+ENVSL="$(mktemp --suffix=.yaml)"; trap 'rm -rf "$ST" "$ENVSL"' EXIT
+{
+  grep -v -E '^(DATABASE_URL|GEMINI_API_KEY|GEMINI_API_KEYS|KAM_WORKERS|KAM_OBNOVA_V_SERVERU):' "$KOREN/env.yaml" | tr -d '\r' || true
+  echo "KAM_WORKERS: \"4\""
+  echo "KAM_OBNOVA_V_SERVERU: \"0\""
+  echo "GEMINI_API_KEY: \"$GEMINI_PRVNI\""
+  echo "GEMINI_API_KEYS: \"$GEMINI_VSECHNY\""
+} > "$ENVSL"
 "$GCLOUD" run deploy kam --source "$ST" --region europe-west1 --allow-unauthenticated \
   --min-instances 1 --max-instances 1 --cpu 4 --memory 8Gi --concurrency 250 --timeout 300 --cpu-boost \
-  --update-env-vars "^|^KAM_WORKERS=4|KAM_OBNOVA_V_SERVERU=0|GEMINI_API_KEY=$GEMINI_PRVNI|GEMINI_API_KEYS=$GEMINI_VSECHNY"   --remove-env-vars DATABASE_URL --quiet
+  --env-vars-file "$ENVSL" --quiet
 
 echo "== Ověření"
 curl -s -m 30 https://hack-a-ton-hushkys.web.app/api/health; echo

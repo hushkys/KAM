@@ -370,25 +370,20 @@ export function Scenarios() {
                   options={HORIZONTY.map((y) => ({ value: String(y), label: String(y) }))} />
               </div>
 
-              <Card className="sc-kpi-karta" flush>
-                <table className="sc-kpi">
-                  <thead><tr><th>Ukazatel v roce {rok}</th><th className="r">{ivs.length ? "Se zásahem" : "Výhled"}</th>{ivs.length > 0 && <th className="r">Rozdíl</th>}</tr></thead>
-                  <tbody>
-                    {[["population", "Obyvatelé", ""], ["zs_util", "Vytížení ZŠ", " %"], ["tax", "Daňové příjmy obce", ""]].map(([k, l, jed]) => {
-                      const v = vRoce[k];
-                      const hodnota = k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
-                      const d = v?.delta ?? 0;
-                      return (
-                        <tr key={k}>
-                          <th scope="row">{l}</th>
-                          <td className="r num strong">{hodnota}</td>
-                          {ivs.length > 0 && <td className={`r num ${d ? (d > 0 ? "delta-pos" : "delta-neg") : "mute"}`}>{d ? signed(d, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : jed) : "beze změny"}</td>}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </Card>
+              <div className="sc-dlazdice" role="group" aria-label={`Ukazatele v roce ${rok}`}>
+                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy"]].map(([k, l]) => {
+                  const v = vRoce[k];
+                  const hodnota = k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
+                  const d = v?.delta ?? 0;
+                  return (
+                    <div className="sc-dlazdice-bunka" key={k}>
+                      <span className="sc-dlazdice-popis">{l} · {rok}</span>
+                      <strong className="num">{hodnota}</strong>
+                      {ivs.length > 0 && <span className={`sc-pilulka ${d ? (d > 0 ? "je-plus" : "je-minus") : ""}`}>{d ? signed(d, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "") : "beze změny"}</span>}
+                    </div>
+                  );
+                })}
+              </div>
 
               {res.warnings.scenario.length > 0 && (
                 <div className="stack-y" style={{ gap: 8 }}>
