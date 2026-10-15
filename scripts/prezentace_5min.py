@@ -1,4 +1,4 @@
-"""Pětiminutová prezentace KAM do pozadí ukázky (5 snímků, přechod Morph).
+"""Pětiminutová prezentace KAM do pozadí ukázky (5 snímků, prolnutí mezi snímky).
 
     python scripts/prezentace_5min.py
 
@@ -73,7 +73,7 @@ def stavej() -> Path:
             text(s, *t)
         if n.get("krit"):
             text(s, "!!krit", Inches(0.8), Inches(6.95), Inches(11.5), Inches(0.35), [("Kritérium: ", SEDA), (n["krit"], n["krit_barva"])], 13, TEXT_TUCNY)
-        morph(s, prvni)
+        morph(s, prvni=True)  # bez Morphu: obyčejné prolnutí mezi snímky
         return s
 
     def cislo(jmeno, x, y, w, hodnota, popis, barva=BILA, vel=40):
