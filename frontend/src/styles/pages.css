@@ -1683,3 +1683,14 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 /* Volby průvodce se zalamují jako flex: poslední řádek se roztáhne, nezbude poloprázdný. */
 .pr-volby { display: flex; flex-wrap: wrap; }
 .pr-volby > .pr-volba { flex: 1 1 260px; }
+
+/* Scénáře: co opatření v území řeší */
+.sc-resi { display: grid; gap: 6px; grid-column: 1 / -1; }
+.sc-resi-nadpis { font-size: .75rem; font-weight: 650; color: var(--text-mute); }
+.sc-resi ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-resi li { padding: 4px 10px; font-size: .8125rem; font-weight: 600; background: var(--m-soft); border: 1px solid var(--m-line); color: var(--text); cursor: help; }
+.sc-resi li.lvl-kriticke, .sc-resi li.lvl-vysoke { background: color-mix(in oklab, var(--bad) 12%, transparent); border-color: color-mix(in oklab, var(--bad) 40%, transparent); }
+.sc-resi li.lvl-stredni { background: color-mix(in oklab, var(--warn) 12%, transparent); border-color: color-mix(in oklab, var(--warn) 40%, transparent); }
+.sc-resi.is-obecne { font-size: .8125rem; color: var(--text-dim); }
+.sc-kde.is-dost .sc-kde-nadpis { color: var(--text-dim); }
+.sc-kde.is-dost { border-left-color: var(--border-strong); }

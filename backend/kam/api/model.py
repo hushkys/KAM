@@ -71,7 +71,7 @@ def sim_catalog() -> dict:
     # v prohlížeči — pilíře jsou jeden číselník a ten žije v indicators.py.
     ivs = {k: {**v, "pillar_label": PILLARS.get(v["pillar"], "Ostatní")} for k, v in simulate.INTERVENTIONS.items()}
     return {"interventions": ivs, "assumptions": simulate.ASSUMPTIONS,
-            "help": simulate.INTERVENTION_HELP, "sady": simulate.SADY}
+            "help": simulate.INTERVENTION_HELP, "sady": simulate.SADY, "resi": simulate.RESI_OBECNE}
 
 
 @router.get("/simulate/navrh/{tid}")

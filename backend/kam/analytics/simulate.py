@@ -67,6 +67,65 @@ for _k, _z in ZARIZENI.items():
         "pocet": {"label": f"Počet ({_z['jednotka']})", "min": 1, "max": _z["max"], "step": _z["step"], "default": _z["default"]},
         "rok": {"label": "Rok otevření", "min": 2026, "max": 2038, "step": 1, "default": 2028}}}
 
+# Rozsah posuvníku podle velikosti území: horní mez = obyvatelé × podíl,
+# ale aspoň `nejmene` a nejvýš `max` z parametru. 5 000 bytů pro vesnici se
+# dvěma sty lidmi je číslo, které nikdo nezadá, a posuvník je pak nepoužitelný
+# — každý pixel znamená desítky bytů.
+ROZSAH: dict[str, tuple[float, float]] = {
+    "byty": (0.12, 20), "zs_mista": (0.10, 30), "ms_mista": (0.05, 16), "pracovni_mista": (0.30, 50),
+    "domov_seniori": (0.03, 10), "ordinace": (1 / 1000, 2), "stomatolog": (1 / 1500, 2),
+    "lekarna": (1 / 2000, 2), "pediatr": (1 / 1500, 2), "specialista": (1 / 1000, 2), "gynekolog": (1 / 2000, 2),
+    "stacionar": (0.01, 10), "dzr": (0.01, 10), "pecovatelske": (0.02, 10), "soc_sluzba": (1 / 2000, 2),
+    "knihovna": (1 / 5000, 1), "kulturni_dum": (1 / 10000, 1), "hasici": (1 / 10000, 1), "komunikace": (1 / 100, 5),
+}
+for _k, (_podil, _nejmene) in ROZSAH.items():
+    INTERVENTIONS[_k]["params"]["pocet"]["na_obyv"] = _podil
+    INTERVENTIONS[_k]["params"]["pocet"]["nejmene"] = _nejmene
+
+# Co které opatření obecně řeší. Ukazuje se u opatření, když v území model
+# žádný konkrétní problém, který by řešilo, nenašel.
+RESI_OBECNE: dict[str, str] = {
+    "byty": "úbytek a odliv obyvatel, nedostatek bydlení pro mladé rodiny",
+    "zs_mista": "plné třídy základních škol", "ms_mista": "nedostatek míst ve školkách",
+    "spoj": "špatné spojení do města za prací, k lékaři a do škol",
+    "pracovni_mista": "nezaměstnanost a odchod mladých za prací",
+    "domov_seniori": "nedostatek míst v domovech pro seniory",
+    "ordinace": "špatnou dostupnost praktického lékaře", "stomatolog": "špatnou dostupnost zubaře",
+    "lekarna": "daleko do lékárny", "pediatr": "špatnou dostupnost dětského lékaře", "specialista": "dlouhé čekání na specialistu",
+    "gynekolog": "špatnou dostupnost gynekologa", "stacionar": "chybějící denní péči o seniory",
+    "dzr": "chybějící péči o lidi s demencí", "pecovatelske": "bydlení pro seniory, kteří potřebují pomoc",
+    "soc_sluzba": "chybějící terénní sociální péči", "knihovna": "chybějící knihovnu a místo pro komunitu",
+    "kulturni_dum": "chybějící prostor pro kulturu a spolky", "hasici": "dlouhý dojezd hasičů",
+    "komunikace": "chybějící nebo nevyhovující místní cesty",
+}
+# Rizika z `risks.assess` → opatření, která je řeší (navíc k tomu, co riziko
+# samo uvádí v `interventions`).
+RIZIKO_RESI: dict[str, tuple[str, ...]] = {
+    "starnuti": ("stacionar", "dzr", "pecovatelske", "soc_sluzba", "domov_seniori"),
+    "pece_seniori": ("domov_seniori", "dzr", "pecovatelske", "stacionar"),
+    "lekari": ("ordinace", "pediatr", "specialista", "lekarna"),
+    "ubytek": ("byty", "pracovni_mista"), "odliv": ("byty", "pracovni_mista", "spoj"),
+    "nezamestnanost": ("pracovni_mista",), "skoly": ("zs_mista",),
+}
+
+
+def resi(tid: str, typy: list[str], varovani: list[dict]) -> dict[str, list[dict]]:
+    """Které problémy TOHOTO území dané opatření řeší: rizika i varování výhledu."""
+    from . import risks
+    out: dict[str, list[dict]] = {t: [] for t in typy}
+    for r in risks.assess(tid):
+        # vykyv je poznámka, kanalizace u bytů omezení výstavby, ne problém, který byty řeší
+        if r["type"].startswith("vykyv") or r["type"] == "kanalizace":
+            continue
+        for t in typy:
+            if t in r.get("interventions", []) or t in RIZIKO_RESI.get(r["type"], ()):
+                out[t].append({"title": r["title"], "level": r["level"], "text": r["text"]})
+    for w in varovani:
+        if w.get("suggest") in out and not any(x["title"] == w["title"] for x in out[w["suggest"]]):
+            out[w["suggest"]].append({"title": w["title"], "level": w["level"], "text": w["text"]})
+    return out
+
+
 # Krátký popis ke každému zásahu. Nadpis řekne co, tohle řekne, co zásah
 # v modelu opravdu dělá — a tím i co od výsledku čekat a co ne.
 INTERVENTION_HELP: dict[str, str] = {
@@ -392,6 +451,7 @@ def compute(payload: dict) -> dict:
                    "ds_places": ds0, "tax_per_capita": round(tax_pc), "stops": stops0, "zub": zub0},
         "method": "Bez zásahu = nejpravděpodobnější výhled. Zásahy se k němu přičítají od roku, kdy začnou. Je to modelový odhad, ne předpověď.",
         "kind": "SCÉNÁŘ",
+        "resi": resi(tid, [iv["type"] for iv in payload["interventions"]], wb),
     }
 
 

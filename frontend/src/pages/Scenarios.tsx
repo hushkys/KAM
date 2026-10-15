@@ -22,7 +22,7 @@ import { date, kc, num, signed } from "../lib/format";
 import { setQuery, useLocation, useNahled } from "../lib/router";
 import { toast } from "../lib/toast";
 
-interface Param { label: string; min?: number; max?: number; step?: number; default: number | string; options?: Record<string, string> }
+interface Param { label: string; min?: number; max?: number; step?: number; default: number | string; options?: Record<string, string>; na_obyv?: number; nejmene?: number }
 interface Spec { label: string; pillar: string; pillar_label: string; params: Record<string, Param> }
 interface Sada { key: string; label: string; pillar: string; otazka: string; ivs: Iv[] }
 interface Catalog {
@@ -30,7 +30,9 @@ interface Catalog {
   assumptions: Record<string, { label: string; value: number; unit: string; why: string }>;
   help: Record<string, string>;
   sady: Sada[];
+  resi: Record<string, string>;
 }
+interface Problem { title: string; level: string; text: string }
 interface Iv { type: string; params: Record<string, number | string> }
 interface Row { year: number; population: number; zs_util: number | null; ms_util: number | null; zs_demand: number; zs_capacity: number; ms_demand: number; ms_capacity: number }
 interface Warning { key: string; level: string; year: number; title: string; text: string; suggest: string; suggest_params?: Record<string, number> | null; suggest_text?: string }
@@ -40,6 +42,7 @@ interface Result {
   warnings: { baseline: Warning[]; scenario: Warning[] }; metrics: { key: string; label: string; unit: string; values: { year: number; base: number | null; scenario: number | null; delta: number | null }[] }[];
   chain: { label: string; tag: string; detail?: string }[]; costs: { capex: number; opex_year: number; tax_delta_year: number };
   assumptions: { key: string; label: string; value: number; unit: string; why: string }[]; inputs: Record<string, number>; method: string; cache: { hit: boolean; ms: number; hits: number };
+  resi?: Record<string, Problem[]>;
 }
 interface Saved { id: string; name: string; territory: string; territory_name: string; interventions: Iv[]; created_at: string; summary: { warnings: number } }
 interface Misto { id: string; name: string; poradi: number; hodnota: number; mezera: number; prinos: number; vaha: number; pasmo: string; median_pasma?: number }
@@ -55,6 +58,17 @@ function encode(ivs: Iv[]): string { return btoa(unescape(encodeURIComponent(JSO
 function decode(s: string | null): Iv[] {
   if (!s) return [];
   try { const v = JSON.parse(decodeURIComponent(escape(atob(s)))); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+
+/** Horní mez posuvníku podle velikosti území (`simulate.ROZSAH`): obyvatelé ×
+ *  podíl, aspoň `nejmene`, nejvýš katalogové `max` — a nikdy pod aktuální
+ *  hodnotou, ať se navržené číslo vejde. */
+function horniMez(p: Param, obyvatel: number | null, aktualni: number): number {
+  const max = p.max ?? 100;
+  if (!p.na_obyv || !obyvatel) return max;
+  const step = p.step ?? 1;
+  const mez = Math.max(p.nejmene ?? step, Math.ceil((obyvatel * p.na_obyv) / step) * step);
+  return Math.max(Math.min(max, mez), Math.min(max, aktualni));
 }
 
 function defaults(cat: Catalog, type: string): Iv {
@@ -86,6 +100,22 @@ function useDoporuceni(type: string, tid: string): Doporuceni | null {
   return d;
 }
 
+/** Co opatření v tomto území řeší: rizika a varování, ke kterým patří. Když
+ *  žádné nejsou, řekne obecně, k čemu opatření je — ne „je toho tu dost“,
+ *  protože počet na obyvatele neříká nic o problému, který má opatření řešit. */
+function Resi({ problemy, obecne }: { problemy?: Problem[]; obecne?: string }) {
+  if (problemy && problemy.length > 0) {
+    return (
+      <div className="sc-resi">
+        <span className="sc-resi-nadpis">Řeší tady</span>
+        <ul>{problemy.map((p) => <li key={p.title} className={`lvl-${p.level}`} title={p.text}>{p.title}</li>)}</ul>
+      </div>
+    );
+  }
+  if (!obecne) return null;
+  return <div className="sc-resi is-obecne"><span className="sc-resi-nadpis">K čemu je</span><span>Řeší {obecne}. V tomto území model takový problém nehlásí.</span></div>;
+}
+
 /** Je to tady potřeba? U obce posudek proti obcím stejné velikosti, u ORP,
  *  okresu a kraje obce **uvnitř** území, kde to chybí nejvíc. Jiné obce
  *  mimo vybrané území se nenabízejí: kdo plánuje pro Jaroměř, nechce slyšet,
@@ -101,13 +131,12 @@ function Kde({ type, tid, onPick }: { type: string; tid: string; onPick: (id: st
   if (obec) {
     if (!tady) return null;
     const stav = tady.mezera >= 30 ? "chybi" : tady.mezera >= 10 ? "mirne" : "dost";
-    const nadpis = { chybi: "Tady to chybí", mirne: "Tady je to mírně pod obvyklou úrovní", dost: "Tady je toho dost" }[stav];
+    const nadpis = { chybi: "Dostupnost: výrazně pod obvyklou úrovní", mirne: "Dostupnost: mírně pod obvyklou úrovní", dost: "Dostupnost: obvyklá" }[stav];
     return (
       <div className={`sc-kde is-${stav}`}>
         <div className="sc-kde-hlava"><span className="sc-kde-nadpis">{nadpis}</span>{hint}</div>
         <p className="sc-kde-tady">
           Obec má <strong>{num(tady.hodnota, 2)}{jednotka}</strong>, obvyklá obec stejné velikosti ({tady.pasmo}) {num(tady.median_pasma ?? 0, 2)}{jednotka}.
-          {stav === "dost" && " Opatření tu pomůže méně než jinde."}
         </p>
       </div>
     );
@@ -323,10 +352,14 @@ export function Scenarios() {
                     ) : (
                       <label className="param" key={k}>
                         <span className="param-top"><span>{p.label}</span><b>{k === "rok" ? iv.params[k] : num(Number(iv.params[k]))}</b></span>
-                        <input type="range" min={p.min} max={p.max} step={p.step} value={Number(iv.params[k])} onChange={(e) => update(i, k, Number(e.target.value))}
-                          style={{ "--p": `${((Number(iv.params[k]) - (p.min ?? 0)) / ((p.max ?? 1) - (p.min ?? 0))) * 100}%` } as CSSProperties} aria-label={p.label} />
+                        {(() => {
+                          const hm = k === "pocet" ? horniMez(p, res?.baseline[0]?.population ?? null, Number(iv.params[k])) : (p.max ?? 1);
+                          return <input type="range" min={p.min} max={hm} step={p.step} value={Number(iv.params[k])} onChange={(e) => update(i, k, Number(e.target.value))}
+                            style={{ "--p": `${((Number(iv.params[k]) - (p.min ?? 0)) / (hm - (p.min ?? 0))) * 100}%` } as CSSProperties} aria-label={p.label} />;
+                        })()}
                       </label>
                     ))}
+                    <Resi problemy={res?.resi?.[iv.type]} obecne={cat.data?.resi?.[iv.type]} />
                     <Kde type={iv.type} tid={tid} onPick={setTid} />
                   </div>
                 );
