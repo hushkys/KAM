@@ -1700,3 +1700,71 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .vyd-tabulka.bez-srovnani .vyd-radek { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .9fr); }
 .vyd-tabulka.bez-srovnani .vyd-radek > :nth-child(4) { display: none; }
 .donut-legend .dl-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ------------------------------------------------------------- Statistiky
+   Souhrn v jednom panelu, mozaika zdrojů, tabulka oblastí, mřížka zařízení,
+   provoz ve třech sloupcích. Vzduch dělá mezera mezi skupinami, ne rámečky. */
+.st-souhrn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--gap); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+.st-souhrn-bunka { display: grid; gap: 6px; align-content: start; padding: 24px 26px; border-left: 1px solid var(--border); animation: sc-najezd 420ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.st-souhrn-bunka:first-child { border-left: 0; }
+.st-souhrn-popis { font-size: .8125rem; font-weight: 600; color: var(--text-mute); }
+.st-souhrn-bunka strong { font-size: clamp(1.75rem, 1.3rem + 1.2vw, 2.5rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.05; color: var(--text); }
+.st-souhrn-bunka:first-child strong { color: var(--m); }
+.st-souhrn-sub { font-size: .8125rem; color: var(--text-dim); }
+@container stranka (max-width: 900px) {
+  .st-souhrn { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-souhrn-bunka:nth-child(3) { border-left: 0; }
+  .st-souhrn-bunka:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+
+.st-mozaika { display: flex; flex-wrap: wrap; gap: 4px; min-height: 320px; align-content: stretch; }
+.st-dlazdice { flex-basis: 120px; min-height: 92px; display: grid; align-content: space-between; gap: 4px; padding: 12px 14px; position: relative; overflow: hidden;
+  background: color-mix(in oklab, var(--c) 18%, var(--surface)); border-top: 3px solid var(--c); animation: sc-najezd 420ms var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
+.st-dlazdice strong { font-size: 1.375rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+.st-dlazdice span { font-size: .8125rem; font-weight: 550; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.st-dlazdice em { font-style: normal; font-size: .75rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.st-dlazdice.is-zbytek { background: color-mix(in oklab, var(--text) 5%, var(--surface)); }
+
+.st-formaty { display: grid; gap: 6px; }
+.st-format { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; font-size: .8125rem; isolation: isolate; }
+.st-format::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--m-soft); border-left: 2px solid var(--m); z-index: -1; transform-origin: left; animation: bar-grow var(--t-lg) var(--ease-out) both; }
+.st-format b { font-weight: 650; }
+.st-format span { color: var(--text-dim); }
+
+.st-oblasti { display: grid; }
+.st-oblast { display: grid; grid-template-columns: minmax(0, 1fr) 72px 84px; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+.st-oblast:last-child { border-bottom: 0; }
+.st-oblast-hlava { font-size: .75rem; font-weight: 600; color: var(--text-mute); padding-top: 0; }
+.st-oblast .r { text-align: right; }
+.st-oblast-jmeno { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.st-oblast-jmeno svg { color: var(--m); flex: none; }
+.st-oblast-jmeno > span { display: grid; gap: 5px; min-width: 0; flex: 1; font-weight: 550; }
+.st-oblast-pruh { display: block; height: 4px; background: linear-gradient(90deg, color-mix(in oklab, var(--m) 50%, transparent), var(--m)); transform-origin: left; animation: bar-grow var(--t-lg) var(--ease-out) both; }
+
+.st-zarizeni { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.st-zarizeni > div { display: grid; gap: 3px; align-content: start; padding: 14px 16px; background: var(--surface); animation: sc-najezd 360ms var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 18) * 20ms); }
+.st-zarizeni strong { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; color: var(--m); }
+.st-zarizeni span { font-size: .78rem; color: var(--text-dim); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.st-provoz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+@container stranka (max-width: 900px) { .st-provoz { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+.st-provoz-nadpis { margin: 0 0 12px; font-size: .8125rem; font-weight: 650; color: var(--text-mute); }
+.st-joby, .st-scenare { list-style: none; margin: 0; padding: 0; display: grid; }
+.st-joby li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 0; font-size: .875rem; border-bottom: 1px solid var(--border); }
+.st-joby li i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-mute); }
+.st-joby li.is-done i, .st-joby li.is-ok i { background: var(--ok); }
+.st-joby li.is-running i { background: var(--info); animation: konec-puls 1.6s infinite; }
+.st-joby li.is-error i { background: var(--bad); }
+.st-joby time { font-size: .75rem; color: var(--text-mute); }
+.st-scenare li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.st-scenare li span { font-size: .875rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-scenare li small { grid-row: 2; font-size: .75rem; color: var(--text-mute); }
+.st-scenare li b { grid-row: span 2; align-self: center; color: var(--m); }
+.st-provoz-cisla { display: grid; gap: 14px; align-content: start; }
+.st-provoz-cisla > div { display: grid; gap: 2px; }
+.st-provoz-cisla strong { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
+.st-provoz-cisla span { font-size: .8125rem; color: var(--text-dim); }
+/* Statistiky: mozaika vyplní výšku karty, mřížka zařízení bez šedé prázdné buňky */
+.st-mozaika { min-height: 500px; align-items: stretch; }
+.st-zarizeni { gap: 0; background: none; border: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.st-zarizeni > div { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
