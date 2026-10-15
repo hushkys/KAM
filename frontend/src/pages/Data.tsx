@@ -50,7 +50,7 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
     <Card i={1} title={data ? `${num(data.total)} ${status === "ok" ? "funkčních " : ""}datových sad` : "Datové sady"} icon="database" actions={<a className="btn btn-sm" href="/api/datasets/export.csv"><Icon name="download" size={15} /> Stáhnout seznam (CSV)</a>}>
       <div className="input-icon" style={{ marginBottom: 12 }}><Icon name="search" size={17} /><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Hledat v názvech a popisech (i bez diakritiky)…" aria-label="Hledat datové sady" /></div>
       <div className="filters">
-        {sel("source", src, (sources?.sources ?? []).filter((s) => s.datasets > 0).map((s) => [s.id, s.name]), "Zdroj")}
+        {sel("source", src, (sources?.sources ?? []).filter((s) => s.ma_zaznamy).map((s) => [s.id, s.name]), "Zdroj")}
         {sel("pillar", pillar, PILLARS, "Oblast")}
         {sel("region", region, KRAJE, "Území")}
         {sel("loaded", loaded, [["true", "Načteno do modelu"], ["false", "Jen v katalogu"]], "Využití")}
@@ -122,11 +122,11 @@ function ZdrojeSkupina({ label, rows, i }: { label: string; rows: SourceRow[]; i
                 <td className="strong">{s.name.replace("NKOD — ", "")}</td>
                 <td className="small mute">{{ nkod: "NKOD (SPARQL)", dcat: "DCAT-AP", csw: "CSW (INSPIRE)", api: "REST API", file: "Soubory", portal: "Portál" }[s.kind] ?? s.kind}</td>
                 <td className="r">{s.datasets ? num(s.verified) : "—"}</td>
-                <td className="r mute">{s.datasets ? num(s.datasets) : "—"}</td>
+                <td className="r mute" title={s.pres_nkod ? "Sady tohoto poskytovatele vede Národní katalog otevřených dat (NKOD)." : undefined}>{s.datasets ? num(s.datasets) : "—"}{s.pres_nkod && <small> · přes NKOD</small>}</td>
                 <td className="small mute">{s.harvested_at ? ago(s.harvested_at) : "—"}</td>
                 <td className="r" style={{ whiteSpace: "nowrap" }}>
                   {s.portal_url && <a className="icon-btn sm" href={s.portal_url} target="_blank" rel="noopener noreferrer" aria-label={`Otevřít ${s.name}`}><Icon name="external" size={15} /></a>}
-                  {s.datasets > 0 && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady tohoto zdroje"><Icon name="filter" size={15} /></Link>}
+                  {s.ma_zaznamy && <Link className="icon-btn sm" to={`/data?source=${s.id}`} aria-label="Zobrazit sady tohoto zdroje"><Icon name="filter" size={15} /></Link>}
                 </td>
               </tr>
             ))}

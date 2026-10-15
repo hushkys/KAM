@@ -43,6 +43,6 @@ export interface Overview {
   risks: { territory: { id: string; name: string; population: number }; top: { type: string; title: string; level: string; level_label: string; score: number; text: string }; count: number; score: number }[];
   kraj_risks: Risk[];
 }
-export interface SourceRow { id: string; name: string; group: string; portal_url: string; url: string; kind: string; harvested_at: string | null; datasets: number; verified: number }
+export interface SourceRow { id: string; name: string; group: string; portal_url: string; url: string; kind: string; harvested_at: string | null; datasets: number; verified: number; pres_nkod?: boolean; ma_zaznamy?: boolean }
 export interface Sources { total: number; verified: number; broken: number; no_link: number; pages: number; unchecked: number; core: number; kraje: number; other: number; publishers: number; loaded: number; api_sources: number; sources: SourceRow[]; by_pillar: { key: string; label: string; count: number }[]; by_region: Record<string, number>; by_freshness: Record<string, number>; checked_at: string | null }
 export interface IndicatorMeta { code: string; name: string; unit: string; pillar: string; polarity: number; derived: boolean; formula?: string }

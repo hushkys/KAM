@@ -58,6 +58,43 @@ def health() -> dict:
 _counts_cache: dict = {}
 
 
+# Zdroje, které se čtou přímo (soubory, REST služby), nemají v katalogu vlastní
+# záznamy, protože jejich sady vede NKOD. Prázdné buňky by ale vypadaly, že
+# se z nich nic nebere, takže se doplní tím, co se opravdu čte: počet souborů
+# nebo vrstev a čas poslední sklizně. Portály, které katalog nese přes NKOD,
+# ukážou počet sad téhož poskytovatele v NKOD; je to označené (`pres_nkod`).
+def _doplnit_zdroje(sources: list[dict]) -> None:
+    from ..config import settings
+    from ..ingest.link import KHK_TITLES
+    by_id = {x["id"]: x for x in sources}
+    with SessionLocal() as s:
+        joby = {j.name: j.updated_at for j in s.scalars(select(JobState))}
+        vlastni = dict(s.execute(select(Source.id, Source.dataset_count)).all())
+        ico = dict(s.execute(select(Source.id, Source.ico)).all())
+
+    def nastav(sid: str, pocet: int, kdy) -> None:
+        x = by_id.get(sid)
+        if x is None or x["datasets"]:
+            return
+        x["datasets"], x["verified"] = pocet, pocet
+        x["harvested_at"] = x["harvested_at"] or (kdy.isoformat() if kdy else None)
+
+    nastav("csu-mos", max(0, settings.mos_last_year - settings.mos_first_year + 1), joby.get("mos"))
+    nastav("cuzk-ruian", 4, joby.get("geo"))  # hranice kraje, okresů, ORP a obcí
+    nastav("khk-arcgis", len(KHK_TITLES), joby.get("khk"))
+    for x in sources:
+        if not x["datasets"] and vlastni.get(x["id"]):
+            # Portál, jehož záznamy se při sloučení s NKOD přeskočily jako duplicity.
+            x["datasets"], x["pres_nkod"] = vlastni[x["id"]], True
+    for sid, x in by_id.items():
+        if x["datasets"] or x["kind"] not in ("portal", "api", "file"):
+            continue
+        n = by_id.get(f"nkod-{ico.get(sid, '')}")
+        if n and n["datasets"]:
+            x["datasets"], x["verified"], x["pres_nkod"] = n["datasets"], n["verified"], True
+            x["harvested_at"] = x["harvested_at"] or n["harvested_at"]
+
+
 def dataset_counts() -> dict:
     """Catalogue counts. `verified` (link checked and reachable) is the headline
     everywhere; `total` includes records whose link failed or is missing."""
@@ -80,11 +117,15 @@ def dataset_counts() -> dict:
         checked_at = s.scalar(select(func.max(Dataset.checked_at)))
     sources = [{"id": i, "name": n, "group": g, "portal_url": p, "url": u, "kind": k, "harvested_at": h.isoformat() if h else None, "datasets": c, "verified": int(v or 0)}
                for i, n, g, p, u, k, h, c, v in by_source]
+    poskytovatelu = sum(1 for x in sources if x["datasets"])  # jen ti, kdo mají vlastní záznamy v katalogu
+    for x in sources:
+        x["ma_zaznamy"] = x["datasets"] > 0  # filtr „zobrazit sady zdroje" má smysl jen pro ně
+    _doplnit_zdroje(sources)
     sources.sort(key=lambda x: ({"core": 0, "kraje": 1}.get(x["group"], 2), -x["datasets"]))
     verified = by_status.get("ok", 0)
     data = {"total": total, "verified": verified, "broken": by_status.get("chyba", 0), "no_link": by_status.get("bez_odkazu", 0), "pages": by_status.get("stranka", 0),
             "unchecked": by_status.get("neovereno", 0), "core": grouped.get("core", 0), "kraje": grouped.get("kraje", 0), "other": grouped.get("ostatni", 0),
-            "loaded": loaded, "api_sources": api_sources, "sources": sources, "publishers": sum(1 for x in sources if x["datasets"]),
+            "loaded": loaded, "api_sources": api_sources, "sources": sources, "publishers": poskytovatelu,
             "by_pillar": [{"key": k, "label": PILLARS.get(k, "Ostatní"), "count": v} for k, v in sorted(by_pillar.items(), key=lambda kv: -kv[1])],
             "by_region": {str(k): v for k, v in by_region.items()}, "by_freshness": by_fresh,
             "checked_at": checked_at.isoformat() if checked_at else None}

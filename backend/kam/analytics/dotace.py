@@ -97,11 +97,52 @@ def _rada(tid: str) -> list[dict]:
             for y, v in sorted(cerp.items())]
 
 
+def _kraj_celkem(t) -> dict | None:
+    """Kraj jako celek: součet dotací, které poslal do svých ORP, a pořadí ORP.
+
+    Kraj nemá nad sebou sourozence, takže „pořadí kraje" nedává smysl; místo
+    něj se ukazuje, které ORP dostalo na obyvatele nejvíc."""
+    orp = store.members("orp", t.kraj_code)
+    soucty = {k: 0.0 for k in KRAJ_KODY}
+    videno = {k: False for k in KRAJ_KODY}
+    radek = []
+    obyv_celkem = 0.0
+    for s in orp:
+        h = {k: (store.latest(s.id, k) or (None, None))[1] for k in KRAJ_KODY}
+        for k, v in h.items():
+            if v is not None:
+                soucty[k] += v
+                videno[k] = True
+        o = (store.latest(s.id, OBYV) or (None, None))[1]
+        if o:
+            obyv_celkem += o
+            radek.append((s.id, s.name, ((h["dot_prog_castka"] or 0) + (h["dot_indiv_castka"] or 0)) / o))
+    if not (videno["dot_prog_castka"] or videno["dot_indiv_castka"]):
+        return None
+    celkem = soucty["dot_prog_castka"] + soucty["dot_indiv_castka"]
+    radek.sort(key=lambda r: -r[2])
+    return {
+        "uzemi": {"id": t.id, "name": t.name, "level": "kraj"},
+        "programove": soucty["dot_prog_castka"] if videno["dot_prog_castka"] else None,
+        "programove_pocet": soucty["dot_prog_pocet"] if videno["dot_prog_pocet"] else None,
+        "individualni": soucty["dot_indiv_castka"] if videno["dot_indiv_castka"] else None,
+        "individualni_pocet": soucty["dot_indiv_pocet"] if videno["dot_indiv_pocet"] else None,
+        "celkem": celkem, "obdobi": OBDOBI_KRAJE,
+        "na_obyvatele": round(celkem / obyv_celkem) if obyv_celkem else None,
+        "poradi": None, "z_celkem": len(radek),
+        "median_na_obyvatele": round(sorted(r[2] for r in radek)[len(radek) // 2]) if radek else None,
+        "zebricek": [{"id": r[0], "name": r[1], "na_obyvatele": round(r[2])} for r in radek],
+        "vyssi_celek": "ORP",
+    }
+
+
 def _kraj_dotace(tid: str) -> dict | None:
     """Krajské dotace pro ORP nebo okres, do kterého území patří."""
     t = store.territory(tid)
     if t is None:
         return None
+    if t.level == "kraj":
+        return _kraj_celkem(t)
     cil = tid if t.level in ("orp", "okres") else (t.orp_id or t.okres_id)
     if not cil:
         return None

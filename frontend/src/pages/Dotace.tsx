@@ -10,7 +10,7 @@ import { BarList, ChartSwitch, LineChart } from "../components/charts";
 import { DotaceHook } from "../components/DotaceHook";
 import { Icon } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Card, ErrorBox, KindTag, Stat } from "../components/ui";
+import { Card, ErrorBox, InfoHint, KindTag, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
 import { Link, setQuery, useLocation } from "../lib/router";
@@ -23,6 +23,7 @@ interface Kraj {
   celkem: number; obdobi: string; na_obyvatele: number | null; poradi: number | null; z_celkem: number;
   median_na_obyvatele: number | null;
   zebricek: { id: string; name: string; na_obyvatele: number }[];
+  vyssi_celek?: string;
 }
 interface Zdroj { nazev: string; kdo: string; url: string; pozn: string; oblasti: string[]; kvuli: string[] }
 interface Data {
@@ -87,8 +88,9 @@ export function Dotace() {
                 value={kc(data.cerpani_celkem)} sub="FAKT · z rozpočtu území" />
               <Stat i={1} label={`Dotace na obyvatele ${posledni?.year ?? ""}`} value={posledni?.na_obyvatele !== null && posledni ? `${num(posledni.na_obyvatele)} Kč` : "—"} />
               <Stat i={2} label={k ? `Dotace od kraje · ${k.uzemi.name}` : "Dotace od kraje"} value={k ? kc(k.celkem) : "—"} sub={k?.obdobi ?? ""} />
-              <Stat i={3} label="Pořadí v kraji (na obyvatele)" value={k?.poradi ? `${k.poradi}. z ${k.z_celkem}` : "—"}
-                sub={k?.median_na_obyvatele ? `medián ${num(k.median_na_obyvatele)} Kč/obyv.` : ""}
+              <Stat i={3} label={k?.vyssi_celek ? "Nejvíc na obyvatele" : "Pořadí v kraji (na obyvatele)"}
+                value={k?.vyssi_celek ? (k.zebricek?.[0]?.name ?? "—") : k?.poradi ? `${k.poradi}. z ${k.z_celkem}` : "—"}
+                sub={k?.vyssi_celek ? (k.zebricek?.[0] ? `${num(k.zebricek[0].na_obyvatele)} Kč/obyv. · medián ORP ${num(k.median_na_obyvatele ?? 0)} Kč` : "") : k?.median_na_obyvatele ? `medián ${num(k.median_na_obyvatele)} Kč/obyv.` : ""}
                 tone={k?.poradi && k.poradi > k.z_celkem / 2 ? "warn" : undefined} />
             </div>
 
@@ -124,6 +126,13 @@ export function Dotace() {
                 }] : []),
               ]} />
             </Card>
+
+            {k?.vyssi_celek && k.zebricek && k.zebricek.length > 0 && (
+              <Card i={2} title="Dotace od kraje podle ORP (na obyvatele)" icon="chart"
+                actions={<InfoHint label="Jak číst pořadí">Součet dotací, které kraj poslal do jednotlivých ORP v letech {k.obdobi}, dělený počtem obyvatel ORP. Na obyvatele proto, že v absolutních číslech vyhraje vždy největší ORP.</InfoHint>}>
+                <BarList items={k.zebricek.map((z) => ({ key: z.id, label: z.name, value: z.na_obyvatele }))} format={(v) => `${num(v)} Kč`} />
+              </Card>
+            )}
 
             {k && (
               <Card i={2} title={`Dotace od kraje podle druhu · ${k.uzemi.name}`} icon="coins">
