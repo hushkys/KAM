@@ -157,3 +157,34 @@ def test_assistant_falls_back_to_grounded_report_without_model():
     text = "".join(d["text"] for e, d in ev if e == "token")
     assert "Horní Testov" in text and "model teď není dostupný" in text
     assert next(d for e, d in ev if e == "done")["fallback"] is True
+
+
+def test_gemini_klice_se_parsuji_a_prepinaji(monkeypatch):
+    """Klíčů je víc; ten, kterému došly limity, se odloží a jede se dál."""
+    import time
+
+    from kam import config
+    from kam.ai import providers
+
+    monkeypatch.setenv("GEMINI_API_KEY", "AIza-prvni")
+    monkeypatch.setenv("GEMINI_API_KEYS", "AQ.druhy, AIza-prvni ;AQ.treti\n")
+    assert config._klice_gemini() == ["AIza-prvni", "AQ.druhy", "AQ.treti"]
+
+    import dataclasses
+
+    monkeypatch.setattr(providers, "settings", dataclasses.replace(providers.settings, gemini_api_keys=["A", "B", "C"]))
+    p = providers.Provider(1, "G", "gemini", "", "m", "A", "cloud", 0.2, 700)
+    assert p._klice() == ["A", "B", "C"]
+    monkeypatch.setitem(providers.KLIC_DO, "A", time.time() + 60)
+    assert p._klice() == ["B", "C", "A"]   # vyčerpaný jde na konec
+    assert providers.Provider._vertex("AQ.x") and not providers.Provider._vertex("AIzaX")
+    providers.KLIC_DO.clear()
+
+
+def test_odpoved_na_stejnou_otazku_se_drzi_v_pameti():
+    from kam.ai import assistant
+
+    a = assistant._klic_odpovedi("  Kolik   obyvatel má Jaroměř? ", ["obec:574121"], "stredni", "cloud")
+    b = assistant._klic_odpovedi("kolik obyvatel má jaroměř?", ["obec:574121"], "stredni", "cloud")
+    assert a == b
+    assert a != assistant._klic_odpovedi("kolik obyvatel má jaroměř?", ["obec:573868"], "stredni", "cloud")

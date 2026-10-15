@@ -40,6 +40,16 @@ def _int(name: str, default: int) -> int:
         return default
 
 
+def _klice_gemini() -> list[str]:
+    surove = os.environ.get("GEMINI_API_KEY", "") + "," + os.environ.get("GEMINI_API_KEYS", "")
+    out: list[str] = []
+    for k in surove.replace("\n", ",").replace(";", ",").split(","):
+        k = k.strip().strip("\"'")
+        if k and k not in out:
+            out.append(k)
+    return out
+
+
 @dataclass(frozen=True)
 class Settings:
     data_dir: Path = field(default_factory=lambda: Path(os.environ.get("KAM_DATA_DIR", ROOT / "data")))
@@ -53,7 +63,10 @@ class Settings:
     embed_model: str = os.environ.get("LOCAL_EMBED_MODEL", "text-embedding-nomic-embed-text-v1.5")
 
     # Cloud model. Empty key = cloud tier disabled, the router stays local.
-    gemini_api_key: str = os.environ.get("GEMINI_API_KEY", "")
+    # Klíčů může být víc (GEMINI_API_KEYS, oddělené čárkou): když jednomu dojdou
+    # limity, `ai/providers.py` přepne na další. GEMINI_API_KEY je první z nich.
+    gemini_api_keys: list[str] = field(default_factory=lambda: _klice_gemini())
+    gemini_api_key: str = field(default_factory=lambda: (_klice_gemini() or [""])[0])
     gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
     mos_first_year: int = _int("KAM_MOS_FIRST_YEAR", 2005)

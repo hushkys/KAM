@@ -32,7 +32,21 @@ from .prompts import system_prompt
 AKCE = "AKCE:"
 
 
-def _history(session_id: str, limit: int = 6) -> list[dict]:
+# Mezipaměť odpovědí. Při soutěži se stejné otázky ptá spousta lidí a každý
+# dotaz stojí dotaz u Gemini, jehož limity jsou malé; odpověď na stejnou
+# otázku nad stejnými daty se proto na chvíli drží. Jen u samostatné otázky
+# (bez předchozí konverzace) a jen u odpovědi od modelu — záložní podklad
+# a odpovědi, které něco ovládají, se neukládají.
+_ODPOVEDI: dict[tuple, tuple[float, str, dict]] = {}
+_ODPOVEDI_TTL = 20 * 60
+_ODPOVEDI_MAX = 300
+
+
+def _klic_odpovedi(zprava: str, terr_ids: list[str], delka: str, tier: str) -> tuple:
+    return (" ".join(zprava.lower().split()), tuple(terr_ids), delka, tier)
+
+
+def _history(session_id: str, limit: int = 4) -> list[dict]:
     with session_scope() as s:
         rows = s.scalars(select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.id.desc()).limit(limit)).all()
         return [{"role": r.role, "content": r.content[:1500]} for r in reversed(rows)]
@@ -190,6 +204,19 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
                    "model": provider.name if provider else None, "territory": {"id": terr.id, "name": terr.name} if terr else None,
                    "sources": numbered, "simulation": sim_link}
 
+    klic_odpovedi = None
+    if not history and not actions and route.intent != "ACTION" and not sim_link:
+        klic_odpovedi = _klic_odpovedi(remaining, [t.id for t in ([terr] if terr else [])], cfg["answer_length"], route.tier)
+        zasah = _ODPOVEDI.get(klic_odpovedi)
+        if zasah and time.time() - zasah[0] < _ODPOVEDI_TTL:
+            _, text_z, meta_z = zasah
+            for kus in range(0, len(text_z), 160):
+                yield "token", {"text": text_z[kus:kus + 160]}
+            if cfg["history"]:
+                _save(session_id, message, text_z, {**meta_z, "cache": True})
+            yield "done", {"ms": round((time.perf_counter() - t0) * 1000), "tier": meta_z["tier"], "fallback": False, "model": meta_z["model"], "cache": True}
+            return
+
     answer = ""
     fallback = False
     used = None  # the provider that actually answered, which need not be the routed one
@@ -246,6 +273,11 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
         answer = safe
     tier = used.tier if used else ("none" if fallback else route.tier)
     meta = {"route": route.intent, "tier": tier, "model": used.name if used else None, "fallback": fallback, "sources": numbered}
+    if klic_odpovedi and used and not fallback and answer.strip():
+        if len(_ODPOVEDI) >= _ODPOVEDI_MAX:
+            for stary in sorted(_ODPOVEDI, key=lambda k: _ODPOVEDI[k][0])[: _ODPOVEDI_MAX // 4]:
+                _ODPOVEDI.pop(stary, None)
+        _ODPOVEDI[klic_odpovedi] = (time.time(), answer, meta)
     if cfg["history"]:
         _save(session_id, message, answer, meta)
     # The `meta` event named the model we were about to try; this one names the

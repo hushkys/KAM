@@ -26,6 +26,15 @@ GCLOUD="${GCLOUD:-gcloud}"
 PY="${PYTHON:-/c/Users/hushkys/AppData/Local/Programs/Python/Python312/python.exe}"
 ST="$(mktemp -d)"; trap 'rm -rf "$ST"' EXIT
 
+# Klíče ke Gemini se berou z .env (mimo git) a jdou jen do proměnných služby.
+GEMINI_VSECHNY="$("$PY" -c "
+import pathlib, re, sys
+t = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+m = re.search(r'(?m)^GEMINI_API_KEYS\s*=\s*(.+)$', t)
+print(m.group(1).strip() if m else '')" "$KOREN/.env")"
+GEMINI_PRVNI="${GEMINI_VSECHNY%%,*}"
+[ -n "$GEMINI_VSECHNY" ] || echo "   (v .env nejsou GEMINI_API_KEYS — asistent poběží v záložním režimu)"
+
 echo "== 1/3 Stavební složka"
 ( cd "$KOREN" && git ls-files -z --cached --others --exclude-standard | tar --null -T - -cf - ) | tar -xf - -C "$ST"
 
@@ -55,7 +64,7 @@ PY
 echo "== 3/3 Cloud Run"
 "$GCLOUD" run deploy kam --source "$ST" --region europe-west1 --allow-unauthenticated \
   --min-instances 1 --max-instances 1 --cpu 4 --memory 8Gi --concurrency 250 --timeout 300 --cpu-boost \
-  --update-env-vars KAM_WORKERS=4,KAM_OBNOVA_V_SERVERU=0 --remove-env-vars DATABASE_URL --quiet
+  --update-env-vars "^|^KAM_WORKERS=4|KAM_OBNOVA_V_SERVERU=0|GEMINI_API_KEY=$GEMINI_PRVNI|GEMINI_API_KEYS=$GEMINI_VSECHNY"   --remove-env-vars DATABASE_URL --quiet
 
 echo "== Ověření"
 curl -s -m 30 https://hack-a-ton-hushkys.web.app/api/health; echo

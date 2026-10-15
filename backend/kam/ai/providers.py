@@ -112,12 +112,32 @@ class Provider:
             # Out of budget while still thinking: say so, so the caller falls back.
             raise RuntimeError(f"{self.name}: model vyčerpal limit tokenů přemýšlením")
 
+    # Strop výstupu u cloudu: odpověď má mít kolem 150 slov, ale model
+    # s 1 400 tokeny se rád rozepíše, a limity bezplatných klíčů se počítají
+    # na tokeny i na dotazy.
+    GEMINI_MAX_VYSTUP = 700
+
+    def _klice(self) -> list[str]:
+        """Klíče podle toho, který se dá použít: ty, které právě nevyčerpaly
+        limit, napřed. Pořadí v nastavení se jinak drží."""
+        vse: list[str] = []
+        for k in [*settings.gemini_api_keys, self.api_key]:
+            if k and k not in vse:
+                vse.append(k)
+        ted = time.time()
+        return sorted(vse, key=lambda k: KLIC_DO.get(k, 0) > ted)
+
+    @staticmethod
+    def _vertex(klic: str) -> bool:
+        # Klíče „AQ.…“ jsou klíče Vertex AI (Google Cloud); „AIza…“ jsou z AI Studia.
+        return klic.startswith("AQ.")
+
     def _gemini(self, messages, temperature, max_tokens, timeout) -> Iterator[str]:
         system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
         contents = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
                     for m in messages if m["role"] != "system"]
         body: dict = {"contents": contents, "generationConfig": {
-            "temperature": self.temperature if temperature is None else temperature, "maxOutputTokens": max_tokens or self.max_tokens,
+            "temperature": self.temperature if temperature is None else temperature, "maxOutputTokens": min(max_tokens or self.max_tokens, self.GEMINI_MAX_VYSTUP),
             # The same reason the local servers get reasoning_effort "none":
             # Gemini 3.x flash spends the whole output budget thinking and the
             # answer arrives truncated mid-sentence. Measured on
@@ -128,8 +148,16 @@ class Provider:
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
         base = self.base_url.rstrip("/") or "https://generativelanguage.googleapis.com/v1beta"
-        url = f"{base}/models/{self.model}:streamGenerateContent"
-        yield from self._gemini_stream(url, body, timeout, retry=True)
+        posledni: Exception | None = None
+        for klic in self._klice():
+            url = (f"https://aiplatform.googleapis.com/v1/publishers/google/models/{self.model}:streamGenerateContent"
+                   if self._vertex(klic) else f"{base}/models/{self.model}:streamGenerateContent")
+            try:
+                yield from self._gemini_stream(url, body, timeout, retry=True, klic=klic)
+                return
+            except KlicVycerpan as e:
+                posledni = e   # tenhle klíč je na chvíli mimo, zkusí se další
+        raise RuntimeError(str(posledni) if posledni else f"{self.name}: žádný klíč k dispozici")
 
     # A shared model is busy sometimes: Gemini answers 503 "high demand" (or 429)
     # and the same request succeeds moments later. Two short waits are worth it
@@ -137,18 +165,26 @@ class Provider:
     # and the caller's own fallback still covers a real outage.
     BUSY_BACKOFF = (1.2, 3.0)
 
-    def _gemini_stream(self, url: str, body: dict, timeout: float, retry: bool, busy: int = 0) -> Iterator[str]:
+    def _gemini_stream(self, url: str, body: dict, timeout: float, retry: bool, busy: int = 0, klic: str = "") -> Iterator[str]:
+        klic = klic or self.api_key
+        params = {"alt": "sse", **({"key": klic} if self._vertex(klic) else {})}
+        hlavicky = {} if self._vertex(klic) else {"x-goog-api-key": klic}
         with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0)) as c, c.stream(
-            "POST", url, params={"alt": "sse"}, json=body, headers={"x-goog-api-key": self.api_key}) as r:
+            "POST", url, params=params, json=body, headers=hlavicky) as r:
             if r.status_code >= 400:
                 r.read()
+                # Limit, zrušený nebo nepovolený klíč: tenhle klíč se na chvíli
+                # odloží a zkusí se další. Čekat s týmž klíčem nemá smysl.
+                if r.status_code in (401, 403, 429):
+                    KLIC_DO[klic] = time.time() + (90 if r.status_code == 429 else 900)
+                    raise KlicVycerpan(f"{self.name}: HTTP {r.status_code} {r.text[:160]}")
                 if retry and r.status_code == 400 and "thinkingConfig" in body.get("generationConfig", {}):
                     cfg = {k: v for k, v in body["generationConfig"].items() if k != "thinkingConfig"}
-                    yield from self._gemini_stream(url, {**body, "generationConfig": cfg}, timeout, retry=False)
+                    yield from self._gemini_stream(url, {**body, "generationConfig": cfg}, timeout, retry=False, klic=klic)
                     return
                 if r.status_code in (429, 503) and busy < len(self.BUSY_BACKOFF):
                     time.sleep(self.BUSY_BACKOFF[busy])
-                    yield from self._gemini_stream(url, body, timeout, retry, busy + 1)
+                    yield from self._gemini_stream(url, body, timeout, retry, busy + 1, klic)
                     return
                 raise RuntimeError(f"{self.name}: HTTP {r.status_code} {r.text[:200]}")
             for line in r.iter_lines():
@@ -168,7 +204,15 @@ class Provider:
         try:
             if self.kind == "gemini":
                 base = self.base_url.rstrip("/") or "https://generativelanguage.googleapis.com/v1beta"
-                r = httpx.get(f"{base}/models/{self.model}", headers={"x-goog-api-key": self.api_key}, timeout=6)
+                klice = self._klice() or [self.api_key]
+                chyba = ""
+                for k in klice:
+                    if self._vertex(k):
+                        r = httpx.get(f"https://aiplatform.googleapis.com/v1/publishers/google/models/{self.model}", params={"key": k}, timeout=6)
+                    else:
+                        r = httpx.get(f"{base}/models/{self.model}", headers={"x-goog-api-key": k}, timeout=6)
+                    if r.status_code == 200:
+                        break
                 ok = r.status_code == 200
                 models = [self.model] if ok else []
             else:
@@ -182,10 +226,20 @@ class Provider:
             return {"ok": False, "ms": round((time.perf_counter() - t) * 1000), "models": [], "model_loaded": None, "error": str(e)[:200]}
 
 
+class KlicVycerpan(RuntimeError):
+    """Klíč k Gemini je na chvíli (nebo napořád) nepoužitelný — limit, zrušení, nepovolené API."""
+
+
+# Do kdy se který klíč nepoužívá (unixový čas); drží se v paměti procesu.
+KLIC_DO: dict[str, float] = {}
+
+
 def _row_to_provider(r: ModelProvider) -> Provider:
     key = decrypt(r.api_key_enc)
-    if r.kind == "gemini" and not key:
-        key = settings.gemini_api_key
+    if r.kind == "gemini" and settings.gemini_api_keys:
+        # Klíče z prostředí mají přednost před uloženým: uložený zašifroval
+        # jiný klíč (jiný stroj) nebo už byl zrušen.
+        key = settings.gemini_api_keys[0]
     return Provider(r.id, r.name, r.kind, r.base_url, r.model, key, r.tier, r.temperature, r.max_tokens)
 
 
@@ -201,7 +255,7 @@ def seed_defaults() -> None:
         if s.scalar(select(ModelProvider.id).where(ModelProvider.tier == "local").limit(1)) is None:
             s.add(ModelProvider(name="Gemma 4 (LM Studio)", kind="openai", base_url=settings.local_llm_url, model=settings.local_chat_model,
                                 tier="local", enabled=True, is_default=True, temperature=0.2, max_tokens=900))
-        if not settings.gemini_api_key:
+        if not settings.gemini_api_keys:
             return
         row = s.scalar(select(ModelProvider).where(ModelProvider.kind == "gemini").order_by(ModelProvider.id))
         if row is None:
