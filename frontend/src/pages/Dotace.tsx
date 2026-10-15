@@ -95,7 +95,7 @@ export function Dotace() {
             </div>
 
             <Card i={1} title="Dotace po letech a srovnání v kraji" icon="chart">
-              <div className="row" style={{ marginBottom: 10 }}><KindTag kind="FAKT" /><span className="muted small">{data.zdroj_dat}</span></div>
+              <div className="row" style={{ marginBottom: 10 }}><KindTag kind="FAKT" info={`Zdroj: ${data.zdroj_dat}.`} /></div>
               <ChartSwitch id="dotace" views={[
                 {
                   key: "rok", label: "Přijaté dotace po letech", icon: "trend-up", render: () => (

@@ -78,7 +78,7 @@ export function Finance() {
 
             <Card i={1} title="Jak obec hospodaří" icon="target"
               actions={<InfoHint label="Podle jakého pravidla hodnotíme">{s.pravidlo}</InfoHint>}>
-              <div className="row" style={{ marginBottom: 10 }}><KindTag kind="MODEL" /><span className="muted small">{data?.zdroj}</span></div>
+              <div className="row" style={{ marginBottom: 10 }}><KindTag kind="MODEL" info={`Hodnocení je pravidlo nad rozpočtem, ne zveřejněný údaj. Zdroj čísel: ${data?.zdroj ?? ""}.`} /></div>
               <p className="lead-p">{s.popis}</p>
               <div className="facts-list" style={{ marginTop: 12 }}>
                 <div className="fact-row"><span>Provozní přebytek na obyvatele (ročně)</span>

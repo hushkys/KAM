@@ -84,12 +84,12 @@ def pillar_status(cards: list[dict]) -> tuple[str, str]:
     if not cards:
         return "bez_dat", "Bez dat"
     if bad >= 3 or (bad >= 2 and good == 0):
-        return "problem", "Vyžaduje pozornost"
+        return "problem", "Nepříznivý vývoj"
     if bad > good:
-        return "sledovat", "Sledovat"
+        return "sledovat", "Mírně nepříznivý vývoj"
     if good > bad:
         return "dobre", "Příznivý vývoj"
-    return "stabilni", "Stabilní"
+    return "stabilni", "Stabilní vývoj"
 
 
 def profile(tid: str, with_risks: bool = True) -> dict | None:

@@ -41,13 +41,18 @@ export function Card({ title, icon, actions, children, className = "", span, i, 
 }
 
 const KIND_LABEL: Record<string, string> = { FAKT: "Fakt", TREND: "Trend", MODEL: "Model", "SCÉNÁŘ": "Scénář", AI: "AI interpretace", "PŘEDPOKLAD": "Předpoklad", "ZÁSAH": "Zásah" };
-export function KindTag({ kind }: { kind: string }) {
+/** Štítek původu informace (Fakt, Model, Scénář…). S `info` je to zároveň
+ *  tlačítko: po najetí nebo klepnutí ukáže, odkud číslo je a jak vzniklo.
+ *  Jeden prvek místo štítku a vedle něj „i“, ať je to všude stejné. */
+export function KindTag({ kind, info }: { kind: string; info?: ReactNode }) {
   const k = kind.toUpperCase();
   const cls = { FAKT: "fakt", TREND: "trend", MODEL: "model", "SCÉNÁŘ": "scenar", AI: "ai", "PŘEDPOKLAD": "predpoklad", "ZÁSAH": "zasah" }[k] ?? "fakt";
-  return <span className={`kind kind-${cls}`}>{KIND_LABEL[k] ?? kind}</span>;
+  const tag = <span className={`kind kind-${cls}${info ? " has-info" : ""}`}>{KIND_LABEL[k] ?? kind}{info && <Icon name="info" size={11} />}</span>;
+  if (!info) return tag;
+  return <InfoHint label={`${KIND_LABEL[k] ?? kind}: odkud to je`} trigger={tag}>{info}</InfoHint>;
 }
 
-const LEVEL: Record<string, string> = { nizke: "Nízké", sledovat: "Sledovat", stredni: "Střední", vysoke: "Vysoké", kriticke: "Kritické" };
+const LEVEL: Record<string, string> = { nizke: "Nízké", sledovat: "Nízké", stredni: "Střední", vysoke: "Vysoké", kriticke: "Kritické" };
 export function Severity({ level, label }: { level: string; label?: string }) {
   return (
     <span className={`sev sev-${level}`}>
@@ -145,7 +150,7 @@ export function ErrorBox({ error, retry }: { error: { message: string } | null; 
 }
 
 /** The "i" mark: explanatory copy lives behind it, not in tinted boxes. */
-export function InfoHint({ children, label = "Co to znamená" }: { children: ReactNode; label?: string }) {
+export function InfoHint({ children, label = "Co to znamená", trigger }: { children: ReactNode; label?: string; trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -172,12 +177,12 @@ export function InfoHint({ children, label = "Co to znamená" }: { children: Rea
           Hover is for a mouse only: on a touch screen the browser fires a
           synthetic mouseenter just before the click, which opened the note and
           let the click immediately close it again. */}
-      <button ref={btn} type="button" className="info-hint" aria-label={label} aria-expanded={open} aria-describedby={open ? id : undefined}
+      <button ref={btn} type="button" className={`info-hint${trigger ? " is-tag" : ""}`} aria-label={label} aria-expanded={open} aria-describedby={open ? id : undefined}
         onClick={(e) => { e.stopPropagation(); open ? setOpen(false) : show(); }}
         onKeyDown={(e) => e.stopPropagation()}
         onMouseEnter={() => !matchMedia("(hover: none)").matches && show()}
         onMouseLeave={() => !matchMedia("(hover: none)").matches && setOpen(false)}>
-        <Icon name="info" size={15} />
+        {trigger ?? <Icon name="info" size={15} />}
       </button>
       {open && createPortal(<div id={id} role="tooltip" className="tooltip glass" style={{ left: pos.x, top: pos.y }}>{children}</div>, document.body)}
     </>

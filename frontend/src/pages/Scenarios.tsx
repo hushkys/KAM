@@ -346,7 +346,7 @@ export function Scenarios() {
             <>
               <div className="sc-verdikt-radek">
                 <div style={{ minWidth: 0 }}>
-                  <div className="sc-uzemi"><KindTag kind="SCÉNÁŘ" /><Erb id={res.territory.id} name={res.territory.name} size={26} /><h2>{res.territory.name}</h2></div>
+                  <div className="sc-uzemi"><KindTag kind="SCÉNÁŘ" info="Scénář: výhled bez opatření a s nimi. Opatření se přičítají k nejpravděpodobnějšímu výhledu od roku, kdy začnou. Čísla, která nejsou v datech, jsou předpoklady a dají se změnit." /><Erb id={res.territory.id} name={res.territory.name} size={26} /><h2>{res.territory.name}</h2></div>
                   <p className="sc-verdikt">{verdict}{busy && <span className="sc-pocita"> Počítám…</span>}</p>
                 </div>
                 <Segmented size="sm" label="Stav k roku" value={String(rok)} onChange={(v) => setRok(Number(v))}

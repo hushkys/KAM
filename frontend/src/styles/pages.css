@@ -1630,3 +1630,38 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .sc-obsah .chart path.band { opacity: .22; }
 @keyframes sc-najezd { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes sc-krok { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+/* Jednotné štítky původu: štítek Fakt/Model je zároveň tlačítko s vysvětlením */
+.info-hint.is-tag { width: auto; height: auto; padding: 0; background: none; }
+.info-hint.is-tag:hover { background: none; }
+.kind.has-info { display: inline-flex; align-items: center; gap: 4px; cursor: help; }
+.kind.has-info svg { opacity: .75; }
+.info-hint.is-tag:hover .kind, .info-hint.is-tag[aria-expanded="true"] .kind { filter: brightness(1.15); box-shadow: 0 0 0 1px currentColor inset; }
+.ind { position: relative; }
+.ind .ind-tag { position: absolute; top: 10px; right: 10px; }
+.ind .ind-name { padding-right: 58px; }
+
+/* Seznam údajů: popisek nad hodnotou, ať se úzká karta nerozpadá do dvou sloupců slov */
+.facts-list { container: fakta / inline-size; gap: 0; }
+.fact-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.fact-row span:first-child { font-size: .78rem; color: var(--text-mute); }
+.fact-row span:last-child { font-weight: 600; text-align: left; font-size: .9375rem; color: var(--text); }
+@container fakta (min-width: 460px) {
+  .fact-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: baseline; gap: 12px; }
+  .fact-row span:first-child { font-size: .875rem; color: var(--text-dim); }
+  .fact-row span:last-child { text-align: right; }
+}
+
+/* Grafy: hlavní čára s nádechem a koncovým bodem, jemnější mřížka */
+.chart .grid-line { stroke-dasharray: 2 4; opacity: .7; }
+.chart .line.draw { stroke-width: 2.6; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .18)); }
+.chart .plocha { pointer-events: none; }
+.chart .konec-zare { opacity: .18; transform-box: fill-box; transform-origin: center; animation: konec-puls 2.4s var(--ease-out) 1s infinite; }
+.chart .konec-text { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+@keyframes konec-puls { 0% { transform: scale(.6); opacity: .35; } 70% { transform: scale(1.6); opacity: 0; } 100% { opacity: 0; } }
+.bar-item .bar-fill { background: linear-gradient(90deg, color-mix(in oklab, var(--m, var(--accent)) 55%, transparent), var(--m, var(--accent))); }
+:root[data-motion="reduce"] .chart .konec-zare { animation: none; }
+.fakta-pocty { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1px; margin-top: 12px; background: var(--border); border: 1px solid var(--border); }
+.fakta-pocty > div { display: grid; gap: 2px; align-content: start; padding: 10px 12px; background: var(--surface); }
+.fakta-pocty strong { font-size: 1.25rem; font-weight: 700; color: var(--m, var(--text)); }
+.fakta-pocty span { font-size: .75rem; color: var(--text-dim); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

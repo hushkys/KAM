@@ -17,7 +17,7 @@ from . import store
 from .forecast import summary as outlook
 from .trends import classify
 
-LEVELS = ((0.8, "kriticke", "Kritické"), (0.6, "vysoke", "Vysoké"), (0.4, "stredni", "Střední"), (0.2, "sledovat", "Sledovat"))
+LEVELS = ((0.8, "kriticke", "Kritické"), (0.6, "vysoke", "Vysoké"), (0.4, "stredni", "Střední"), (0.2, "sledovat", "Nízké"))
 
 _cache: dict[str, list[dict]] = {}
 

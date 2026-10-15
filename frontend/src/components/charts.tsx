@@ -53,8 +53,9 @@ export function LineChart({ series, height = 260, unit = "", nowYear, refLine, f
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const fmt = format ?? ((v: number) => num(v));
-  const pad = { l: 52, r: 14, t: 12, b: 28 };
+  const pad = { l: 52, r: 40, t: 14, b: 28 };
   const years = useMemo(() => [...new Set(series.flatMap((s) => s.points.map((p) => p.year)))].sort((a, b) => a - b), [series]);
   const vals = series.flatMap((s) => [...s.points.map((p) => p.value), ...(s.band ?? []).flatMap((b) => [b.lo, b.hi])]).filter((v): v is number => v !== null && Number.isFinite(v));
   if (refLine) vals.push(refLine.value);
@@ -118,6 +119,28 @@ export function LineChart({ series, height = 260, unit = "", nowYear, refLine, f
           <path key={`${s.key}-band`} className="band chart-fade" fill={s.color}
             d={`M${s.band.map((b) => `${X(b.year).toFixed(1)},${Y(b.hi).toFixed(1)}`).join("L")}L${[...s.band].reverse().map((b) => `${X(b.year).toFixed(1)},${Y(b.lo).toFixed(1)}`).join("L")}Z`} />
         ))}
+        {/* Plocha pod hlavní řadou: barevný přechod do ztracena dává grafu
+            tělo, aniž by přidal informaci, kterou by bylo nutné číst. */}
+        {(() => {
+          const hlavni = series.find((s) => !s.faint && !s.dashed);
+          if (!hlavni) return null;
+          const pts = hlavni.points.filter((p) => p.value !== null && Number.isFinite(p.value));
+          if (pts.length < 2) return null;
+          const dno = Y(Math.max(lo, Math.min(hi, yZero ? 0 : lo)));
+          const d = `M${X(pts[0].year).toFixed(1)},${dno.toFixed(1)}` + pts.map((p) => `L${X(p.year).toFixed(1)},${Y(p.value as number).toFixed(1)}`).join("")
+            + `L${X(pts[pts.length - 1].year).toFixed(1)},${dno.toFixed(1)}Z`;
+          return (
+            <>
+              <defs>
+                <linearGradient id={`pl-${gid}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={hlavni.color} stopOpacity={0.32} />
+                  <stop offset="100%" stopColor={hlavni.color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <path className="plocha chart-fade is-slow" d={d} fill={`url(#pl-${gid})`} />
+            </>
+          );
+        })()}
         {series.filter((s) => s.faint).map((s) => (
           <path key={s.key} className="line chart-fade" d={path(s.points)} stroke={s.color} strokeWidth={s.width ?? 1} strokeOpacity={0.38} />
         ))}
@@ -129,6 +152,18 @@ export function LineChart({ series, height = 260, unit = "", nowYear, refLine, f
             strokeWidth={s.width ?? 2.2} strokeDasharray={s.dashed ? "5 5" : undefined}
             style={s.dashed ? undefined : { ["--len" as string]: 3000 }} pathLength={s.dashed ? undefined : 3000} />
         ))}
+        {series.filter((s) => !s.faint).map((s, si) => {
+          const pts = s.points.filter((p) => p.value !== null && Number.isFinite(p.value));
+          const p = pts[pts.length - 1];
+          if (!p || pts.length < 2 || hover !== null) return null;
+          return (
+            <g key={`${s.key}-konec`} className="konec spark-pop is-late">
+              <circle className="konec-zare" cx={X(p.year)} cy={Y(p.value as number)} r={9} fill={s.color} />
+              <circle className="dot" cx={X(p.year)} cy={Y(p.value as number)} r={4.5} fill={s.color} />
+              {si < 2 && <text className="konec-text" x={X(p.year) + 9} y={Y(p.value as number) + 4 + (si === 1 ? 12 : 0)} fill={s.color}>{fmt(p.value as number)}</text>}
+            </g>
+          );
+        })}
         {series.filter((s) => !s.faint).flatMap((s) => isolated(s.points).map((p) => (
           <circle key={`${s.key}-solo-${p.year}`} className="dot spark-pop is-late" cx={X(p.year)} cy={Y(p.value as number)} r={4} fill={s.color} />
         )))}
@@ -362,6 +397,7 @@ function umistiTip(x: number, y: number, sirka: number): { styl: React.CSSProper
 /** Vertical bars by year (e.g. observations per year). */
 export function Columns({ items, height = 140, format, ariaLabel }: { items: { label: string; value: number }[]; height?: number; format?: (v: number) => string; ariaLabel: string }) {
   const [ref, width] = useWidth<HTMLDivElement>();
+  const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const [hover, setHover] = useState<number | null>(null);
   const m = Math.max(1, ...items.map((i) => i.value));
   const gap = 3, bw = Math.max(2, (width - gap * (items.length - 1)) / Math.max(1, items.length));
@@ -369,11 +405,17 @@ export function Columns({ items, height = 140, format, ariaLabel }: { items: { l
   return (
     <div className="chart" ref={ref}>
       <svg viewBox={`0 0 ${width} ${height + 18}`} role="img" aria-label={ariaLabel} onPointerLeave={() => setHover(null)}>
+        <defs>
+          <linearGradient id={`sl-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--m, var(--accent))" />
+            <stop offset="100%" stopColor="var(--m, var(--accent))" stopOpacity={0.45} />
+          </linearGradient>
+        </defs>
         {items.map((it, i) => {
           const h = (it.value / m) * height;
           return (
             <g key={it.label} onPointerEnter={() => setHover(i)}>
-              <rect x={i * (bw + gap)} y={height - h} width={bw} height={Math.max(1, h)} rx={Math.min(4, bw / 3)} fill={hover === i ? "var(--accent-strong)" : "var(--accent)"} opacity={hover === null || hover === i ? 1 : 0.55}
+              <rect x={i * (bw + gap)} y={height - h} width={bw} height={Math.max(1, h)} rx={Math.min(4, bw / 3)} fill={hover === i ? "var(--m, var(--accent-strong))" : `url(#sl-${gid})`} opacity={hover === null || hover === i ? 1 : 0.5}
                 style={{ transformOrigin: `0 ${height}px`, animation: `col-grow 600ms var(--ease-out) ${i * 18}ms both` }} />
               {(i % Math.ceil(items.length / 8) === 0 || i === items.length - 1) && <text className="axis-label" x={i * (bw + gap) + bw / 2} y={height + 14} textAnchor="middle">{it.label}</text>}
             </g>

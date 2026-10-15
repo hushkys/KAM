@@ -50,7 +50,7 @@ export function Overview() {
         {(d?.kpis ?? Array.from({ length: 4 }, () => null)).map((k, i) => k ? (
           <div className="kpi reveal" key={k.key} style={{ "--i": i } as CSSProperties}>
             <div className="kpi-top"><span className="kpi-label">{k.label}</span>
-              <InfoHint label={`Odkud je: ${k.label}`}>Skutečná zveřejněná hodnota za rok {k.year}, ne odhad modelu. Zdroj: {ZDROJ_KPI[k.key] ?? "Český statistický úřad"}. Čára ukazuje vývoj{k.since ? ` od roku ${k.since}` : ""}.</InfoHint></div>
+              <KindTag kind="FAKT" info={<>Skutečná zveřejněná hodnota za rok {k.year}, ne odhad modelu. Zdroj: {ZDROJ_KPI[k.key] ?? "Český statistický úřad"}. Čára ukazuje vývoj{k.since ? ` od roku ${k.since}` : ""}.</>} /></div>
             <span className="kpi-value">{withUnit(k.value, k.unit)}</span>
             <span className="kpi-sub">{k.change !== null ? `${signed(k.change, 2, k.unit === "%" ? " p. b." : " %")} od ${k.since}` : "za rok"} · {k.year}</span>
             <Sparkline points={k.series} ariaLabel={`Vývoj: ${k.label}`} />
@@ -75,7 +75,7 @@ export function Overview() {
               </>
             ) : <span className="skeleton" style={{ width: "100%", aspectRatio: "1000/760" }} />}
           </Card>
-          <Card i={3} title="Výhled počtu obyvatel" icon="trend-up" actions={<><KindTag kind="MODEL" /><Link to="/vyhled" className="btn btn-quiet btn-sm">Celý výhled</Link></>}>
+          <Card i={3} title="Výhled počtu obyvatel" icon="trend-up" actions={<><KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." /><Link to="/vyhled" className="btn btn-quiet btn-sm">Celý výhled</Link></>}>
             {fc.data?.available ? (
               <ChartSwitch id="prehled-vyhled" views={[
                 {

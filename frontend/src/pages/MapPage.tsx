@@ -147,7 +147,7 @@ export function MapPage() {
                   <div className="facts-list">
                     <div className="fact-row"><span>Obyvatelé</span><span className="num">{num(prof.data.territory.population)} ({prof.data.territory.population_year})</span></div>
                     {prof.data.territory.parent && <div className="fact-row"><span>Nadřazené území</span><span>{prof.data.territory.parent.name}</span></div>}
-                    {prof.data.outlook.milestones?.[1] && <div className="fact-row"><span>Výhled {prof.data.outlook.milestones[1].year} <KindTag kind="MODEL" /></span><span className="num">{num(prof.data.outlook.milestones[1].population)}</span></div>}
+                    {prof.data.outlook.milestones?.[1] && <div className="fact-row"><span>Výhled {prof.data.outlook.milestones[1].year} <KindTag kind="MODEL" info="Odhad modelu z vývoje porodnosti, úmrtnosti a stěhování (kohortně-komponentní metoda). Není to zveřejněný údaj, ale výpočet z něj." /></span><span className="num">{num(prof.data.outlook.milestones[1].population)}</span></div>}
                   </div>
                   <div className="section-gap" />
                   {prof.data.risks.slice(0, 3).map((r) => (

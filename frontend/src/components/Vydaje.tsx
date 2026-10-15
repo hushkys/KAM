@@ -40,10 +40,7 @@ export function Vydaje({ tid }: { tid: string }) {
 
   return (
     <>
-      <Card i={4} title="Za co utrácí" icon="coins" actions={<>
-        <KindTag kind="FAKT" />
-        <InfoHint label="Odkud čísla jsou">{data.pozn}</InfoHint>
-      </>}>
+      <Card i={4} title="Za co utrácí" icon="coins" actions={<KindTag kind="FAKT" info={data.pozn} />}>
         <div className="vyd-hlava">
           <Segmented label="Rok" value={String(data.rok)} onChange={(v) => setRok(Number(v))} options={posledni.map((y) => ({ value: String(y), label: String(y) }))} />
         </div>
