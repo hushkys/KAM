@@ -126,7 +126,7 @@ def overview() -> dict:
     return {
         "kraj": {"id": kraj, "name": KRAJ_BY_CODE[HOME_KRAJ].name},
         "kpis": kpis, "outlook": out,
-        "datasets": {k: counts[k] for k in ("total", "verified", "broken", "no_link", "core", "kraje", "other", "loaded", "api_sources", "publishers")},
+        "datasets": {k: counts[k] for k in ("total", "verified", "broken", "no_link", "pages", "core", "kraje", "other", "loaded", "api_sources", "publishers")},
         "model": {"observations": obs, "years": [years[0], years[1]], "territories": len(store.territories()), "pois": pois,
                   "obce": sum(1 for t in store.territories().values() if t.level == "obec" and t.kraj_code == HOME_KRAJ),
                   "indicators": len(store.indicators()) + len(DERIVED)},
