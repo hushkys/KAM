@@ -49,6 +49,9 @@ def main(argv: list[str]) -> int:
         elif step == "check":
             from .check import check
             print("check", check())
+        elif step == "obsah":
+            from .obsah import obsah
+            print("obsah", obsah(int(argv[argv.index("obsah") + 1]) if argv.index("obsah") + 1 < len(argv) and argv[argv.index("obsah") + 1].isdigit() else None))
         elif step == "check-new":
             from .check import check
             print("check-new", check(only_unchecked=True))

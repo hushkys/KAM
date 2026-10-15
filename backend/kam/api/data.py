@@ -82,7 +82,7 @@ def dataset_counts() -> dict:
                for i, n, g, p, u, k, h, c, v in by_source]
     sources.sort(key=lambda x: ({"core": 0, "kraje": 1}.get(x["group"], 2), -x["datasets"]))
     verified = by_status.get("ok", 0)
-    data = {"total": total, "verified": verified, "broken": by_status.get("chyba", 0), "no_link": by_status.get("bez_odkazu", 0),
+    data = {"total": total, "verified": verified, "broken": by_status.get("chyba", 0), "no_link": by_status.get("bez_odkazu", 0), "pages": by_status.get("stranka", 0),
             "unchecked": by_status.get("neovereno", 0), "core": grouped.get("core", 0), "kraje": grouped.get("kraje", 0), "other": grouped.get("ostatni", 0),
             "loaded": loaded, "api_sources": api_sources, "sources": sources, "publishers": sum(1 for x in sources if x["datasets"]),
             "by_pillar": [{"key": k, "label": PILLARS.get(k, "Ostatní"), "count": v} for k, v in sorted(by_pillar.items(), key=lambda kv: -kv[1])],
@@ -370,7 +370,7 @@ def datasets_csv() -> StreamingResponse:
                 buf.truncate()
                 w.writerow([d.id, d.title, d.publisher, d.source_id, PILLARS.get(d.pillar, "Ostatní"), KRAJ_BY_CODE[d.region_code].name if d.region_code in KRAJ_BY_CODE else "ČR",
                             d.url, d.alt_url, d.download_url, d.formats, d.modified, d.freshness, "ano" if d.loaded else "ne", ", ".join(d.usage or []),
-                            {"ok": "funkční", "chyba": "nedostupné", "bez_odkazu": "bez odkazu"}.get(d.check_status, "neověřeno"), d.check_code])
+                            {"ok": "obsahuje data", "stranka": "webová stránka", "chyba": "prázdné nebo nedostupné", "bez_odkazu": "bez odkazu"}.get(d.check_status, "neověřeno"), d.check_code])
                 yield buf.getvalue()
     return StreamingResponse(gen(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="kam-vyuzite-datove-sady.csv"'})
 

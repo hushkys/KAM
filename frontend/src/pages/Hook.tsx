@@ -188,7 +188,7 @@ export function Hook() {
   const cisla: { v: number | null; f: (n: number) => string; l: string; s: string }[] = [
     { v: d?.model.obce ?? null, f: num, l: "obcí kraje, každá s vlastním profilem", s: "obyvatelé, školy, lékaři, rozpočet" },
     { v: d ? d.model.years[1] : null, f: () => roky, l: "roky v časových řadách", s: "dost dlouhé, aby šlo odlišit trend od výkyvu" },
-    { v: d?.datasets.verified ?? null, f: num, l: "ověřených otevřených sad na jednom místě", s: d ? `od ${num(d.datasets.publishers)} poskytovatelů, odkaz při kontrole odpověděl` : "" },
+    { v: d?.datasets.verified ?? null, f: num, l: "otevřených sad se souborem s daty", s: d ? `od ${num(d.datasets.publishers)} poskytovatelů, u každé jsme stáhli začátek souboru` : "" },
     { v: d?.model.pois ?? null, f: num, l: "zařízení a míst na mapě kraje", s: "školy, ordinace, zastávky, knihovny i památky" },
   ];
 

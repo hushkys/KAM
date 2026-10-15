@@ -38,11 +38,11 @@ export interface Overview {
   kraj: { id: string; name: string };
   kpis: { key: string; label: string; value: number; year: number; unit: string; change: number | null; since: number | null; series: SeriesPoint[] }[];
   outlook: Outlook;
-  datasets: { total: number; verified: number; broken: number; no_link: number; core: number; kraje: number; other: number; loaded: number; api_sources: number; publishers: number };
+  datasets: { total: number; verified: number; broken: number; no_link: number; pages: number; core: number; kraje: number; other: number; loaded: number; api_sources: number; publishers: number };
   model: { observations: number; years: [number, number]; territories: number; pois: number; indicators: number; obce: number };
   risks: { territory: { id: string; name: string; population: number }; top: { type: string; title: string; level: string; level_label: string; score: number; text: string }; count: number; score: number }[];
   kraj_risks: Risk[];
 }
 export interface SourceRow { id: string; name: string; group: string; portal_url: string; url: string; kind: string; harvested_at: string | null; datasets: number; verified: number }
-export interface Sources { total: number; verified: number; broken: number; no_link: number; unchecked: number; core: number; kraje: number; other: number; publishers: number; loaded: number; api_sources: number; sources: SourceRow[]; by_pillar: { key: string; label: string; count: number }[]; by_region: Record<string, number>; by_freshness: Record<string, number>; checked_at: string | null }
+export interface Sources { total: number; verified: number; broken: number; no_link: number; pages: number; unchecked: number; core: number; kraje: number; other: number; publishers: number; loaded: number; api_sources: number; sources: SourceRow[]; by_pillar: { key: string; label: string; count: number }[]; by_region: Record<string, number>; by_freshness: Record<string, number>; checked_at: string | null }
 export interface IndicatorMeta { code: string; name: string; unit: string; pillar: string; polarity: number; derived: boolean; formula?: string }

@@ -68,6 +68,12 @@ class Dataset(Base):
     check_status: Mapped[str] = mapped_column(String(16), default="neovereno", index=True)
     check_code: Mapped[int] = mapped_column(Integer, default=0)
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Kontrola OBSAHU (ingest/obsah.py): odkaz, který odpověděl, ještě neznamená soubor s daty.
+    # data | stranka | prazdne | jine | nedostupne; prázdné = ještě se nekontrolovalo.
+    content_status: Mapped[str] = mapped_column(String(16), default="", index=True)
+    content_kind: Mapped[str] = mapped_column(String(16), default="")
+    content_code: Mapped[int] = mapped_column(Integer, default=0)
+    content_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     formats: Mapped[str] = mapped_column(String(255), default="")
     keywords: Mapped[str] = mapped_column(Text, default="")
     themes: Mapped[str] = mapped_column(String(255), default="")

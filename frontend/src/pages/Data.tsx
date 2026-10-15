@@ -57,7 +57,7 @@ function Catalog({ sources }: { sources: Sources | undefined }) {
         {sel("fresh", fresh, [["aktualni", "Aktuální"], ["zastarala", "Po termínu"], ["neznama", "Termín neuveden"]], "Aktuálnost")}
         <label className="field"><span className="field-label">Odkaz</span>
           <select className="select" value={status} onChange={(e) => setQuery({ status: e.target.value === "ok" ? null : e.target.value, page: null })}>
-            <option value="ok">Funkční</option><option value="chyba">Nefunkční</option><option value="bez_odkazu">Bez odkazu</option><option value="vse">Vše</option>
+            <option value="ok">Se souborem s daty</option><option value="stranka">Jen webová stránka</option><option value="chyba">Prázdné nebo nedostupné</option><option value="bez_odkazu">Bez odkazu</option><option value="vse">Vše</option>
           </select>
         </label>
       </div>
@@ -153,7 +153,7 @@ function SourcesTab({ data }: { data: Sources | undefined }) {
       {groups.map(([g, label], gi) => (
         <ZdrojeSkupina key={g} i={gi} label={label} rows={data.sources.filter((s) => s.group === g && (s.datasets > 0 || s.kind !== "nkod"))} />
       ))}
-      <p className="small mute">Sada, která je v celostátním katalogu (NKOD) i na portálu kraje nebo města, se počítá jednou a má oba odkazy. Funkční znamená, že odkaz na data nebo stránku sady při poslední kontrole odpověděl — ne že je obsah v pořádku. IČ 17651921 patří Digitální a informační agentuře.</p>
+      <p className="small mute">Sada, která je v celostátním katalogu (NKOD) i na portálu kraje nebo města, se počítá jednou a má oba odkazy. Funkční znamená, že jsme z odkazu stáhli začátek souboru a je v něm skutečný obsah: ne prázdný soubor, ne chybová a ne webová stránka. IČ 17651921 patří Digitální a informační agentuře.</p>
     </div>
   );
 }
@@ -419,7 +419,7 @@ export function DataPage() {
         <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="stát, kraje, města a další" />
         <Stat i={2} label="Funkčních sad od krajů" value={num(d?.kraje ?? null)} sub="včetně krajských portálů" />
         <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="statistiky ČSÚ a data kraje" />
-        <Stat i={4} label="Nefunkčních" value={num(d ? d.broken + d.no_link : null)} sub="odkaz neodpověděl nebo chybí" />
+        <Stat i={4} label="Bez souboru s daty" value={num(d ? d.broken + d.no_link + d.pages : null)} sub="webová stránka, mrtvý nebo chybějící odkaz" />
       </div>
       <Tabs label="Sekce" value={tab} onChange={(v) => setQuery({ tab: v === "katalog" ? null : v, page: null })}
         tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Chybějící data", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />

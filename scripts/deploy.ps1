@@ -15,6 +15,11 @@
 
 $ErrorActionPreference = "Stop"
 
+# Od 15. 10. 2026 běží produkce s databází v obrazu (SQLite), ne na Neonu.
+# Tenhle skript by službu znovu připojil k Neonu (DATABASE_URL z env.yaml)
+# a nasadil obraz bez databáze — nasazuje se přes scripts/deploy_cloudrun.sh.
+if (-not $env:KAM_NEON) { throw "Nasazuj přes: bash scripts/deploy_cloudrun.sh  (tenhle skript je pro Neon; přebije to KAM_NEON=1)" }
+
 $korenn = Split-Path -Parent $PSScriptRoot
 $gcloud = if ($env:GCLOUD_CMD) { $env:GCLOUD_CMD } else { "C:\gcsdk\google-cloud-sdk\bin\gcloud.cmd" }
 if (-not $env:CLOUDSDK_PYTHON) { $env:CLOUDSDK_PYTHON = "C:\Users\hushkys\AppData\Local\Programs\Python\Python312\python.exe" }

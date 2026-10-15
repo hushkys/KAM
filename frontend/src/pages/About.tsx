@@ -169,27 +169,26 @@ export function About() {
           </Card>
 
           {/* Co přesně znamená „funkční“ u počtu datových sad. Číslo stojí na
-              úvodní stránce i v Datech a bez téhle karty by tvrdilo víc, než
-              kontrola ověřuje: že odkaz odpověděl, ne že je soubor v pořádku. */}
+              úvodní stránce i v Datech, takže karta říká, co se opravdu ověřuje. */}
           <Card span={12} i={6} title="Co znamená „funkční datová sada“" icon="database">
             <div className="prose je-siroka">
               <p>
-                Funkční je sada, jejíž odkaz <strong>odpověděl</strong>. Zkoušíme nejkonkrétnější odkaz, který sada má — přímé stažení
-                souboru, jinak stránku vydavatele. Stránku v Národním katalogu přeskakujeme, protože odpoví „v pořádku“ na cokoli.
-                Za funkční bereme odpověď 2xx nebo 3xx do 15 sekund, i ze serveru s rozbitým certifikátem, který soubor přesto vydá.
+                Funkční je sada, ze které jsme <strong>stáhli začátek souboru a je v něm skutečný obsah</strong>. U každé sady zkoušíme
+                odkaz ke stažení (a u webových služeb se zeptáme na data) a podle prvních bajtů poznáme, jestli jde o archiv, CSV, JSON,
+                XML, mapovou vrstvu, nebo o prázdný soubor či chybovou stránku. Stránka v Národním katalogu se nepočítá, protože odpoví
+                „v pořádku“ na cokoli. Odkazy zkoušíme jako běžný prohlížeč, protože některé státní servery odmítají roboty.
               </p>
               {src.data && (
                 <p>
                   Poslední kontrola{src.data.checked_at ? ` proběhla ${date(src.data.checked_at)} a` : ""} z {num(src.data.total)} sad v katalogu
-                  prošlo {num(src.data.verified)}. Chybou nebo vůbec neodpovědělo {num(src.data.broken)} (nejčastěji „nenalezeno“, chyba serveru
-                  nebo vypršel čas) a {num(src.data.no_link)} nemá žádný odkaz, který by šlo vyzkoušet.
+                  našla soubor s daty u {num(src.data.verified)}. U {num(src.data.pages)} je odkaz jen webová stránka (vizualizace, rozcestník portálu),
+                  {num(src.data.broken)} je prázdných nebo nedostupných a {num(src.data.no_link)} nemá žádný odkaz.
                 </p>
               )}
               <p>
-                <strong>Co kontrola neověřuje:</strong> obsah. Soubor může být prázdný, v jiném formátu nebo zastaralý — a server, který
-                na chybějící soubor vrátí „nenalezeno“ s kódem 200, projde taky. Číslo říká „odkaz je dostupný“, ne „data jsou v pořádku“.
-                Sady, ze kterých model počítá ({src.data ? num(src.data.loaded) : "…"}), sklizeň opravdu stahuje a čte hodnotu po hodnotě;
-                v katalogu jsou označené jako načtené do modelu.
+                <strong>Co to neznamená:</strong> že je soubor úplný, aktuální a že ho aplikace zpracovává. Zjišťujeme, že obsahuje data,
+                ne co v nich je. Sady, ze kterých model opravdu počítá ({src.data ? num(src.data.loaded) : "…"}), sklizeň stahuje celé a čte
+                hodnotu po hodnotě; v katalogu jsou označené jako načtené do modelu. Ostatní si může každý stáhnout z originálu.
               </p>
             </div>
           </Card>

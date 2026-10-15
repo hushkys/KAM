@@ -168,9 +168,9 @@ export function Overview() {
           <Card i={6} title="Data v modelu" icon="database" actions={<Link to="/data" className="btn btn-quiet btn-sm">Katalog dat</Link>}>
             {d && (
               <div className="facts-list">
-                <div className="fact-row"><span>Funkční datové sady (odkaz odpověděl)</span><span className="num">{num(d.datasets.verified)}</span></div>
+                <div className="fact-row"><span>Sady se souborem s daty</span><span className="num">{num(d.datasets.verified)}</span></div>
                 <div className="fact-row"><span>Poskytovatelé dat</span><span className="num">{num(d.datasets.publishers)}</span></div>
-                <div className="fact-row"><span>Nefunkční nebo chybějící odkaz (nezapočteno)</span><span className="num">{num(d.datasets.broken + d.datasets.no_link)}</span></div>
+                <div className="fact-row"><span>Webové stránky, mrtvé a chybějící odkazy (nezapočteno)</span><span className="num">{num(d.datasets.broken + d.datasets.no_link + d.datasets.pages)}</span></div>
                 <div className="fact-row"><span>Sady, jejichž hodnoty model načetl</span><span className="num">{num(d.datasets.loaded)}</span></div>
                 <div className="fact-row"><span>Ukazatele</span><span className="num">{num(d.model.indicators)}</span></div>
               </div>
