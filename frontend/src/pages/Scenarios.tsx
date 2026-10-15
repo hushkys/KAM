@@ -15,7 +15,7 @@ import { ChartSwitch, Heatmap, LineChart, Legend } from "../components/charts";
 import { Erb } from "../components/Erb";
 import { Icon, PILLAR_ICON } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
-import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, PageHeader, Segmented, Tabs } from "../components/ui";
+import { Card, Empty, ErrorBox, InfoHint, KindTag, Modal, PageHeader, Segmented, Stat, Tabs } from "../components/ui";
 import { api, ApiError, invalidate, useApi } from "../lib/api";
 import { date, kc, num, signed } from "../lib/format";
 import { setQuery, useLocation, useNahled } from "../lib/router";
@@ -239,12 +239,13 @@ export function Scenarios() {
           </>
         } />
 
+      <div className="toolbar-card reveal">
+        <div className="toolbar-picker"><TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" /></div>
+      </div>
+
       <div className="sc">
         {/* ------------------------------------------------------ stavba */}
         <div className="sc-stavba stack-y">
-          <Card i={0} title="Území" icon="pin">
-            <TerritoryPicker value={tid} onChange={(id) => setTid(id)} label="Obec, ORP, okres nebo kraj" />
-          </Card>
 
           <Card i={1} title="Zásahy" icon="split"
             actions={ivs.length ? <button className="btn btn-quiet btn-sm" onClick={() => setIvs([])}>Odebrat vše</button> : undefined}>
@@ -370,18 +371,13 @@ export function Scenarios() {
                   options={HORIZONTY.map((y) => ({ value: String(y), label: String(y) }))} />
               </div>
 
-              <div className="sc-dlazdice" role="group" aria-label={`Ukazatele v roce ${rok}`}>
-                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy"]].map(([k, l]) => {
+              <div className="stats-row">
+                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy"]].map(([k, l], n) => {
                   const v = vRoce[k];
                   const hodnota = k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
                   const d = v?.delta ?? 0;
-                  return (
-                    <div className="sc-dlazdice-bunka" key={k}>
-                      <span className="sc-dlazdice-popis">{l} · {rok}</span>
-                      <strong className="num">{hodnota}</strong>
-                      {ivs.length > 0 && <span className={`sc-pilulka ${d ? (d > 0 ? "je-plus" : "je-minus") : ""}`}>{d ? signed(d, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "") : "beze změny"}</span>}
-                    </div>
-                  );
+                  return <Stat key={k} i={n} label={`${l} · ${rok}`} value={hodnota}
+                    sub={ivs.length > 0 ? (d ? `${signed(d, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} proti stavu bez zásahu` : "beze změny") : "výhled bez zásahu"} />;
                 })}
               </div>
 
