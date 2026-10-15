@@ -246,7 +246,7 @@ ZARIZENI: dict[str, dict] = {
     "lekarna": {"label": "Nová lékárna", "pillar": "zdravotnictvi", "codes": ("071000",), "den": "pop", "jednotka": "lékáren", "metrika": "Lékárny",
                 "max": 10, "step": 1, "default": 1, "capex": 2.5, "provoz": 0.0,
                 "help": "Přidá lékárnu a přepočte lékárny na 10 000 obyvatel."},
-    "pediatr": {"label": "Nová ordinace dětského lékaře", "pillar": "zdravotnictvi", "codes": ("070710", "khk_pl_deti"), "den": "kids", "jednotka": "ordinací", "metrika": "Dětští lékaři",
+    "pediatr": {"label": "Nová ordinace dětského lékaře", "pillar": "zdravotnictvi", "codes": ("070710",), "den": "kids", "jednotka": "ordinací", "metrika": "Dětští lékaři",
                 "max": 10, "step": 1, "default": 1, "capex": 1.5, "provoz": 0.0,
                 "help": "Přidá ordinaci praktického lékaře pro děti a dorost a přepočte ji na 1 000 dětí."},
     "specialista": {"label": "Nová ordinace specialisty", "pillar": "zdravotnictvi", "codes": ("070740",), "den": "pop", "jednotka": "ordinací", "metrika": "Ordinace specialistů",
@@ -280,7 +280,9 @@ ZARIZENI: dict[str, dict] = {
                    "max": 100, "step": 1, "default": 5, "capex": 12.0, "provoz": 0.0,
                    "help": "Přidá kilometry místních komunikací; přepočet je na 1 000 obyvatel."},
 }
+TVARY_ZARIZENI = {'lekarna': ('lékárna', 'lékárny', 'lékáren'), 'pediatr': ('ordinace', 'ordinace', 'ordinací'), 'specialista': ('ordinace', 'ordinace', 'ordinací'), 'gynekolog': ('ordinace', 'ordinace', 'ordinací'), 'stacionar': ('místo', 'místa', 'míst'), 'dzr': ('místo', 'místa', 'míst'), 'pecovatelske': ('byt', 'byty', 'bytů'), 'soc_sluzba': ('služba', 'služby', 'služeb'), 'knihovna': ('knihovna', 'knihovny', 'knihoven'), 'kulturni_dum': ('kulturní dům', 'kulturní domy', 'kulturních domů'), 'hasici': ('stanice', 'stanice', 'stanic'), 'komunikace': ('km', 'km', 'km')}
 for _k, _z in ZARIZENI.items():
+    _z["tvary"] = TVARY_ZARIZENI[_k]
     _z.setdefault("derived", f"d_zar_{_k}")
     _den, _scale, _jedn = DEN[_z["den"]]
     # komunikace se počítají na tisíc, ne na deset tisíc obyvatel

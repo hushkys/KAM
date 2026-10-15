@@ -33,7 +33,8 @@ interface Catalog {
 }
 interface Iv { type: string; params: Record<string, number | string> }
 interface Row { year: number; population: number; zs_util: number | null; ms_util: number | null; zs_demand: number; zs_capacity: number; ms_demand: number; ms_capacity: number }
-interface Warning { key: string; level: string; year: number; title: string; text: string; suggest: string }
+interface Warning { key: string; level: string; year: number; title: string; text: string; suggest: string; suggest_params?: Record<string, number> | null; suggest_text?: string }
+interface Navrh { available: boolean; reason?: string; territory: { id: string; name: string }; interventions: Iv[]; duvody: { type: string; label: string; duvod: string }[]; varovani_pred: number; varovani_po: number | null }
 interface Result {
   available: boolean; reason?: string; territory: { id: string; name: string }; base_year: number; baseline: Row[]; scenario: Row[];
   warnings: { baseline: Warning[]; scenario: Warning[] }; metrics: { key: string; label: string; unit: string; values: { year: number; base: number | null; scenario: number | null; delta: number | null }[] }[];
@@ -41,7 +42,7 @@ interface Result {
   assumptions: { key: string; label: string; value: number; unit: string; why: string }[]; inputs: Record<string, number>; method: string; cache: { hit: boolean; ms: number; hits: number };
 }
 interface Saved { id: string; name: string; territory: string; territory_name: string; interventions: Iv[]; created_at: string; summary: { warnings: number } }
-interface Misto { id: string; name: string; poradi: number; hodnota: number; mezera: number; prinos: number; vaha: number; pasmo: string }
+interface Misto { id: string; name: string; poradi: number; hodnota: number; mezera: number; prinos: number; vaha: number; pasmo: string; median_pasma?: number }
 interface Doporuceni {
   available: boolean; reason?: string; z: number;
   ukazatel: { name: string; unit: string };
@@ -76,7 +77,8 @@ function useDoporuceni(type: string, tid: string): Doporuceni | null {
     if (hotove) { setD(hotove); return; }
     setD(null);
     let zruseno = false;
-    api<Doporuceni>("/umisteni", { body: { zasah: type, obce: tid.startsWith("obec:") ? [tid] : [], kraj: 86, pocet: 5 } })
+    const obec = tid.startsWith("obec:");
+    api<Doporuceni>("/umisteni", { body: { zasah: type, obce: obec ? [tid] : [], kraj: 86, pocet: 5, uvnitr: obec ? null : tid } })
       .then((r) => { pamet.set(klic, r); if (!zruseno) setD(r); })
       .catch(() => { if (!zruseno) setD(null); });
     return () => { zruseno = true; };
@@ -84,37 +86,43 @@ function useDoporuceni(type: string, tid: string): Doporuceni | null {
   return d;
 }
 
-/** Kde zásah dává smysl: kde stojí vybrané území a kam se dá přepnout. */
+/** Je to tady potřeba? U obce posudek proti obcím stejné velikosti, u ORP,
+ *  okresu a kraje obce **uvnitř** území, kde to chybí nejvíc. Jiné obce
+ *  mimo vybrané území se nenabízejí: kdo plánuje pro Jaroměř, nechce slyšet,
+ *  že víc by to pomohlo v Trutnově. */
 function Kde({ type, tid, onPick }: { type: string; tid: string; onPick: (id: string) => void }) {
   const d = useDoporuceni(type, tid);
   if (!d) return <div className="sc-kde"><span className="skeleton" style={{ height: 38, width: "100%" }} /></div>;
   if (!d.available) return null;
+  const obec = tid.startsWith("obec:");
   const tady = d.vase?.obce[0];
-  const nej = d.zebricek.filter((m) => m.id !== tid).slice(0, 4);
+  const jednotka = d.ukazatel.unit ? ` ${d.ukazatel.unit}` : "";
+  const hint = <InfoHint label="Jak se to posuzuje">{d.pravidlo} Ukazatel: {d.ukazatel.name}. {d.pozn_dat}</InfoHint>;
+  if (obec) {
+    if (!tady) return null;
+    const stav = tady.mezera >= 30 ? "chybi" : tady.mezera >= 10 ? "mirne" : "dost";
+    const nadpis = { chybi: "Tady to chybí", mirne: "Tady je to mírně pod obvyklou úrovní", dost: "Tady je toho dost" }[stav];
+    return (
+      <div className={`sc-kde is-${stav}`}>
+        <div className="sc-kde-hlava"><span className="sc-kde-nadpis">{nadpis}</span>{hint}</div>
+        <p className="sc-kde-tady">
+          Obec má <strong>{num(tady.hodnota, 2)}{jednotka}</strong>, obvyklá obec stejné velikosti ({tady.pasmo}) {num(tady.median_pasma ?? 0, 2)}{jednotka}.
+          {stav === "dost" && " Opatření tu pomůže méně než jinde."}
+        </p>
+      </div>
+    );
+  }
+  const nej = d.zebricek.filter((m) => m.mezera > 0).slice(0, 4);
+  if (!nej.length) return <div className="sc-kde"><div className="sc-kde-hlava"><span className="sc-kde-nadpis">V tomto území nikde výrazně nechybí</span>{hint}</div></div>;
   return (
     <div className="sc-kde">
-      <div className="sc-kde-hlava">
-        <span className="sc-kde-nadpis">Kde to dává smysl</span>
-        <InfoHint label="Jak se doporučení počítá">
-          {d.pravidlo} Ukazatel: {d.ukazatel.name}. {d.pozn_dat}
-        </InfoHint>
-      </div>
-      {tady ? (
-        <p className="sc-kde-tady">
-          <strong>Tady: {tady.poradi}. z {d.z}</strong>
-          {tady.mezera > 0
-            ? <> — o {num(tady.mezera, 0)} % pod obvyklou úrovní obcí stejné velikosti</>
-            : <> — na obvyklé úrovni nebo lepší, zásah zde pomůže málo</>}
-        </p>
-      ) : (
-        <p className="sc-kde-tady">Pořadí obcí v kraji, kde by zásah pomohl nejvíc:</p>
-      )}
+      <div className="sc-kde-hlava"><span className="sc-kde-nadpis">Kde v území chybí nejvíc</span>{hint}</div>
       <div className="sc-kde-chips">
         {nej.map((m) => (
-          <button key={m.id} type="button" className="sc-chip" onClick={() => onPick(m.id)} title={`${m.poradi}. místo · o ${num(m.mezera, 0)} % pod obvyklou úrovní · ${m.pasmo}`}>
+          <button key={m.id} type="button" className="sc-chip" onClick={() => onPick(m.id)} title={`Spočítat pro obec ${m.name} · o ${num(m.mezera, 0)} % pod obvyklou úrovní obcí stejné velikosti`}>
             <Erb id={m.id} name={m.name} size={18} />
             <span>{m.name}</span>
-            <b>{m.poradi}.</b>
+            <b>−{num(m.mezera, 0)} %</b>
           </button>
         ))}
       </div>
@@ -142,7 +150,9 @@ export function Scenarios() {
   const [kamZasah, setKamZasah] = useState<string>("");
   const seq = useRef(0);
   // Průvodce vede k prvnímu výsledku; z odkazu s hotovým scénářem se rovnou čte výsledek.
-  const [hotovo, setHotovo] = useState(Boolean(query.get("iv") || query.get("add")));
+  const [hotovo, setHotovo] = useState(Boolean(query.get("iv") || query.get("add") || query.get("navrh")));
+  const [navrhInfo, setNavrhInfo] = useState<Navrh | null>(null);
+  const [navrhBusy, setNavrhBusy] = useState(false);
   const [pridavam, setPridavam] = useState(false);
 
   useEffect(() => {
@@ -152,7 +162,7 @@ export function Scenarios() {
   }, [cat.data]);
 
   useEffect(() => {
-    if (!nahled) setQuery({ t: tid, iv: ivs.length ? encode(ivs) : null, add: null });
+    if (!nahled) setQuery({ t: tid, iv: ivs.length ? encode(ivs) : null, add: null, navrh: null });
     const my = ++seq.current;
     setBusy(true);
     const timer = setTimeout(() => {
@@ -165,9 +175,48 @@ export function Scenarios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tid, ivs, assume]);
 
+  /** Opatření spočítaná z problémů území: co, kolik a proč (`simulate.navrh`). */
+  const navrhni = async (id: string, jen?: string | null) => {
+    setNavrhBusy(true);
+    try {
+      const n = await api<Navrh>(`/simulate/navrh/${encodeURIComponent(id)}${jen ? `?jen=${encodeURIComponent(jen)}` : ""}`);
+      setTid(id);
+      if (!n.available || !n.interventions.length) {
+        setNavrhInfo(null); setHotovo(false);
+        toast("warn", n.available ? "U tohoto území model nenašel problém, který by šlo vyřešit opatřením. Vyberte opatření sami." : (n.reason ?? "Návrh se nepodařilo spočítat."));
+        return;
+      }
+      setNavrhInfo(n); setIvs(n.interventions); setHotovo(true); setPridavam(false);
+    } catch (e) {
+      setHotovo(false);
+      toast("error", (e as Error).message);
+    } finally { setNavrhBusy(false); }
+  };
+  useEffect(() => {
+    const n = query.get("navrh");
+    if (n) navrhni(query.get("t") ?? tid, n === "1" ? null : n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Doplní řešení z varování v potřebné velikosti. Když už scénář opatření
+   *  má, přičte jen to, co chybí — varování se počítá ze scénáře, takže
+   *  `suggest_params.pocet` je rozdíl, ne celek. */
+  const doplnReseni = (w: Warning) => {
+    if (!cat.data || !w.suggest_params) return;
+    const spec = cat.data.interventions[w.suggest];
+    if (!spec) return;
+    const max = spec.params.pocet?.max ?? Infinity;
+    setIvs((all) => {
+      const i = all.findIndex((x) => x.type === w.suggest);
+      if (i < 0) return [...all, { type: w.suggest, params: { ...defaults(cat.data!, w.suggest).params, ...w.suggest_params } }];
+      return all.map((x, j) => j !== i ? x : { ...x, params: { ...x.params,
+        pocet: Math.min(max, Number(x.params.pocet ?? 0) + Number(w.suggest_params!.pocet ?? 0)),
+        rok: Math.min(Number(x.params.rok ?? 9999), Number(w.suggest_params!.rok ?? 9999)) } });
+    });
+  };
+
   const update = (i: number, key: string, v: number | string) => setIvs((all) => all.map((iv, j) => (j === i ? { ...iv, params: { ...iv.params, [key]: v } } : iv)));
   const remove = (i: number) => setIvs((all) => all.filter((_, j) => j !== i));
-  const add = (type: string) => { if (cat.data) { setIvs((all) => (all.some((i) => i.type === type) ? all : [...all, defaults(cat.data!, type)]));  } };
 
   const vRoce = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values.find((v) => v.year === rok) ?? m.values[m.values.length - 1]])), [res, rok]);
   const m2040 = useMemo(() => Object.fromEntries((res?.metrics ?? []).map((m) => [m.key, m.values[m.values.length - 1]])), [res]);
@@ -177,11 +226,11 @@ export function Scenarios() {
    *  z výsledku: rok horizontu, rozdíl obyvatel a počet varování modelu. */
   const verdict = useMemo(() => {
     if (!res?.available) return "";
-    if (!ivs.length) return `Bez zásahu: výhled území do roku ${lastYear ?? ""}. Přidejte zásah vlevo.`;
+    if (!ivs.length) return `Bez opatření: výhled území do roku ${lastYear ?? ""}.`;
     const w = res.warnings.scenario.length;
     const move = popDelta === null || Math.round(popDelta) === 0
-      ? `se zásah do roku ${lastYear ?? ""} na počtu obyvatel prakticky neprojeví`
-      : `bude v roce ${lastYear ?? ""} o ${num(Math.abs(popDelta))} obyvatel ${popDelta > 0 ? "víc" : "méně"} než bez zásahu`;
+      ? `se opatření do roku ${lastYear ?? ""} na počtu obyvatel prakticky neprojeví`
+      : `bude v roce ${lastYear ?? ""} o ${num(Math.abs(popDelta))} obyvatel ${popDelta > 0 ? "víc" : "méně"} než bez opatření`;
     return `Podle modelu ${move}. ${w ? `Model k tomu hlásí ${w} varování.` : "Žádné varování nehlásí."}`;
   }, [res, ivs.length, popDelta, lastYear]);
 
@@ -208,7 +257,7 @@ export function Scenarios() {
     { value: "obyvatele", label: "Obyvatelé" },
     ...(kapacity.length ? [{ value: "skoly" as Zalozka, label: "Školy" }] : []),
     ...(ivs.length && res?.chain.length ? [{ value: "postup" as Zalozka, label: "Jak to působí" }] : []),
-    ...(ivs.length ? [{ value: "naklady" as Zalozka, label: "Náklady" }, { value: "kam" as Zalozka, label: "Kam umístit" }] : []),
+    ...(ivs.length ? [{ value: "naklady" as Zalozka, label: "Náklady" }, ...(tid.startsWith("obec:") ? [] : [{ value: "kam" as Zalozka, label: "Kde v území" }])] : []),
   ];
   const aktZalozka = zalozky.some((z) => z.value === zalozka) ? zalozka : "obyvatele";
   const kamTyp = ivs.some((i) => i.type === kamZasah) ? kamZasah : ivs[0]?.type ?? "";
@@ -217,7 +266,7 @@ export function Scenarios() {
   return (
     <>
       <PageHeader
-        title={<>Scénáře <InfoHint label="Co jsou scénáře">Zvolte území a zásah (nová výstavba, ordinace, spoje…). Model spočítá výhled dvakrát, bez zásahu a se zásahem, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></>}
+        title={<>Scénáře <InfoHint label="Co jsou scénáře">Zvolte území a opatření (nová výstavba, ordinace, spoje…). Model spočítá výhled dvakrát, bez opatření a s nimi, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></>}
         actions={
           hotovo ? (<>
             <button className="btn" onClick={share} disabled={!prikazy}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
@@ -231,7 +280,7 @@ export function Scenarios() {
       {!hotovo && cat.data && (
         <Pruvodce key={pridavam ? "pridat" : "novy"} interventions={cat.data.interventions} help={cat.data.help} sady={cat.data.sady ?? []}
           ulozene={saved.data ?? []} tid={tid} setTid={setTid} setIvs={setIvs} vytvor={(t) => defaults(cat.data!, t)} pridat={pridavam}
-          onHotovo={() => { setHotovo(true); setPridavam(false); }} onZrus={() => { setPridavam(false); setHotovo(ivs.length > 0); }} />
+          onHotovo={() => { setHotovo(true); setPridavam(false); setNavrhInfo(null); }} onNavrh={(id) => navrhni(id)} navrhBusy={navrhBusy} onZrus={() => { setPridavam(false); setHotovo(ivs.length > 0); }} />
       )}
       {!hotovo && !cat.data && <span className="skeleton" style={{ height: 240, width: "100%" }} />}
 
@@ -242,6 +291,17 @@ export function Scenarios() {
       </div>
 
       <div className="stack-y sc-sloupec">
+          {navrhInfo && navrhInfo.territory.id === tid && (
+            <Card i={0} className="sc-navrh" title={`Navrženo podle problémů území ${navrhInfo.territory.name}`} icon="sparkle"
+              actions={<InfoHint label="Jak návrh vznikl">Model spočítal výhled bez opatření a vzal varování (školy, lékaři, péče o seniory), rizika území (úbytek, odliv, nezaměstnanost) a služby, kterých má obec výrazně méně než obvyklá obec stejné velikosti. Velikost každého opatření je spočítaná tak, aby problém zmizel nebo se srovnal s obvyklou úrovní. Všechno jde dál upravit.</InfoHint>}>
+              <ul className="sc-navrh-seznam">
+                {navrhInfo.duvody.map((d) => <li key={d.type}><strong>{d.label}</strong><span>{d.duvod}</span></li>)}
+              </ul>
+              {navrhInfo.varovani_po !== null && navrhInfo.varovani_pred > 0 && (
+                <p className="xsmall mute" style={{ marginTop: 10 }}>Varování modelu: {navrhInfo.varovani_pred} bez opatření → {navrhInfo.varovani_po} s nimi.</p>
+              )}
+            </Card>
+          )}
           <Card i={1} title="Váš scénář" icon="split"
             actions={<button className="btn btn-quiet btn-sm" onClick={() => { setIvs([]); setHotovo(false); setPridavam(false); }}>Začít znovu</button>}>
             <div className="sc-zasahy">
@@ -274,7 +334,7 @@ export function Scenarios() {
             </div>
 
             <div className="sc-pridat">
-              <button className="btn btn-sm" onClick={() => { setPridavam(true); setHotovo(false); }}><Icon name="plus" size={15} /> Přidat další zásah</button>
+              <button className="btn btn-sm" onClick={() => { setPridavam(true); setHotovo(false); }}><Icon name="plus" size={15} /> Přidat další opatření</button>
             </div>
           </Card>
 
@@ -300,7 +360,7 @@ export function Scenarios() {
                   const hodnota = dopl ? num(v?.scenario ?? null, 2) : k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
                   const d = v?.delta ?? 0;
                   return <Stat key={k} i={n} label={`${l} · ${rok}`} value={hodnota}
-                    sub={ivs.length > 0 ? (d ? `${signed(d, dopl ? 2 : k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} proti stavu bez zásahu` : "beze změny") : "výhled bez zásahu"} />;
+                    sub={ivs.length > 0 ? (d ? `${signed(d, dopl ? 2 : k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} oproti stavu bez opatření` : "beze změny") : "výhled bez opatření"} />;
                 })}
               </div>
 
@@ -310,7 +370,12 @@ export function Scenarios() {
                     <div className={`warn-card lvl-${w.level}`} key={w.key + w.year}>
                       <Icon name="alert" size={18} />
                       <span className="wc-title">{w.title}</span>
-                      <span className="wc-text">{w.text} {w.suggest && !ivs.some((i) => i.type === w.suggest) && cat.data?.interventions[w.suggest] && <button className="btn btn-sm btn-quiet" onClick={() => add(w.suggest)}>Přidat řešení <Icon name="arrow-right" size={14} /></button>}</span>
+                      <span className="wc-text">{w.text}{w.suggest_text ? ` ${w.suggest_text}` : ""}</span>
+                      {w.suggest && w.suggest_params && cat.data?.interventions[w.suggest] && (
+                        <button className="btn btn-sm wc-akce" onClick={() => doplnReseni(w)}>
+                          <Icon name="plus" size={14} /> Doplnit: {cat.data.interventions[w.suggest].label.toLowerCase()} +{num(Number(w.suggest_params.pocet))}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -324,17 +389,18 @@ export function Scenarios() {
                       {
                         key: "cesty", label: "Dvě cesty", icon: "trend-up", render: () => (
                           <>
-                            <LineChart ariaLabel="Obyvatelé bez zásahu a se zásahem" height={260} series={[
-                              { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: res.baseline.map((r) => ({ year: r.year, value: r.population })) },
-                              { key: "s", label: "Se zásahem", color: "var(--accent)", width: 2.6, points: res.scenario.map((r) => ({ year: r.year, value: r.population })) },
+                            <LineChart ariaLabel="Obyvatelé bez opatření a s nimi" height={260} series={[
+                              { key: "b", label: "Bez opatření", color: "var(--text-mute)", dashed: true, points: res.baseline.map((r) => ({ year: r.year, value: r.population })) },
+                              { key: "s", label: "S opatřeními", color: "var(--m)", width: 2.8, points: res.scenario.map((r) => ({ year: r.year, value: r.population })),
+                                band: ivs.length ? res.scenario.map((r, i) => ({ year: r.year, lo: Math.min(r.population, res.baseline[i]?.population ?? r.population), hi: Math.max(r.population, res.baseline[i]?.population ?? r.population) })) : undefined },
                             ]} />
-                            <Legend items={[{ label: "Bez zásahu", color: "var(--text-mute)", dashed: true }, { label: "Se zásahem", color: "var(--accent)" }]} />
+                            <Legend items={[{ label: "Bez opatření", color: "var(--text-mute)", dashed: true }, { label: "S opatřeními", color: "var(--m)" }]} />
                           </>
                         ),
                       },
                       {
                         key: "rozdil", label: "Jen rozdíl", icon: "split", render: () => (
-                          <LineChart ariaLabel="Rozdíl mezi scénářem a stavem bez zásahu" height={260} yZero
+                          <LineChart ariaLabel="Rozdíl mezi scénářem a stavem bez opatření" height={260} yZero
                             format={(v) => signed(v, 0)} series={[{
                               key: "d", label: "Rozdíl", color: "var(--accent)", width: 2.6,
                               points: res.scenario.map((r, i) => ({ year: r.year, value: r.population - (res.baseline[i]?.population ?? r.population) })),
@@ -362,8 +428,8 @@ export function Scenarios() {
                         <>
                           <LineChart ariaLabel={`Vytížení ${k.label}`} height={240} unit="%" format={(v) => `${num(v, 0)} %`}
                             refLine={{ value: 100, label: "Kapacita 100 %" }} series={[
-                              { key: "b", label: "Bez zásahu", color: "var(--text-mute)", dashed: true, points: k.b },
-                              { key: "s", label: "Se zásahem", color: "var(--warn)", points: k.s },
+                              { key: "b", label: "Bez opatření", color: "var(--text-mute)", dashed: true, points: k.b },
+                              { key: "s", label: "S opatřeními", color: "var(--warn)", points: k.s },
                             ]} />
                           <p className="xsmall mute" style={{ marginTop: 8 }}>{k.cap}. Nad 100 % je dětí víc než míst.</p>
                         </>
@@ -512,13 +578,13 @@ function Kam({ type, tid, typy, onTyp, onPick }: { type: string; tid: string; ty
   const nejvic = Math.max(1, ...(d?.zebricek ?? []).map((m) => m.mezera));
   return (
     <div className="sc-kam">
-      {typy.length > 1 && <Segmented size="sm" label="Zásah" value={type} onChange={onTyp} options={typy} />}
+      {typy.length > 1 && <Segmented size="sm" label="Opatření" value={type} onChange={onTyp} options={typy} />}
       {!d && <span className="skeleton" style={{ height: 220, width: "100%" }} />}
       {d && !d.available && <p className="muted small">{d.reason}</p>}
       {d?.available && (
         <>
           <p className="small mute sc-kam-uvod">
-            Obce kraje podle toho, kolik lidí by zásah dostihl: {d.co}.
+            Obce tohoto území podle toho, kolik lidí by opatření pomohlo: {d.co}.
             <InfoHint label="Jak se pořadí počítá">{d.pravidlo} {d.pozn_dat}</InfoHint>
           </p>
           <ol className="sc-kam-seznam">

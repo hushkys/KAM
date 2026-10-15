@@ -49,6 +49,7 @@ class MistoRequest(BaseModel):
     obce: list[str] = Field(default_factory=list, max_length=30)
     pocet: int | None = Field(default=None, ge=1, le=30)
     kraj: int = HOME_KRAJ
+    uvnitr: str | None = Field(default=None, max_length=32)
 
 
 @router.get("/umisteni/pravidla")
@@ -61,7 +62,7 @@ def umisteni_pravidla() -> dict:
 
 @router.post("/umisteni")
 def umisteni_porovnani(req: MistoRequest) -> dict:
-    return umisteni.porovnej(req.kraj, req.zasah, req.obce, req.pocet)
+    return umisteni.porovnej(req.kraj, req.zasah, req.obce, req.pocet, req.uvnitr)
 
 
 @router.get("/simulate/catalog")
@@ -71,6 +72,12 @@ def sim_catalog() -> dict:
     ivs = {k: {**v, "pillar_label": PILLARS.get(v["pillar"], "Ostatní")} for k, v in simulate.INTERVENTIONS.items()}
     return {"interventions": ivs, "assumptions": simulate.ASSUMPTIONS,
             "help": simulate.INTERVENTION_HELP, "sady": simulate.SADY}
+
+
+@router.get("/simulate/navrh/{tid}")
+def sim_navrh(tid: str, jen: str | None = None) -> dict:
+    """Opatření spočítaná z problémů území: co, kolik a proč."""
+    return simulate.navrh(tid, jen)
 
 
 @router.post("/simulate")

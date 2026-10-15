@@ -17,18 +17,20 @@ export interface PUlozeny { id: string; name: string; territory: string; territo
 interface PIv { type: string; params: Record<string, number | string> }
 
 type Krok = "start" | "sada" | "ulozene" | "kategorie" | "zasah" | "uzemi";
-type Rezim = "" | "sada" | "novy" | "ulozene";
+type Rezim = "" | "sada" | "novy" | "ulozene" | "auto";
 
 const TOK: Record<string, Krok[]> = {
   sada: ["start", "sada", "uzemi"],
   novy: ["start", "kategorie", "zasah", "uzemi"],
+  auto: ["start", "uzemi"],
   pridat: ["kategorie", "zasah"],
 };
 
-export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setIvs, vytvor, pridat, onHotovo, onZrus }: {
+export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setIvs, vytvor, pridat, onHotovo, onZrus, onNavrh, navrhBusy }: {
   interventions: Record<string, PSpec>; help: Record<string, string>; sady: PSada[]; ulozene: PUlozeny[];
   tid: string; setTid: (id: string) => void; setIvs: (fn: (all: PIv[]) => PIv[]) => void;
   vytvor: (type: string) => PIv; pridat: boolean; onHotovo: () => void; onZrus: () => void;
+  onNavrh: (tid: string) => void; navrhBusy: boolean;
 }) {
   const [krok, setKrok] = useState<Krok>(pridat ? "kategorie" : "start");
   const [hist, setHist] = useState<Krok[]>([]);
@@ -51,7 +53,7 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
     setKrok(hist[hist.length - 1]); setHist((h) => h.slice(0, -1));
   };
 
-  const tok = pridat ? TOK.pridat : TOK[rezim === "sada" ? "sada" : "novy"];
+  const tok = pridat ? TOK.pridat : TOK[rezim === "sada" ? "sada" : rezim === "auto" ? "auto" : "novy"];
   const poradi = Math.max(0, tok.indexOf(krok));
   const ukazPostup = krok !== "start" && krok !== "ulozene";
 
@@ -76,15 +78,19 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
         )}
       </div>
 
+      <div className="pr-krok" key={krok}>
       {krok === "start" && (
         <>
-          <h2 className="pr-otazka">Jak chcete začít? <InfoHint label="Co jsou scénáře">Model spočítá výhled území dvakrát, bez zásahu a se zásahem, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></h2>
+          <h2 className="pr-otazka">Jak chcete začít? <InfoHint label="Co jsou scénáře">Model spočítá výhled území dvakrát, bez opatření a s nimi, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></h2>
           <div className="pr-volby is-start">
+            <button className="pr-volba is-hlavni" onClick={() => { setRezim("auto"); jdi("uzemi"); }}>
+              <i className="pr-ikona"><Icon name="sparkle" size={24} /></i><strong>Navrhnout za mě</strong><span>Model najde problémy území a spočítá, co a kolik přidat.</span>
+            </button>
             <button className="pr-volba" onClick={() => { setRezim("sada"); jdi("sada"); }}>
-              <i className="pr-ikona"><Icon name="target" size={24} /></i><strong>Hotový scénář</strong><span>Typická otázka obce, zásahy se nastaví samy.</span>
+              <i className="pr-ikona"><Icon name="target" size={24} /></i><strong>Hotový scénář</strong><span>Typická otázka obce, opatření se nastaví sama.</span>
             </button>
             <button className="pr-volba" onClick={() => { setRezim("novy"); jdi("kategorie"); }}>
-              <i className="pr-ikona"><Icon name="plus" size={24} /></i><strong>Nový scénář</strong><span>Sami zvolíte oblast a zásah z {Object.keys(interventions).length} možností.</span>
+              <i className="pr-ikona"><Icon name="plus" size={24} /></i><strong>Nový scénář</strong><span>Sami zvolíte oblast a opatření z {Object.keys(interventions).length} možností.</span>
             </button>
             {ulozene.length > 0 && (
               <button className="pr-volba" onClick={() => { setRezim("ulozene"); jdi("ulozene"); }}>
@@ -111,7 +117,7 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
 
       {krok === "sada" && (
         <>
-          <h2 className="pr-otazka">Na jakou otázku hledáte odpověď? <InfoHint label="Hotové scénáře">Typické otázky, se kterými obce přicházejí. Zásahy a jejich velikost půjde na dalším místě upravit.</InfoHint></h2>
+          <h2 className="pr-otazka">Na jakou otázku hledáte odpověď? <InfoHint label="Hotové scénáře">Typické otázky, se kterými obce přicházejí. Opatření a jejich velikost půjde potom upravit.</InfoHint></h2>
           <div className="pr-seznam">
             {sady.map((s) => (
               <button key={s.key} className="pr-polozka" onClick={() => { setIvs(() => s.ivs.map((i) => ({ type: i.type, params: { ...i.params } }))); jdi("uzemi"); }}>
@@ -146,7 +152,7 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
             {kategorie.map((k) => (
               <button key={k.pillar} className="pr-volba" onClick={() => { setPillar(k.pillar); jdi("zasah"); }}>
                 <i className="pr-ikona"><Icon name={PILLAR_ICON[k.pillar] ?? "target"} size={24} /></i><strong>{k.label}</strong>
-                <span>{k.items.length === 1 ? "1 zásah" : k.items.length < 5 ? `${k.items.length} zásahy` : `${k.items.length} zásahů`}</span>
+                <span>{k.items.length === 1 ? "1 opatření" : `${k.items.length} opatření`}</span>
               </button>
             ))}
           </div>
@@ -155,7 +161,7 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
 
       {krok === "zasah" && kat && (
         <>
-          <h2 className="pr-otazka">Jaký zásah chcete vyzkoušet? <span className="pr-kat">{kat.label}</span></h2>
+          <h2 className="pr-otazka">Jaké opatření chcete vyzkoušet? <span className="pr-kat">{kat.label}</span></h2>
           <div className="pr-seznam">
             {kat.items.map(([k, v]) => (
               <div key={k} className="pr-polozka-radek">
@@ -175,9 +181,14 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
         <>
           <h2 className="pr-otazka">Pro které území to chcete spočítat?</h2>
           <div className="pr-uzemi"><TerritoryPicker value={tid} onChange={setTid} label="Obec, ORP, okres nebo kraj" /></div>
-          <div className="pr-akce"><button className="btn btn-primary" onClick={onHotovo}>Spočítat scénář <Icon name="arrow-right" size={16} /></button></div>
+          <div className="pr-akce">
+            {rezim === "auto"
+              ? <button className="btn btn-primary" disabled={navrhBusy} onClick={() => onNavrh(tid)}>{navrhBusy ? "Počítám návrh…" : "Navrhnout opatření"} <Icon name="arrow-right" size={16} /></button>
+              : <button className="btn btn-primary" onClick={onHotovo}>Spočítat scénář <Icon name="arrow-right" size={16} /></button>}
+          </div>
         </>
       )}
+      </div>
     </Card>
   );
 }

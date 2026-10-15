@@ -21,6 +21,13 @@ const MAP_OPTS = [
   { value: "500020", label: "Nezaměstnanost" },
 ];
 
+const ZDROJ_KPI: Record<string, string> = {
+  pop: "Český statistický úřad, Městská a obecní statistika",
+  s65: "Český statistický úřad, Městská a obecní statistika",
+  un: "Úřad práce ČR (MPSV), přes Městskou a obecní statistiku ČSÚ",
+  byty: "Český statistický úřad, Městská a obecní statistika",
+};
+
 export function Overview() {
   const ov = useApi<OverviewT>("/overview");
   const fc = useApi<Forecast>("/forecast/kraj:86");
@@ -34,7 +41,7 @@ export function Overview() {
       <PrehledHook kpis={d?.kpis ?? []} pozorovani={d?.model.observations}>
         <div className="row" style={{ marginTop: 20 }}>
           <Link className="btn" to="/mapa"><Icon name="map" size={16} /> Otevřít mapu</Link>
-          <Link className="btn btn-primary" to="/scenare"><Icon name="split" size={16} /> Simulovat zásah</Link>
+          <Link className="btn btn-primary" to="/scenare"><Icon name="split" size={16} /> Sestavit scénář</Link>
         </div>
       </PrehledHook>
       <ErrorBox error={ov.error} retry={ov.reload} />
@@ -42,7 +49,8 @@ export function Overview() {
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
         {(d?.kpis ?? Array.from({ length: 4 }, () => null)).map((k, i) => k ? (
           <div className="kpi reveal" key={k.key} style={{ "--i": i } as CSSProperties}>
-            <div className="kpi-top"><span className="kpi-label">{k.label}</span><KindTag kind="FAKT" /></div>
+            <div className="kpi-top"><span className="kpi-label">{k.label}</span>
+              <InfoHint label={`Odkud je: ${k.label}`}>Skutečná zveřejněná hodnota za rok {k.year}, ne odhad modelu. Zdroj: {ZDROJ_KPI[k.key] ?? "Český statistický úřad"}. Čára ukazuje vývoj{k.since ? ` od roku ${k.since}` : ""}.</InfoHint></div>
             <span className="kpi-value">{withUnit(k.value, k.unit)}</span>
             <span className="kpi-sub">{k.change !== null ? `${signed(k.change, 2, k.unit === "%" ? " p. b." : " %")} od ${k.since}` : "za rok"} · {k.year}</span>
             <Sparkline points={k.series} ariaLabel={`Vývoj: ${k.label}`} />

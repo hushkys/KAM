@@ -84,7 +84,9 @@ def _doplň_zarizeni() -> None:
     from ..indicators import DEN, ZARIZENI
     for k, z in ZARIZENI.items():
         PRAVIDLA.setdefault(k, {"code": z["derived"], "smer": 1, "vaha": DEN[z["den"]][0],
-                                "co": f"lidí v obcích s horší dostupností zařízení „{z['metrika'].lower()}“, než je obvyklé"})
+                                "co": f"lidí v obcích s horší dostupností zařízení „{z['metrika'].lower()}“, než je obvyklé",
+                                # Zařízení, které obec nemá, statistika nevykazuje: chybějící = nula.
+                                "nuly": True})
 
 
 _doplň_zarizeni()
@@ -105,6 +107,8 @@ def _kandidati(kraj_code: int, pravidlo: dict) -> tuple[list[dict], dict[int, fl
         lv = store.latest(t.id, code)
         w = store.latest(t.id, vaha)
         obyv = store.latest(t.id, "110900")
+        if lv is None and pravidlo.get("nuly") and w is not None:
+            lv = (w[0], 0.0)
         if lv is None or w is None or not w[1] or obyv is None:
             continue
         idx, label = pasmo(obyv[1])
@@ -113,28 +117,17 @@ def _kandidati(kraj_code: int, pravidlo: dict) -> tuple[list[dict], dict[int, fl
     kraj_med = _median([r["hodnota"] for r in radky])
     if kraj_med is None:
         return [], {}, kraj_med
-    if kraj_med == 0:
-        # Zařízení je v kraji vzácné: většina obcí ho nemá, takže medián je nula
-        # a „horší než obvyklé" nejde změřit. Mezera je pak prostě „nemá žádné"
-        # a pořadí rozhoduje počet lidí, kterých se to týká.
-        for r in radky:
-            r["median_pasma"] = 0.0
-            r["mezera"] = 1.0 if r["hodnota"] == 0 else 0.0
-            r["prinos"] = round(r["mezera"] * r["vaha"])
-        radky.sort(key=lambda r: -r["prinos"])
-        for i, r in enumerate(radky):
-            r["poradi"] = i + 1
-        return radky, {i: 0.0 for i in range(len(PASMA))}, 0.0
-
     mediany: dict[int, float] = {}
     for i in range(len(PASMA)):
         v = [r["hodnota"] for r in radky if r["pasmo"] == i]
         m = _median(v) if len(v) >= MIN_V_PASMU else None
-        mediany[i] = m if m else kraj_med
+        mediany[i] = m if m is not None else kraj_med
 
     for r in radky:
         med = mediany[r["pasmo"]]
-        rel = (med - r["hodnota"]) / med if smer > 0 else (r["hodnota"] - med) / med
+        # Medián pásma nula: obce té velikosti to obvykle nemají, takže tu nic
+        # „nechybí" víc než u sousedů.
+        rel = 0.0 if not med else (med - r["hodnota"]) / med if smer > 0 else (r["hodnota"] - med) / med
         r["median_pasma"] = med
         r["mezera"] = round(min(max(rel, 0.0), STROP_MEZERY), 4)
         r["prinos"] = round(r["mezera"] * r["vaha"])
@@ -157,7 +150,7 @@ def _varianta(radky: dict[str, dict], ids: list[str]) -> dict:
     }
 
 
-def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None = None) -> dict:
+def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None = None, uvnitr: str | None = None) -> dict:
     """Porovná vybraná místa s nejlepší možnou sadou stejné velikosti."""
     pravidlo = PRAVIDLA.get(zasah)
     if pravidlo is None:
@@ -166,6 +159,17 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
     if not radky:
         return {"available": False, "reason": "Pro tento ukazatel nejsou v kraji dostatečná data."}
 
+    # Uvnitř ORP nebo okresu se hledá jen v jeho obcích: kdo plánuje pro Náchodsko,
+    # nechce slyšet, že jinde v kraji je to potřeba víc. Mediány pásem zůstávají
+    # krajské, aby „obvyklá úroveň" znamenala totéž všude.
+    ut = store.territory(uvnitr) if uvnitr else None
+    if ut is not None and ut.level in ("orp", "okres"):
+        clenove = {o.id for o in store.members("obec", kraj_code, parent=ut.id)}
+        radky = [dict(r) for r in radky if r["id"] in clenove]
+        for i, r in enumerate(radky):
+            r["poradi"] = i + 1
+        if not radky:
+            return {"available": False, "reason": "V tomto území pro ukazatel nejsou data."}
     podle_id = {r["id"]: r for r in radky}
     n = pocet or len(vybrane) or 3
     vase = _varianta(podle_id, vybrane) if vybrane else None
@@ -186,7 +190,7 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
         "mediany_pasem": [{"pasmo": PASMA[i][2], "median": round(m, 2)} for i, m in sorted(mediany.items())],
         "co": pravidlo["co"],
         "pozn_dat": ((pravidlo.get("pozn", "") + " ") if pravidlo.get("pozn") else "") + (
-            "Zařízení je v kraji vzácné (většina obcí ho nemá), proto se hledají nejlidnatější obce, které ho nemají vůbec." if kraj_med == 0 else ""),
+            "Obec, která zařízení nemá, se počítá s nulou." if pravidlo.get("nuly") else ""),
         "vase": vase,
         "nejlepsi": nejlepsi,
         "rozdil": rozdil,

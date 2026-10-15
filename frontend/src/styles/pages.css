@@ -1603,3 +1603,30 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .pr-podnadpis { margin: 0 0 14px; font-size: .9375rem; font-weight: 650; color: var(--text-dim); }
 .pr-uzemi { max-width: 640px; }
 .pr-hlava:empty { display: none; }
+
+/* Scénáře: posudek „je to tady potřeba“, návrh z problémů, varování s řešením, pohyb */
+.sc-kde { padding: 10px 12px; border-left: 3px solid var(--border-strong); background: var(--surface); }
+.sc-kde.is-chybi { border-left-color: var(--bad); }
+.sc-kde.is-mirne { border-left-color: var(--warn); }
+.sc-kde.is-dost { border-left-color: var(--ok); }
+.sc-kde-nadpis { font-size: .8125rem; letter-spacing: 0; color: var(--text); }
+.sc-kde.is-chybi .sc-kde-nadpis { color: var(--bad); }
+.sc-kde.is-dost .sc-kde-nadpis { color: var(--ok); }
+.sc-chip b { color: var(--bad); }
+.sc-navrh { border-left: 3px solid var(--m); }
+.sc-navrh-seznam { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sc-navrh-seznam li { display: grid; gap: 2px; padding: 10px 12px; background: var(--surface-2); animation: sc-najezd 420ms var(--ease-out) both; }
+.sc-navrh-seznam li:nth-child(2) { animation-delay: 60ms; } .sc-navrh-seznam li:nth-child(3) { animation-delay: 120ms; }
+.sc-navrh-seznam li:nth-child(4) { animation-delay: 180ms; } .sc-navrh-seznam li:nth-child(5) { animation-delay: 240ms; } .sc-navrh-seznam li:nth-child(6) { animation-delay: 300ms; }
+.sc-navrh-seznam strong { font-size: .9375rem; }
+.sc-navrh-seznam span { font-size: .8125rem; color: var(--text-dim); line-height: 1.45; }
+.warn-card .wc-akce { grid-column: 2; justify-self: start; margin-top: 6px; }
+.pr-volba.is-hlavni { border-color: var(--m-line); background: var(--m-soft); }
+.pr-krok { animation: sc-krok 320ms var(--ease-out) both; }
+.sc-vysledek > * { animation: sc-najezd 460ms var(--ease-out) both; }
+.sc-vysledek > *:nth-child(2) { animation-delay: 50ms; } .sc-vysledek > *:nth-child(3) { animation-delay: 100ms; }
+.sc-vysledek > *:nth-child(4) { animation-delay: 150ms; } .sc-vysledek > *:nth-child(n+5) { animation-delay: 200ms; }
+.sc-zasah { animation: sc-najezd 360ms var(--ease-out) both; }
+.sc-obsah .chart path.band { opacity: .22; }
+@keyframes sc-najezd { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes sc-krok { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }

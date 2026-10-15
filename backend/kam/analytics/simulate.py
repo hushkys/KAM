@@ -149,6 +149,22 @@ def _latest(tid: str, *codes: str) -> float:
     return total
 
 
+# Školy se doplňují do tohoto vytížení: nad ním model hlásí varování.
+CIL_VYTIZENI = 0.9
+
+
+def _zaokr(v: float, step: float, lo: float, hi: float) -> int:
+    """Nahoru na krok posuvníku a do jeho mezí: návrh musí jít nastavit."""
+    import math
+    return int(min(max(math.ceil(v / step) * step, lo), hi))
+
+
+def _kusy(n: float, tvary: tuple[str, str, str]) -> str:
+    """„1 lékárna, 3 lékárny, 5 lékáren“."""
+    n = int(round(n))
+    return f"{_fmt(n)} {tvary[0] if n == 1 else tvary[1] if 2 <= n <= 4 else tvary[2]}"
+
+
 def _fmt(v: float, d: int = 0) -> str:
     return f"{v:,.{d}f}".replace(",", " ").replace(".", ",")
 
@@ -190,7 +206,14 @@ def compute(payload: dict) -> dict:
     stops0 = _latest(tid, "khk_zast_bus")
     zar = [k for k in ZARIZENI if any(iv["type"] == k for iv in payload["interventions"])]
     zar0 = {k: _latest(tid, *ZARIZENI[k]["codes"]) for k in zar}
-    zar_ref = {k: store.latest(ref, ZARIZENI[k]["derived"]) for k in zar}
+    if t and t.level == "obec":
+        from .umisteni import pasmo
+        i_p = pasmo(pop0)[0]
+        zar_ref = {k: (None, m) if (m := _median_pasma(t.kraj_code, k, i_p)) else None for k in zar}
+        srovnani = "obvyklá obec stejné velikosti"
+    else:
+        zar_ref = {k: store.latest(ref, ZARIZENI[k]["derived"]) for k in zar}
+        srovnani = "kraj"
 
     def path(with_iv: bool) -> list[dict]:
         rows = []
@@ -277,44 +300,61 @@ def compute(payload: dict) -> dict:
     scen = path(True)
 
     def warnings(rows: list[dict]) -> list[dict]:
+        """Varování a u každého i to, kolik čeho přidat, aby zmizelo.
+
+        Školy se doplňují tak, aby vytížení nikde nepřekročilo 90 % (to je hranice
+        varování), služby tak, aby v roce 2040 dosáhly krajského průměru na obyvatele.
+        `suggest_params.pocet` je to, co chybí **navíc** k tomu, co scénář už má."""
         out = []
-        for key, label, cap_key in (("zs_util", "Základní školy", "zs_capacity"), ("ms_util", "Mateřské školy", "ms_capacity")):
+        last = rows[-1]
+        for key, label, cap_key, typ in (("zs_util", "Základní školy", "zs_capacity", "zs_mista"), ("ms_util", "Mateřské školy", "ms_capacity", "ms_mista")):
+            dem_key = key.replace("util", "demand")
             crit = next((r for r in rows if r[key] and r[key] > 1.0), None)
             warn = next((r for r in rows if r[key] and r[key] > 0.9), None)
+            chybi = max((r[dem_key] / CIL_VYTIZENI - r[cap_key] for r in rows if r[cap_key]), default=0)
+            spec = INTERVENTIONS[typ]["params"]["pocet"]
+            navrh = {"pocet": _zaokr(chybi, spec["step"], spec["min"], spec["max"]), "rok": max(2026, (crit or warn or last)["year"] - 1)} if chybi > 0 else None
+            text_navrhu = f"Aby třídy v žádném roce nebyly plné z víc než 90 %, chybí {_fmt(navrh['pocet'])} míst." if navrh else ""
             if crit:
-                need = crit[key.replace("util", "demand")] - crit[cap_key]
+                need = crit[dem_key] - crit[cap_key]
                 out.append({"key": key, "level": "kriticke", "year": crit["year"], "title": f"{label}: v roce {crit['year']} nebudou stačit",
-                            "text": f"Potřeba {_fmt(crit[key.replace('util', 'demand')])} míst, kapacita {_fmt(crit[cap_key])} ({_fmt(100 * crit[key])} %). Chybí asi {_fmt(need)} míst.",
-                            "suggest": "zs_mista" if key == "zs_util" else "ms_mista"})
+                            "text": f"Potřeba {_fmt(crit[dem_key])} míst, kapacita {_fmt(crit[cap_key])} ({_fmt(100 * crit[key])} %). Chybí asi {_fmt(need)} míst.",
+                            "suggest": typ, "suggest_params": navrh, "suggest_text": text_navrhu})
             elif warn:
                 out.append({"key": key, "level": "vysoke", "year": warn["year"], "title": f"{label}: od roku {warn['year']} plné z více než 90 %",
-                            "text": f"Vytížení dosáhne {_fmt(100 * warn[key])} %.", "suggest": "zs_mista" if key == "zs_util" else "ms_mista"})
-        if ref_gp and ref_gp[1]:
-            low = next((r for r in rows if r["gp_10k"] is not None and r["gp_10k"] < 0.7 * ref_gp[1]), None)
-            if low and gp0:
-                out.append({"key": "gp", "level": "stredni", "year": low["year"], "title": "Dostupnost praktických lékařů",
-                            "text": f"{_fmt(low['gp_10k'], 1)} ordinace na 10 000 obyvatel (kraj {_fmt(ref_gp[1], 1)}).", "suggest": "ordinace"})
-        if ref_zub and ref_zub[1]:
-            low = next((r for r in rows if r["zub_10k"] is not None and r["zub_10k"] < 0.7 * ref_zub[1]), None)
-            if low and zub0:
-                out.append({"key": "zub", "level": "stredni", "year": low["year"], "title": "Dostupnost zubního lékaře",
-                            "text": f"{_fmt(low['zub_10k'], 1)} ordinace na 10 000 obyvatel (kraj {_fmt(ref_zub[1], 1)}).", "suggest": "stomatolog"})
-        if ref_ds and ref_ds[1]:
-            low = next((r for r in rows if r["ds_100_65"] is not None and r["ds_100_65"] < 0.6 * ref_ds[1]), None)
-            if low and ds0:
-                out.append({"key": "ds", "level": "stredni", "year": low["year"], "title": "Kapacita domovů pro seniory",
-                            "text": f"{_fmt(low['ds_100_65'], 1)} míst na 100 obyvatel 65+ (kraj {_fmt(ref_ds[1], 1)}).", "suggest": "domov_seniori"})
+                            "text": f"Vytížení dosáhne {_fmt(100 * warn[key])} %.", "suggest": typ, "suggest_params": navrh, "suggest_text": text_navrhu})
+
+        def sluzba(key, title, ratio_key, count_key, ref_v, prah, den_key, scale, unit, typ, odpovida=True):
+            if not (ref_v and ref_v[1]) or not odpovida:
+                return
+            low = next((r for r in rows if r[ratio_key] is not None and r[ratio_key] < prah * ref_v[1]), None)
+            if not low:
+                return
+            spec = INTERVENTIONS[typ]["params"]["pocet"]
+            chybi = ref_v[1] * last[den_key] / scale - last[count_key]
+            navrh = {"pocet": _zaokr(chybi, spec["step"], spec["min"], spec["max"]), "rok": max(2026, low["year"])} if chybi > 0 else None
+            out.append({"key": key, "level": "stredni", "year": low["year"], "title": title,
+                        "text": f"{_fmt(low[ratio_key], 1)} {unit} (kraj {_fmt(ref_v[1], 1)}).", "suggest": typ, "suggest_params": navrh,
+                        "suggest_text": f"Na krajský průměr v roce 2040 chybí {_fmt(navrh['pocet'])}." if navrh else ""})
+
+        sluzba("gp", "Dostupnost praktických lékařů", "gp_10k", "gp", ref_gp, 0.7, "population", 10000, "ordinace na 10 000 obyvatel", "ordinace", bool(gp0))
+        sluzba("zub", "Dostupnost zubního lékaře", "zub_10k", "zub", ref_zub, 0.7, "population", 10000, "ordinace na 10 000 obyvatel", "stomatolog", bool(zub0))
+        sluzba("ds", "Kapacita domovů pro seniory", "ds_100_65", "ds_places", ref_ds, 0.6, "age_65", 100, "míst na 100 obyvatel 65+", "domov_seniori", bool(ds0))
         for k in zar:
             ref_k = zar_ref[k]
             if not (ref_k and ref_k[1]):
                 continue
             # Jen na konci horizontu: před zprovozněním zařízení je dostupnost vždycky nízká.
-            last = rows[-1]
-            low = last if last[f"x_{k}_r"] is not None and last[f"x_{k}_r"] < 0.7 * ref_k[1] else None
-            if low:
+            if last[f"x_{k}_r"] is not None and last[f"x_{k}_r"] < 0.7 * ref_k[1]:
                 z = ZARIZENI[k]
-                out.append({"key": k, "level": "stredni", "year": low["year"], "title": f"Dostupnost: {z['metrika'].lower()}",
-                            "text": f"{_fmt(low[f'x_{k}_r'], 2)} {z['ratio_unit']} (kraj {_fmt(ref_k[1], 2)}).", "suggest": k})
+                den = {"pop": last["population"], "kids": last["age_0_14"], "old": last["age_65"]}[z["den"]]
+                chybi = ref_k[1] * den / z["scale"] - last[f"x_{k}"]
+                spec = INTERVENTIONS[k]["params"]["pocet"]
+                kolik = _zaokr(chybi, spec["step"], spec["min"], spec["max"]) if chybi > 0 else 0
+                out.append({"key": k, "level": "stredni", "year": last["year"], "title": f"Dostupnost: {z['metrika'].lower()}",
+                            "text": f"{_fmt(last[f'x_{k}_r'], 2)} {z['ratio_unit']} ({srovnani} {_fmt(ref_k[1], 2)}).", "suggest": k,
+                            "suggest_params": {"pocet": kolik, "rok": 2028} if kolik else None,
+                            "suggest_text": f"Na úroveň, kterou má {srovnani}, chybí v roce 2040 {_kusy(kolik, z['tvary'])}." if kolik else ""})
         return out
 
     wb, ws = warnings(base), warnings(scen)
@@ -421,6 +461,136 @@ def run(tid: str, interventions: list[dict], assumptions: dict | None = None, re
     ms = (time.perf_counter() - t0) * 1000
     hits = _record(key, payload) if record else 0
     return {**result, "cache": {"hit": hit is not None, "ms": round(ms, 2), "hits": hits, "key": key[:12]}, "request": payload}
+
+
+_PASMA_CACHE: dict[tuple, float | None] = {}
+
+
+def _median_pasma(kraj_code: int, k: str, i_pasma: int) -> float | None:
+    """Medián dostupnosti zařízení `k` u obcí jednoho velikostního pásma.
+
+    Obec bez záznamu se počítá jako nula: MOS i Data KHK zařízení, které obec
+    nemá, nevykazují vůbec, a medián jen z obcí, které ho mají, by „obvyklou
+    úroveň" vyhnal nahoru."""
+    klic = (kraj_code, k, i_pasma)
+    if klic in _PASMA_CACHE:
+        return _PASMA_CACHE[klic]
+    from . import umisteni
+    z = ZARIZENI[k]
+    den_code = DEN[z["den"]][0]
+    hodnoty = []
+    for o in store.members("obec", kraj_code):
+        pop = store.latest(o.id, "110900")
+        if not pop or umisteni.pasmo(pop[1])[0] != i_pasma:
+            continue
+        d = store.latest(o.id, den_code)
+        if not d or not d[1]:
+            continue
+        hodnoty.append(_latest(o.id, *z["codes"]) / d[1] * z["scale"])
+    hodnoty.sort()
+    med = hodnoty[len(hodnoty) // 2] if len(hodnoty) >= 5 else None
+    _PASMA_CACHE[klic] = med
+    return med
+
+
+def navrh(tid: str, jen: str | None = None) -> dict:
+    """Opatření, která vyplývají z problémů území, i s velikostí.
+
+    Bere dvě věci: varování modelu u výhledu bez zásahu (školy, lékaři, péče
+    o seniory) — ta už nesou spočítanou velikost — a rizika z `risks.assess`
+    (úbytek a odliv obyvatel, nezaměstnanost). Velikost se počítá tak, aby
+    problém zmizel nebo se vyrovnal kraji, a pak se celý návrh jednou spustí,
+    aby bylo vidět, kolik varování zbude. `jen` omezí návrh na jedno riziko."""
+    from . import risks
+    t = store.territory(tid)
+    if t is None:
+        return {"available": False, "reason": "Území neznámé."}
+    zaklad = run(tid, [], None, record=False)
+    if not zaklad.get("available"):
+        return {"available": False, "reason": zaklad.get("reason", "Pro území nelze spočítat výhled.")}
+    a = {k: v["value"] for k, v in ASSUMPTIONS.items()}
+    rows = zaklad["baseline"]
+    prvni, posledni = rows[0], rows[-1]
+    navrhy: list[dict] = []
+    # varování → riziko, ke kterému patří (pro filtr `jen`)
+    RIZIKO = {"zs_util": "skoly", "ms_util": "skoly", "gp": "lekari", "zub": "lekari", "ds": "pece_seniori"}
+
+    def pridej(typ, params, duvod, riziko):
+        if any(n["type"] == typ for n in navrhy):
+            return
+        navrhy.append({"type": typ, "params": params, "duvod": duvod, "riziko": riziko})
+
+    for w in zaklad["warnings"]["baseline"]:
+        if w.get("suggest") and w.get("suggest_params"):
+            pridej(w["suggest"], {**{k: p["default"] for k, p in INTERVENTIONS[w["suggest"]]["params"].items()}, **w["suggest_params"]},
+                   f"{w['title']}. {w.get('suggest_text') or w['text']}", RIZIKO.get(w["key"], w["key"]))
+
+    rizika = {r["type"]: r for r in risks.assess(tid)}
+    pokles = prvni["population"] - posledni["population"]
+    if ("ubytek" in rizika or "odliv" in rizika) and pokles > 0:
+        osob = (zaklad.get("inputs") or {}).get("persons_per_flat") or 2.3
+        na_byt = osob * a["osob_byt_bd"] * a["obsazenost_bytu"]
+        spec = INTERVENTIONS["byty"]["params"]["pocet"]
+        pocet = _zaokr(pokles / na_byt, spec["step"], spec["min"], spec["max"])
+        r = rizika.get("ubytek") or rizika.get("odliv")
+        pridej("byty", {"pocet": pocet, "rok": 2028, "typ": "bytove_domy"},
+               f"Do roku {posledni['year']} ubude podle výhledu asi {_fmt(pokles)} obyvatel. Tolik bytů by úbytek vyrovnalo.", r["type"])
+    if "nezamestnanost" in rizika:
+        un = _latest(tid, "501000")
+        cur = store.latest(tid, "500020")
+        ref = store.latest(f"kraj:{t.kraj_code}", "500020")
+        if un and cur and ref and cur[1] > ref[1]:
+            prebytek = un * (1 - ref[1] / cur[1])
+            spec = INTERVENTIONS["pracovni_mista"]["params"]["pocet"]
+            pridej("pracovni_mista", {"pocet": _zaokr(prebytek / a["mista_nezamestnani"], spec["step"], spec["min"], spec["max"]), "rok": 2028},
+                   f"Nezaměstnanost je {_fmt(cur[1], 1)} % (kraj {_fmt(ref[1], 1)} %). Tolik míst by ji srovnalo s krajem.", "nezamestnanost")
+
+    # Služby, kterých má obec výrazně méně než obvyklá obec STEJNÉ VELIKOSTI
+    # (medián pásma z `umisteni`, pod 70 %) a kde by do té úrovně chyběla aspoň
+    # jedna celá jednotka. Proti krajskému průměru by to nešlo: knihovnu má
+    # skoro každá vesnice, takže na obyvatele by každé město vyšlo jako chudé.
+    # Pro ORP, okres a kraj se to nedělá — o zařízení rozhoduje obec.
+    if t.level == "obec":
+        from . import umisteni
+        obyv = posledni["population"]
+        i_pasma, nazev_pasma = umisteni.pasmo(obyv)
+        mezery = []
+        for k, z in ZARIZENI.items():
+            pr = umisteni.PRAVIDLA.get(k)
+            if not pr:
+                continue
+            med = _median_pasma(t.kraj_code, k, i_pasma)
+            if not med:
+                continue
+            c0 = _latest(tid, *z["codes"])
+            den = {"pop": posledni["population"], "kids": posledni["age_0_14"], "old": posledni["age_65"]}[z["den"]]
+            if not den:
+                continue
+            pomer = c0 / den * z["scale"]
+            chybi = med * den / z["scale"] - c0
+            if pomer < 0.7 * med and chybi >= 1:
+                mezery.append((1 - pomer / med + (0.5 if z["den"] == "old" and "starnuti" in rizika else 0), k, z, chybi, med))
+        for _, k, z, chybi, med in sorted(mezery, key=lambda m: -m[0])[:3]:
+            spec = INTERVENTIONS[k]["params"]["pocet"]
+            kolik = _zaokr(chybi, spec["step"], spec["min"], spec["max"])
+            pridej(k, {"pocet": kolik, "rok": 2028},
+                   f"{z['metrika']}: obec má výrazně méně než obvyklá obec stejné velikosti ({nazev_pasma}: {_fmt(med, 2)} {z['ratio_unit']}). "
+                   f"Na tuto úroveň chybí {_kusy(kolik, z['tvary'])}.",
+                   "starnuti" if z["den"] == "old" else z["pillar"])
+
+    if jen:
+        vybrane = [n for n in navrhy if n["riziko"] == jen]
+        navrhy = vybrane or navrhy
+    navrhy = navrhy[:6]
+    ivs = [{"type": n["type"], "params": n["params"]} for n in navrhy]
+    po = run(tid, ivs, None, record=False) if ivs else zaklad
+    return {
+        "available": True, "territory": {"id": tid, "name": t.name},
+        "interventions": ivs,
+        "duvody": [{"type": n["type"], "label": INTERVENTIONS[n["type"]]["label"], "duvod": n["duvod"]} for n in navrhy],
+        "varovani_pred": len(zaklad["warnings"]["baseline"]),
+        "varovani_po": len(po["warnings"]["scenario"]) if po.get("available") else None,
+    }
 
 
 def _record(key: str, payload: dict) -> int:
@@ -534,5 +704,6 @@ def cache_info() -> dict:
 
 
 def reset() -> None:
+    _PASMA_CACHE.clear()
     with _cache_lock:
         _cache.clear()
