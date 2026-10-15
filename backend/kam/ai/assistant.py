@@ -255,8 +255,6 @@ def stream(message: str, session_id: str | None = None, context: dict | None = N
                 answer += line
                 yield "token", {"text": line}
             used = p
-            if attempt:
-                yield "note", {"text": f"{attempts[0].name} neodpověděl, odpověď dokončil {p.name}."}
             break
         except Exception as e:
             _audit("ai_error", {"provider": p.name, "error": str(e)[:300]}, "chyba")

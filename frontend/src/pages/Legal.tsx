@@ -30,7 +30,7 @@ export function Legal() {
               <li>Čísla nepočítá jazykový model, ale analytické moduly KAM; model je pouze vysvětluje a cituje zdroje.</li>
               <li>Odpovědi nejsou právní, finanční, zdravotní ani jinou odbornou radou.</li>
               <li>Asistent je chráněn proti manipulaci (jailbreak, prompt injection) a odpovídá jen k tématům aplikace.</li>
-              <li>Ve výchozím hybridním režimu mohou dotazy jít i na cloudový model — složitější dotazy, a také každý dotaz, když lokální model není dostupný. Režim „Jen lokálně“ to vypne; nastavuje se v <Link to="/nastaveni/soukromi">Nastavení → Data a soukromí</Link>.</li>
+              <li>Dotazy na asistenta zpracovává cloudový jazykový model (Google Gemini). Posílá se mu jen text dotazu a podklady z otevřených dat, ne osobní údaje; nastavení je v <Link to="/nastaveni/soukromi">Nastavení → Data a soukromí</Link>.</li>
             </ul>
 
             <h2 id="modely">Výhledy a scénáře</h2>
@@ -45,7 +45,7 @@ export function Legal() {
               <li>Aplikace nevyžaduje registraci a nepoužívá sledovací ani reklamní cookies. Preference vzhledu se ukládají jen ve vašem prohlížeči (technicky nezbytné úložiště).</li>
               <li>Podněty jsou anonymní. E-maily, telefonní čísla a rodná čísla se v textu automaticky skryjí ještě před uložením.</li>
               <li>Historii konverzací s asistentem lze vypnout; ukládá se s maskováním osobních údajů a maže se po nastavené době (výchozí 30 dní).</li>
-              <li>Kam se data odesílají (lokální model, cloudový model, webhook, e-mail), určuje nastavení serveru v <Link to="/nastaveni/soukromi">Nastavení → Data a soukromí</Link>.</li>
+              <li>Kam se data odesílají (jazykový model, webhook, e-mail), určuje nastavení serveru v <Link to="/nastaveni/soukromi">Nastavení → Data a soukromí</Link>.</li>
               <li>Zpracování se řídí nařízením GDPR a zákonem č. 110/2019 Sb. Nezadávejte do podnětů ani dotazů údaje o jiných osobách.</li>
             </ul>
 

@@ -283,9 +283,11 @@ def seed_defaults() -> None:
     An existing cloud row is left alone — it may have been edited in the UI.
     """
     with session_scope() as s:
-        if s.scalar(select(ModelProvider.id).where(ModelProvider.tier == "local").limit(1)) is None:
-            s.add(ModelProvider(name="Gemma 4 (LM Studio)", kind="openai", base_url=settings.local_llm_url, model=settings.local_chat_model,
-                                tier="local", enabled=True, is_default=True, temperature=0.2, max_tokens=900))
+        # Lokální model (LM Studio) aplikace nepoužívá: na serveru žádný neběží
+        # a každý dotaz by napřed čekal na jeho odmítnutí. Řádek z dřívějška
+        # se smaže, aby se nenabízel ani v přehledu modelů.
+        for r in s.scalars(select(ModelProvider).where(ModelProvider.tier == "local")):
+            s.delete(r)
         if settings.openrouter_api_key and settings.openrouter_models:
             orow = s.scalar(select(ModelProvider).where(ModelProvider.base_url.like("%openrouter.ai%")).order_by(ModelProvider.id))
             if orow is None:

@@ -45,6 +45,8 @@ def _warm() -> None:
     except Exception as e:
         log.warning("Zahřívání selhalo: %s", e)
     local = providers.pick("local")
+    if local is None:
+        return  # bez lokálního serveru není co zahřívat ani z čeho počítat vektory
     if local is not None:
         try:
             # First request to LM Studio loads the model (~20 s); do it now, not on the user's first question.

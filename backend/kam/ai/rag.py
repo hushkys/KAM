@@ -222,6 +222,9 @@ def index() -> Index:
 
 
 def search(query: str, k: int = 8, types: tuple[str, ...] | None = None, use_vectors: bool = True, embed_timeout: float = 1.5) -> list[dict]:
+    from .providers import pick
+    if use_vectors and pick("local") is None:
+        use_vectors = False  # vektor dotazu by počítal lokální server, který nemáme: hledá se jen BM25
     idx = index()
     lex = idx.bm25(query)
     dense: list[tuple[int, float]] = []

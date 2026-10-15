@@ -49,7 +49,6 @@ export function AssistantPage() {
         <span key={p.name} className="ai-status-row" title={p.error ?? ""}>
           <span className="status-dot" style={{ background: p.ok ? "var(--ok)" : "var(--bad)" }} />
           <span className="ellipsis">{p.name}</span>
-          <span className="mute xsmall">{p.tier === "cloud" ? "v cloudu" : "na serveru"}</span>
         </span>
       ))}
       {data && <span className="ai-status-row"><Icon name="database" size={13} /><span className="ellipsis">Podklady: {num(data.rag.docs)} {plural(data.rag.docs, "dokument", "dokumenty", "dokumentů")}</span></span>}

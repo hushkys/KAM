@@ -115,6 +115,7 @@ ingest/  → models.Observation (+ Dataset, Territory, Poi, Fact)
 
 ## AI notes
 
+- **Lokální model (LM Studio) aplikace nepoužívá.** `seed_defaults` maže řádky s `tier == "local"`, zahřívání ani vektory se nespouštějí a `rag.search` bez lokálního serveru hledá jen BM25. Cloud je OpenRouter (bezplatné modely, zkoušené po jednom, prázdná odpověď = selhání) a Gemini. **Rozhraní neříká, který model odpovídal**: odznak u odpovědi je „Asistent KAM“ a událost `note` o předání mezi modely se neposílá.
 - Chat is one pipeline in `ai/assistant.py`: guard → commands → route → tools + retrieval → model, streamed as SSE (`meta`, `action`, `token`, `done`).
 - App commands (`ai/commands.py`) run without a model and are validated against an allowlist; the model may emit `AKCE: {...}` lines, parsed and validated the same way.
 - `ai/router.py` decides intent and tier from keyword evidence on unaccented text in microseconds; the model-based refinement is optional and falls back to the heuristic on any failure.

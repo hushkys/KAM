@@ -221,7 +221,7 @@ function Privacy() {
     <div className="stack-y">
       <Card i={0} title="Kam data odcházejí" icon="shield">
         <div className="facts-list">
-          <div className="fact-row"><span>Dotazy na asistenta</span><span>{{ local_only: "zpracuje jen lokální model", hybrid: "složitější mohou jít na cloudový model", cloud_preferred: "jdou hlavně na cloudový model" }[s.ai.policy]}</span></div>
+          <div className="fact-row"><span>Dotazy na asistenta</span><span>{{ local_only: "asistent je vypnutý (bez jazykového modelu)", hybrid: "zpracuje cloudový model (Google Gemini)", cloud_preferred: "zpracuje cloudový model (Google Gemini)" }[s.ai.policy]}</span></div>
           <div className="fact-row"><span>Podněty občanů</span><span>{{ local: "zůstávají v databázi KAM", webhook: "odcházejí na nastavenou adresu (webhook)", email: "odcházejí e-mailem" }[d.reports_target]}</span></div>
           <div className="fact-row"><span>Stahování dat</span><span>jen z veřejných katalogů (NKOD, ČSÚ, ČÚZK, Data KHK)</span></div>
           <div className="fact-row"><span>Měření návštěvnosti, sledování, cookies</span><span>žádné</span></div>

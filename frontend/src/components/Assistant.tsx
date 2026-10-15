@@ -258,8 +258,8 @@ function Bubble({ m, onAsk }: { m: Msg; onAsk: (q: string) => void }) {
         <div className="msg-meta">
           {route && (
             <span className="route-badge" title={route.reason}>
-              <Icon name={route.tier === "cloud" ? "globe" : route.tier === "rules" ? "wand" : route.tier === "none" ? "shield" : "monitor"} size={13} />
-              {route.tier === "rules" ? "Příkaz aplikace" : route.tier === "none" ? "Ochrana" : m.meta?.model ?? "model"}
+              <Icon name={route.tier === "rules" ? "wand" : route.tier === "none" ? "shield" : "sparkle"} size={13} />
+              {route.tier === "rules" ? "Příkaz aplikace" : route.tier === "none" ? "Ochrana" : "Asistent KAM"}
               {m.ms ? ` · ${(m.ms / 1000).toFixed(1).replace(".", ",")} s` : ""}
               {m.fallback ? " · jen podklady, bez AI" : ""}
             </span>
