@@ -37,7 +37,7 @@ from .models import JobState, Observation
 
 log = logging.getLogger("kam")
 
-TYDENNI = {"obsah": 7, "dotace": 7, "dokumenty": 7}   # krok → po kolika dnech
+TYDENNI = {"obsah": 7, "dotace": 7, "vydaje": 7, "dokumenty": 7}   # krok → po kolika dnech
 BEZI_NEJVYS = timedelta(hours=3)   # „running“ starší než tohle je mrtvý běh, ne běžící
 
 
@@ -119,6 +119,9 @@ def obnov(duvod: str = "plán", v_serveru: bool = False) -> dict:
     if _tydenni_na_rade("dotace"):
         from .ingest import dotace
         krok("dotace", dotace.ingest)
+    if _tydenni_na_rade("vydaje"):
+        from .ingest import vydaje
+        krok("vydaje", vydaje.ingest)
     if _tydenni_na_rade("dokumenty"):
         from .ingest import dokumenty
         krok("dokumenty", lambda: dokumenty.ingest(s_ares=False))

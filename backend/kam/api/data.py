@@ -14,7 +14,7 @@ from .. import crowd
 from ..ai import rag
 from ..analytics import dotace as dotace_mod
 from ..analytics import plany
-from ..analytics import finance, forecast, gaps, risks, simulate, store
+from ..analytics import finance, forecast, gaps, risks, simulate, store, vydaje as vydaje_mod
 from ..analytics.profile import COMPARABLE, PROFILE_CODES, card, profile, reference
 from ..analytics.trends import classify
 from ..db import SessionLocal
@@ -284,6 +284,15 @@ def finance_territory(tid: str) -> dict:
     if not data["roky"]:
         raise HTTPException(404, "Pro toto území nemáme rozpočtová data.")
     return {"territory": {"id": t.id, "name": t.name, "level": t.level}, **data}
+
+
+@router.get("/vydaje/{tid}")
+def vydaje_territory(tid: str, rok: int | None = None) -> dict:
+    """Za co území utrácí: výdaje po oddílech rozpočtové skladby, srovnání s obcemi stejné velikosti."""
+    data = vydaje_mod.ucet(tid, rok)
+    if data is None:
+        raise HTTPException(404, "Území neznámé.")
+    return data
 
 
 @router.get("/dotace/{tid}")

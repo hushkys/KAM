@@ -45,6 +45,8 @@ def is_loaded(source_id: str, title: str) -> bool:
             year = m.group(1)
             return year is None or settings.mos_first_year <= int(year) <= settings.mos_last_year
         return False
+    if source_id == "vydaje":
+        return True
     return source_id in KHK_SOURCES and t in KHK_TITLES
 
 

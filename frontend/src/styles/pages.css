@@ -1539,3 +1539,21 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .vyber-seznam li:hover { background: var(--m-soft); }
 .vyber-seznam li.is-on { font-weight: 650; background: var(--m-soft); }
 .toolbar-card + .sc-sloupec { margin-top: var(--gap); }
+
+/* Hospodaření: za co obec utrácí */
+.vyd-hlava { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
+.vyd-tabulka { display: grid; }
+.vyd-radek { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1.5fr); gap: 4px 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: .9375rem; }
+.vyd-radek:last-child { border-bottom: 0; }
+.vyd-hlavicka { font-size: .75rem; font-weight: 600; color: var(--text-mute); padding-block: 6px; }
+.vyd-nazev { display: grid; gap: 6px; min-width: 0; }
+.vyd-nazev strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vyd-pruh { display: block; height: 5px; background: var(--surface-3); }
+.vyd-pruh i { display: block; height: 100%; background: var(--m); }
+.vyd-radek .r { text-align: right; }
+.vyd-srovnani { font-size: .8125rem; color: var(--text-dim); }
+.vyd-srovnani.is-vice { color: var(--text); font-weight: 600; }
+@container stranka (max-width: 760px) {
+  .vyd-radek { grid-template-columns: minmax(0, 1fr) auto; }
+  .vyd-skryt { display: none; }
+}

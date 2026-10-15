@@ -9,6 +9,7 @@ import { ChartSwitch, Columns, Donut, LineChart, Legend, Waterfall } from "../co
 import { FinanceHook } from "../components/FinanceHook";
 import { Icon } from "../components/Icon";
 import { TerritoryPicker } from "../components/TerritoryPicker";
+import { Vydaje } from "../components/Vydaje";
 import { Card, ErrorBox, InfoHint, KindTag, Stat } from "../components/ui";
 import { useApi } from "../lib/api";
 import { num } from "../lib/format";
@@ -166,6 +167,7 @@ export function Finance() {
           </>
         )}
         {data && !s && <Card><p className="muted">Pro toto území nejsou k dispozici údaje z rozpočtu.</p></Card>}
+        <Vydaje tid={tid} />
       </div>
     </>
   );

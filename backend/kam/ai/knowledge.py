@@ -81,6 +81,11 @@ DOCS: tuple[dict, ...] = (
              "konsolidaci minus běžné výdaje), kapitálové výdaje, krytí investic z vlastního přebytku a kumulované saldo. "
              "Hodnocení je pravidlo s vypsanými prahy, ne odhad. Rozpočet neumí říct, co obec za peníze pořídila, takže se "
              "nikde nepočítá žádná návratnost investice."},
+    {"id": "metoda-vydaje", "title": "Za co obec utrácí (výdaje podle rozpočtové skladby)", "url": "/hospodareni",
+     "text": "Na stránce Hospodaření je karta Za co utrácí: výdaje obce po oddílech rozpočtové skladby (doprava, školství, odpady, správa…), podle druhu výdaje a přijaté dotace podle zdroje. "
+             "Data přebírá služba Výdaje.com z výkazu FIN 2-12 M, který obce vykazují Ministerstvu financí do MONITORU státní pokladny; v katalogu je to poskytovatel Výdaje.com a ukazatele mají předponu vyd_. "
+             "Každá položka je i na obyvatele a porovnaná s mediánem obcí kraje stejné velikostní skupiny (do 500, 500–2 000, 2 000–10 000, nad 10 000 obyvatel), ne s krajem. "
+             "Vyšší výdaj není automaticky horší: rozpočet neříká, co se za peníze pořídilo."},
     {"id": "stranka-dotace", "title": "Stránka Dotace", "url": "/dotace",
      "text": "Tři vrstvy s různou jistotou: kolik dotací obec doopravdy přijala (roční řada z rozpočtu, ČSÚ MOS), kolik kraj "
              "poslal do jejího ORP (Data KHK, souhrn 2021–2025) a rozcestník vyhlašovatelů podle oblastí, ve kterých má území "
