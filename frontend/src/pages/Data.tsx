@@ -415,11 +415,12 @@ export function DataPage() {
         </div>
       </DataHook>
       <div className="stats-row" style={{ marginBottom: "var(--gap)" }}>
-        <Stat i={0} label="Funkčních datových sad" value={num(d?.verified ?? null)} sub={d ? `z ${num(d.total)} v katalogu` : ""} />
-        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="stát, kraje, města a další" />
-        <Stat i={2} label="Funkčních sad od krajů" value={num(d?.kraje ?? null)} sub="včetně krajských portálů" />
+        <Stat i={0} label="Funkčních datových sad" value={num(d?.verified ?? null)}
+          sub={d ? `z ${num(d.total)} v katalogu; zbytek je webová stránka (${num(d.pages)}), nefunkční odkaz (${num(d.broken)}) nebo bez odkazu (${num(d.no_link)})` : ""} />
+        <Stat i={1} label="Poskytovatelů" value={num(d?.publishers ?? null)} sub="úřadů, krajů, měst a portálů, od kterých sady máme" />
+        <Stat i={2} label="Z funkčních sad od jiných krajů" value={num(d?.kraje ?? null)}
+          sub={d ? `zbytek: stát a Královéhradecký kraj ${num(d.core)}, města a další ${num(d.other)}` : ""} />
         <Stat i={3} label="Načteno do modelu" value={num(d?.loaded ?? null)} sub="statistiky ČSÚ a data kraje" />
-        <Stat i={4} label="Bez souboru s daty" value={num(d ? d.broken + d.no_link + d.pages : null)} sub="webová stránka, mrtvý nebo chybějící odkaz" />
       </div>
       <Tabs label="Sekce" value={tab} onChange={(v) => setQuery({ tab: v === "katalog" ? null : v, page: null })}
         tabs={[{ value: "katalog", label: "Katalog", icon: "database", count: d?.verified }, { value: "zdroje", label: "Zdroje", icon: "layers", count: d?.publishers }, { value: "potreby", label: "Chybějící data", icon: "gauge" }, { value: "api", label: "API", icon: "share" }, { value: "metodika", label: "Metodika", icon: "book" }]} />
