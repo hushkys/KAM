@@ -179,7 +179,7 @@ function RiskItem({ r }: { r: Risk }) {
         ))}
         {r.why.length > 0 && <div className="mute">Proč na tom záleží: {r.why.join(" · ")}</div>}
       </details>
-      {r.interventions.length > 0 && (
+      {r.interventions.length > 0 && r.id.startsWith("obec:") && (
         <div className="chips">
           <button className="chip-btn" onClick={() => navigate(`/scenare?t=${r.id.split(":").slice(0, 2).join(":")}&navrh=${r.type}`)}><Icon name="split" size={14} /> Co s tím udělat</button>
         </div>
@@ -222,7 +222,9 @@ export function Profile({ id }: { id: string }) {
         <div className="page-header-actions">
           <Link className="btn" to={`/vyhled?t=${id}`}><Icon name="trend-up" size={16} /> Výhled</Link>
           <button className="btn" onClick={() => openAssistant(`Shrň, co se děje v území ${t?.name ?? ""} a co mu hrozí.`, id)}><Icon name="sparkle" size={16} /> Zeptat se asistenta</button>
-          <Link className="btn btn-primary" to={`/scenare?t=${id}&navrh=1`}><Icon name="split" size={16} /> Navrhnout opatření</Link>
+          {id.startsWith("obec:")
+            ? <Link className="btn btn-primary" to={`/scenare?t=${id}&navrh=1`}><Icon name="split" size={16} /> Navrhnout opatření</Link>
+            : <Link className="btn btn-primary" to={`/scenare?t=${id}`}><Icon name="split" size={16} /> Sestavit scénář</Link>}
         </div>
       </div>
 

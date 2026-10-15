@@ -565,6 +565,8 @@ def navrh(tid: str, jen: str | None = None) -> dict:
     t = store.territory(tid)
     if t is None:
         return {"available": False, "reason": "Území neznámé."}
+    if t.level != "obec":
+        return {"available": False, "reason": "Návrh opatření umíme spočítat jen pro obec: stojí na jejích problémech a na srovnání s obcemi stejné velikosti."}
     zaklad = run(tid, [], None, record=False)
     if not zaklad.get("available"):
         return {"available": False, "reason": zaklad.get("reason", "Pro území nelze spočítat výhled.")}

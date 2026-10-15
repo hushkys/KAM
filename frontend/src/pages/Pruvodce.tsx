@@ -179,11 +179,18 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
 
       {krok === "uzemi" && (
         <>
-          <h2 className="pr-otazka">Pro které území to chcete spočítat?</h2>
-          <div className="pr-uzemi"><TerritoryPicker value={tid} onChange={setTid} label="Obec, ORP, okres nebo kraj" /></div>
+          <h2 className="pr-otazka">{rezim === "auto" ? "Pro kterou obec má model opatření navrhnout?" : "Pro které území to chcete spočítat?"}</h2>
+          {/* Návrh stojí na problémech obce a na srovnání s obcemi stejné
+              velikosti: pro kraj, okres ani ORP ho spočítat nejde, takže je
+              výběr ani nenabízí. */}
+          <div className="pr-uzemi">
+            {rezim === "auto"
+              ? <TerritoryPicker value={tid.startsWith("obec:") ? tid : null} onChange={setTid} label="Obec" levels={["obec"]} />
+              : <TerritoryPicker value={tid} onChange={setTid} label="Obec, ORP, okres nebo kraj" />}
+          </div>
           <div className="pr-akce">
             {rezim === "auto"
-              ? <button className="btn btn-primary" disabled={navrhBusy} onClick={() => onNavrh(tid)}>{navrhBusy ? "Počítám návrh…" : "Navrhnout opatření"} <Icon name="arrow-right" size={16} /></button>
+              ? <button className="btn btn-primary" disabled={navrhBusy || !tid.startsWith("obec:")} onClick={() => onNavrh(tid)}>{navrhBusy ? "Počítám návrh…" : "Navrhnout opatření"} <Icon name="arrow-right" size={16} /></button>
               : <button className="btn btn-primary" onClick={onHotovo}>Spočítat scénář <Icon name="arrow-right" size={16} /></button>}
           </div>
         </>
