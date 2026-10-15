@@ -78,20 +78,34 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
 
       {krok === "start" && (
         <>
-          <h2 className="pr-otazka">Jak chcete začít?</h2>
-          <div className="pr-volby">
+          <h2 className="pr-otazka">Jak chcete začít? <InfoHint label="Co jsou scénáře">Model spočítá výhled území dvakrát, bez zásahu a se zásahem, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></h2>
+          <div className="pr-volby is-start">
             <button className="pr-volba" onClick={() => { setRezim("sada"); jdi("sada"); }}>
-              <Icon name="target" size={22} /><strong>Hotový scénář</strong><span>Typická otázka obce, zásahy se nastaví samy.</span>
+              <i className="pr-ikona"><Icon name="target" size={24} /></i><strong>Hotový scénář</strong><span>Typická otázka obce, zásahy se nastaví samy.</span>
             </button>
             <button className="pr-volba" onClick={() => { setRezim("novy"); jdi("kategorie"); }}>
-              <Icon name="plus" size={22} /><strong>Nový scénář</strong><span>Sami zvolíte oblast a zásah.</span>
+              <i className="pr-ikona"><Icon name="plus" size={24} /></i><strong>Nový scénář</strong><span>Sami zvolíte oblast a zásah z {Object.keys(interventions).length} možností.</span>
             </button>
             {ulozene.length > 0 && (
               <button className="pr-volba" onClick={() => { setRezim("ulozene"); jdi("ulozene"); }}>
-                <Icon name="save" size={22} /><strong>Uložený scénář</strong><span>{ulozene.length === 1 ? "Máte jeden uložený." : `Uloženo: ${ulozene.length}.`}</span>
+                <i className="pr-ikona"><Icon name="save" size={24} /></i><strong>Uložený scénář</strong><span>{ulozene.length === 1 ? "Máte jeden uložený." : `Uloženo: ${ulozene.length}.`}</span>
               </button>
             )}
           </div>
+          {sady.length > 0 && (
+            <div className="pr-rychle">
+              <h3 className="pr-podnadpis">Nebo rovnou vyzkoušejte</h3>
+              <div className="pr-seznam">
+                {sady.map((s) => (
+                  <button key={s.key} className="pr-polozka" onClick={() => { setRezim("sada"); setIvs(() => s.ivs.map((i) => ({ type: i.type, params: { ...i.params } }))); jdi("uzemi"); }}>
+                    <i className="pr-ikona is-mala"><Icon name={PILLAR_ICON[s.pillar] ?? "target"} size={18} /></i>
+                    <span><strong>{s.label}</strong><small>{s.otazka}</small></span>
+                    <Icon name="chevron-right" size={16} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -131,7 +145,7 @@ export function Pruvodce({ interventions, help, sady, ulozene, tid, setTid, setI
           <div className="pr-volby">
             {kategorie.map((k) => (
               <button key={k.pillar} className="pr-volba" onClick={() => { setPillar(k.pillar); jdi("zasah"); }}>
-                <Icon name={PILLAR_ICON[k.pillar] ?? "target"} size={22} /><strong>{k.label}</strong>
+                <i className="pr-ikona"><Icon name={PILLAR_ICON[k.pillar] ?? "target"} size={24} /></i><strong>{k.label}</strong>
                 <span>{k.items.length === 1 ? "1 zásah" : k.items.length < 5 ? `${k.items.length} zásahy` : `${k.items.length} zásahů`}</span>
               </button>
             ))}

@@ -1585,3 +1585,21 @@ html[data-theme="dark"]:has(#main[data-page="scenare"]) { --bg: #14181d; --surfa
 .pr-polozka:hover { border-color: var(--m-line); background: var(--m-soft); }
 .pr-uzemi { max-width: 520px; }
 .pr-akce { margin-top: 20px; display: flex; }
+
+/* Scénáře: průvodce vyplňuje stránku (přebíjí dřívější pravidla výše) */
+.pruvodce { max-width: none; margin-inline: 0; min-height: min(72vh, 680px); display: flex; flex-direction: column; padding: calc(var(--card-pad) + 10px) calc(var(--card-pad) + 14px); }
+.pr-otazka { font-size: clamp(1.5rem, 1.15rem + 1vw, 2.125rem); margin: 10px 0 26px; }
+.pr-volby { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.pr-volba { gap: 8px; padding: 26px; min-height: 190px; }
+.pr-volba strong { font-size: 1.25rem; }
+.pr-volba span { font-size: .9375rem; }
+.pr-ikona { display: inline-grid; place-items: center; width: 52px; height: 52px; margin-bottom: 8px; background: var(--m-soft); color: var(--m); border: 1px solid var(--m-line); font-style: normal; }
+.pr-ikona svg { color: var(--m); }
+.pr-ikona.is-mala { width: 38px; height: 38px; margin: 0; }
+.pr-seznam { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.pr-polozka { padding: 16px 18px; min-height: 76px; }
+.pr-polozka-radek { min-width: 0; }
+.pr-rychle { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--border); }
+.pr-podnadpis { margin: 0 0 14px; font-size: .9375rem; font-weight: 650; color: var(--text-dim); }
+.pr-uzemi { max-width: 640px; }
+.pr-hlava:empty { display: none; }

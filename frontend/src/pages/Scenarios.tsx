@@ -219,13 +219,13 @@ export function Scenarios() {
       <PageHeader
         title={<>Scénáře <InfoHint label="Co jsou scénáře">Zvolte území a zásah (nová výstavba, ordinace, spoje…). Model spočítá výhled dvakrát, bez zásahu a se zásahem, a ukáže rozdíl. Je to odhad z předpokladů, které můžete změnit, ne předpověď.</InfoHint></>}
         actions={
-          <>
-            <button className="btn" onClick={share} disabled={!prikazy} hidden={!hotovo}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
-            <button className="btn btn-primary" disabled={!prikazy} hidden={!hotovo}
+          hotovo ? (<>
+            <button className="btn" onClick={share} disabled={!prikazy}><Icon name="link" size={16} /> Zkopírovat odkaz</button>
+            <button className="btn btn-primary" disabled={!prikazy}
               onClick={() => { setName(`${res?.territory.name ?? ""}: ${ivs.map((i) => cat.data?.interventions[i.type]?.label).join(" + ")}`.slice(0, 110)); setSaveOpen(true); }}>
               <Icon name="save" size={16} /> Uložit scénář
             </button>
-          </>
+          </>) : undefined
         } />
 
       {!hotovo && cat.data && (
