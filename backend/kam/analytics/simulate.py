@@ -27,6 +27,7 @@ from sqlalchemy import select
 
 from ..db import session_scope
 from ..models import SimStat, now
+from ..indicators import DEN, ZARIZENI
 from . import forecast, store
 
 INTERVENTIONS: dict[str, dict] = {
@@ -59,6 +60,13 @@ INTERVENTIONS: dict[str, dict] = {
         "rok": {"label": "Rok otevření", "min": 2026, "max": 2038, "step": 1, "default": 2027}}},
 }
 
+# Zařízení z tabulky `indicators.ZARIZENI` jsou zásahy stejného tvaru: počet
+# a rok. Dnešní počet je v datech, dostupnost se přepočítává na obyvatele.
+for _k, _z in ZARIZENI.items():
+    INTERVENTIONS[_k] = {"label": _z["label"], "pillar": _z["pillar"], "params": {
+        "pocet": {"label": f"Počet ({_z['jednotka']})", "min": 1, "max": _z["max"], "step": _z["step"], "default": _z["default"]},
+        "rok": {"label": "Rok otevření", "min": 2026, "max": 2038, "step": 1, "default": 2028}}}
+
 # Krátký popis ke každému zásahu. Nadpis řekne co, tohle řekne, co zásah
 # v modelu opravdu dělá — a tím i co od výsledku čekat a co ne.
 INTERVENTION_HELP: dict[str, str] = {
@@ -70,6 +78,7 @@ INTERVENTION_HELP: dict[str, str] = {
     "domov_seniori": "Přidá lůžka pro seniory a náklady na jejich vybudování.",
     "ordinace": "Přidá ordinace praktického lékaře a přepočte je na 10 000 obyvatel.",
     "stomatolog": "Přidá zubní ordinace a přepočte je na 10 000 obyvatel.",
+    **{k: z["help"] for k, z in ZARIZENI.items()},
 }
 
 ASSUMPTIONS: dict[str, dict] = {
@@ -92,6 +101,11 @@ ASSUMPTIONS: dict[str, dict] = {
     "mista_prichozi": {"label": "Podíl nových míst pro lidi, kteří se přistěhují", "value": 0.2, "unit": "podíl", "why": "Zbytek obsadí místní a dojíždějící."},
     "osob_domacnost": {"label": "Lidí v jedné přistěhované domácnosti", "value": 2.3, "unit": "osob", "why": "Průměrná velikost domácnosti."},
 }
+for _k, _z in ZARIZENI.items():
+    if _z["capex"]:
+        ASSUMPTIONS[f"naklad_zar_{_k}"] = {"label": f"Investice na jednotku: {_z['label'].lower()}", "value": _z["capex"], "unit": "mil. Kč", "why": "Orientační. Nahraďte rozpočtem projektu."}
+    if _z["provoz"]:
+        ASSUMPTIONS[f"provoz_zar_{_k}"] = {"label": f"Roční provoz na jednotku: {_z['label'].lower()}", "value": _z["provoz"], "unit": "mil. Kč/rok", "why": "Orientační. Nahraďte vlastním odhadem."}
 
 HORIZON = (2030, 2035, 2040)
 _cache: OrderedDict[str, dict] = OrderedDict()
@@ -174,6 +188,9 @@ def compute(payload: dict) -> dict:
     ref_zub = store.latest(ref, "d_zubni_10k")
     ref_ds = store.latest(ref, "d_ds_100_65")
     stops0 = _latest(tid, "khk_zast_bus")
+    zar = [k for k in ZARIZENI if any(iv["type"] == k for iv in payload["interventions"])]
+    zar0 = {k: _latest(tid, *ZARIZENI[k]["codes"]) for k in zar}
+    zar_ref = {k: store.latest(ref, ZARIZENI[k]["derived"]) for k in zar}
 
     def path(with_iv: bool) -> list[dict]:
         rows = []
@@ -186,6 +203,7 @@ def compute(payload: dict) -> dict:
             ms_cap = ms_classes * a["max_ms_trida"]
             gp, ds, unemployed, stops, zub = gp0, ds0, unemployed0, stops0, zub0
             opex = capex = 0.0
+            zc = dict(zar0)
             if with_iv:
                 for iv in payload["interventions"]:
                     p = iv["params"]
@@ -228,6 +246,18 @@ def compute(payload: dict) -> dict:
                         gp += p["pocet"]
                     elif iv["type"] == "stomatolog" and y >= start:
                         zub += p["pocet"]
+                    elif iv["type"] in ZARIZENI and y >= start:
+                        k = iv["type"]
+                        zc[k] += p["pocet"]
+                        if y == start:
+                            capex += p["pocet"] * a.get(f"naklad_zar_{k}", 0.0) * 1e6
+                        opex += p["pocet"] * a.get(f"provoz_zar_{k}", 0.0) * 1e6
+            extra = {}
+            for k in zar:
+                z = ZARIZENI[k]
+                den = {"pop": pop, "kids": kids, "old": old}[z["den"]]
+                extra[f"x_{k}"] = zc[k]
+                extra[f"x_{k}_r"] = round(zc[k] / den * z["scale"], 2) if den else None
             zs_demand = kids * zs_ratio
             ms_demand = kids * ms_ratio
             rows.append({
@@ -239,7 +269,7 @@ def compute(payload: dict) -> dict:
                 "ds_places": ds, "ds_100_65": round(ds / old * 100, 2) if old else None,
                 "unemployed": round(unemployed), "stops": stops, "stops_1000": round(stops / pop * 1000, 2) if pop else None,
                 "tax": round(pop * tax_pc), "car_trips": round((pop - r["population"]) * a["aut_na_obyvatele"] * a["cest_na_auto"]) if with_iv else 0,
-                "opex": round(opex), "capex": round(capex),
+                "opex": round(opex), "capex": round(capex), **extra,
             })
         return rows
 
@@ -274,6 +304,17 @@ def compute(payload: dict) -> dict:
             if low and ds0:
                 out.append({"key": "ds", "level": "stredni", "year": low["year"], "title": "Kapacita domovů pro seniory",
                             "text": f"{_fmt(low['ds_100_65'], 1)} míst na 100 obyvatel 65+ (kraj {_fmt(ref_ds[1], 1)}).", "suggest": "domov_seniori"})
+        for k in zar:
+            ref_k = zar_ref[k]
+            if not (ref_k and ref_k[1]):
+                continue
+            # Jen na konci horizontu: před zprovozněním zařízení je dostupnost vždycky nízká.
+            last = rows[-1]
+            low = last if last[f"x_{k}_r"] is not None and last[f"x_{k}_r"] < 0.7 * ref_k[1] else None
+            if low:
+                z = ZARIZENI[k]
+                out.append({"key": k, "level": "stredni", "year": low["year"], "title": f"Dostupnost: {z['metrika'].lower()}",
+                            "text": f"{_fmt(low[f'x_{k}_r'], 2)} {z['ratio_unit']} (kraj {_fmt(ref_k[1], 2)}).", "suggest": k})
         return out
 
     wb, ws = warnings(base), warnings(scen)
@@ -285,7 +326,8 @@ def compute(payload: dict) -> dict:
     for key, label, unit, d in (("population", "Obyvatelé", "osob", 0), ("age_0_14", "Děti 0–14 let", "osob", 0), ("age_65", "Senioři 65+", "osob", 0),
                                 ("zs_util", "Vytížení ZŠ", "%", 1), ("ms_util", "Vytížení MŠ", "%", 1), ("gp_10k", "Praktičtí lékaři na 10 tis. obyvatel", "", 2), ("zub_10k", "Zubní ordinace na 10 tis.", "", 2),
                                 ("ds_100_65", "Místa v domovech pro seniory na 100 seniorů", "", 2), ("unemployed", "Uchazeči o zaměstnání", "osob", 0),
-                                ("stops_1000", "Zastávky na 1 000 obyv.", "", 2), ("tax", "Daňové příjmy obce", "Kč/rok", 0), ("car_trips", "Cesty autem navíc", "za den", 0)):
+                                ("stops_1000", "Zastávky na 1 000 obyv.", "", 2), ("tax", "Daňové příjmy obce", "Kč/rok", 0), ("car_trips", "Cesty autem navíc", "za den", 0),
+                                *((f"x_{k}_r", f"{ZARIZENI[k]['metrika']} ({ZARIZENI[k]['ratio_unit']})", "", 2) for k in zar)):
         row = {"key": key, "label": label, "unit": unit, "values": []}
         for y in HORIZON:
             b, s = at(base, y)[key], at(scen, y)[key]
@@ -303,7 +345,8 @@ def compute(payload: dict) -> dict:
         "available": True, "territory": {"id": tid, "name": t.name if t else tid}, "base_year": base_year, "years": years,
         "baseline": base, "scenario": scen, "warnings": {"baseline": wb, "scenario": ws}, "metrics": metrics, "chain": chain,
         "costs": {"capex": round(capex), "opex_year": round(opex), "tax_delta_year": round(y40["tax"] - at(base, 2040)["tax"])},
-        "assumptions": [{"key": k, **v, "value": a[k]} for k, v in ASSUMPTIONS.items()],
+        "assumptions": [{"key": k, **v, "value": a[k]} for k, v in ASSUMPTIONS.items()
+                        if not k.endswith(tuple(f"_zar_{z}" for z in ZARIZENI)) or k.split("_zar_", 1)[1] in zar],
         "inputs": {"persons_per_flat": round(persons, 2), "share_0_14": round(100 * share14, 1), "share_65": round(100 * share65, 1),
                    "zs_pupils": zs_pupils, "zs_classes": zs_classes, "ms_children": ms_kids, "ms_classes": ms_classes, "gp": gp0,
                    "ds_places": ds0, "tax_per_capita": round(tax_pc), "stops": stops0, "zub": zub0},
@@ -347,6 +390,15 @@ def _chain(payload, base, scen, a, persons, share14, zs_ratio, tax_pc) -> list[d
         elif iv["type"] == "ordinace":
             steps += [{"label": f"+{p['pocet']} ordinace PL od roku {p['rok']}", "tag": "ZÁSAH"},
                       {"label": f"Ordinací na 10 tis. obyvatel v roce 2040: {_fmt(b40['gp_10k'] or 0, 2)} → {_fmt(s40['gp_10k'] or 0, 2)}", "tag": "MODEL"}]
+        elif iv["type"] in ZARIZENI:
+            k = iv["type"]
+            z = ZARIZENI[k]
+            steps += [{"label": f"{z['label']}: +{_fmt(p['pocet'])} {z['jednotka'] if k in ('stacionar', 'dzr', 'pecovatelske', 'komunikace') else 'ks'} od roku {p['rok']}", "tag": "ZÁSAH"},
+                      {"label": f"{z['metrika']} {z['ratio_unit']} v roce 2040: {_fmt(b40.get(f'x_{k}_r') or 0, 2)} → {_fmt(s40.get(f'x_{k}_r') or 0, 2)}", "tag": "MODEL"}]
+            if a.get(f"naklad_zar_{k}"):
+                steps.append({"label": f"Investice přibližně {_fmt(p['pocet'] * a[f'naklad_zar_{k}'], 1)} mil. Kč", "tag": "PŘEDPOKLAD"})
+            if a.get(f"provoz_zar_{k}"):
+                steps.append({"label": f"Provoz přibližně {_fmt(p['pocet'] * a[f'provoz_zar_{k}'], 1)} mil. Kč ročně", "tag": "PŘEDPOKLAD"})
     return steps
 
 
@@ -421,6 +473,28 @@ SADY: tuple[dict, ...] = (
     {"key": "spoj", "label": "Lepší spojení", "pillar": "doprava",
      "otazka": "Osm spojů denně navíc. Kolik to ročně stojí?",
      "ivs": [{"type": "spoj", "params": {"spoje_den": 8, "zastavky": 1, "delka_km": 15, "rok": 2027}}]},
+)
+
+
+SADY = SADY + (
+    {"key": "pece-o-seniory", "label": "Péče o seniory", "pillar": "socialni",
+     "otazka": "Pečovatelské byty, stacionář a místa pro lidi s demencí. Jak se zvýší dostupnost?",
+     "ivs": [{"type": "pecovatelske", "params": {"pocet": 20, "rok": 2028}},
+             {"type": "stacionar", "params": {"pocet": 20, "rok": 2028}},
+             {"type": "dzr", "params": {"pocet": 24, "rok": 2030}}]},
+    {"key": "pece-o-rodiny", "label": "Péče pro rodiny", "pillar": "zdravotnictvi",
+     "otazka": "Dětský lékař, gynekolog a lékárna. Co to změní v dostupnosti?",
+     "ivs": [{"type": "pediatr", "params": {"pocet": 1, "rok": 2027}},
+             {"type": "gynekolog", "params": {"pocet": 1, "rok": 2028}},
+             {"type": "lekarna", "params": {"pocet": 1, "rok": 2028}}]},
+    {"key": "kultura-obec", "label": "Kultura a spolkový život", "pillar": "kultura",
+     "otazka": "Knihovna a kulturní dům. Kolik to stojí a jak se změní dostupnost?",
+     "ivs": [{"type": "knihovna", "params": {"pocet": 1, "rok": 2028}},
+             {"type": "kulturni_dum", "params": {"pocet": 1, "rok": 2030}}]},
+    {"key": "bezpecnost-obec", "label": "Bezpečí a silnice", "pillar": "doprava",
+     "otazka": "Hasičská stanice a nové místní komunikace.",
+     "ivs": [{"type": "hasici", "params": {"pocet": 1, "rok": 2028}},
+             {"type": "komunikace", "params": {"pocet": 5, "rok": 2027}}]},
 )
 
 

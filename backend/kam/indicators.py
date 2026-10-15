@@ -233,6 +233,63 @@ DERIVED: tuple[Derived, ...] = (
     Derived("d_vydaje_obyv", "Výdaje rozpočtu obce na obyvatele", "Kč", "finance", 0, "khk_vydaje_obce", "110900", 1, "výdaje rozpočtu / obyvatelé"),
 )
 
+# Zařízení, která jde ve scénáři přidat: v datech je jejich dnešní počet
+# (MOS nebo Data KHK) a z něj se počítá dostupnost na obyvatele. Jedna tabulka
+# pro simulátor (`simulate.py`) i pro doporučení „kde“ (`umisteni.py`), aby
+# zásah, který jde přidat, šel i umístit. Náklady jsou orientační předpoklady
+# v mil. Kč na jednotku a ve scénáři se dají přepsat.
+#   codes     – ukazatele s dnešním počtem (použije se první, který území má)
+#   den       – čím se dělí: pop = obyvatelé, kids = děti 0–14, old = 65+
+#   capex     – investice na jednotku, provoz – roční provoz na jednotku
+DEN = {"pop": ("110900", 10000, "na 10 tis. obyvatel"), "kids": ("110930", 1000, "na 1 000 dětí 0–14"), "old": ("110990", 100, "na 100 obyvatel 65+")}
+ZARIZENI: dict[str, dict] = {
+    "lekarna": {"label": "Nová lékárna", "pillar": "zdravotnictvi", "codes": ("071000",), "den": "pop", "jednotka": "lékáren", "metrika": "Lékárny",
+                "max": 10, "step": 1, "default": 1, "capex": 2.5, "provoz": 0.0,
+                "help": "Přidá lékárnu a přepočte lékárny na 10 000 obyvatel."},
+    "pediatr": {"label": "Nová ordinace dětského lékaře", "pillar": "zdravotnictvi", "codes": ("070710", "khk_pl_deti"), "den": "kids", "jednotka": "ordinací", "metrika": "Dětští lékaři",
+                "max": 10, "step": 1, "default": 1, "capex": 1.5, "provoz": 0.0,
+                "help": "Přidá ordinaci praktického lékaře pro děti a dorost a přepočte ji na 1 000 dětí."},
+    "specialista": {"label": "Nová ordinace specialisty", "pillar": "zdravotnictvi", "codes": ("070740",), "den": "pop", "jednotka": "ordinací", "metrika": "Ordinace specialistů",
+                    "max": 10, "step": 1, "default": 1, "capex": 2.5, "provoz": 0.0,
+                    "help": "Přidá ordinaci lékaře specialisty a přepočte ji na 10 000 obyvatel."},
+    "gynekolog": {"label": "Nová gynekologická ordinace", "pillar": "zdravotnictvi", "codes": ("khk_gyn",), "den": "pop", "jednotka": "ordinací", "metrika": "Gynekologové",
+                  "max": 10, "step": 1, "default": 1, "capex": 2.0, "provoz": 0.0,
+                  "help": "Přidá ambulantního gynekologa a přepočte ho na 10 000 obyvatel (Data KHK)."},
+    "stacionar": {"label": "Místa v denním stacionáři", "pillar": "socialni", "codes": ("150154",), "den": "old", "jednotka": "míst", "metrika": "Místa v denních stacionářích",
+                  "max": 200, "step": 5, "default": 20, "capex": 1.2, "provoz": 0.0,
+                  "help": "Přidá místa v denním stacionáři a přepočte je na 100 obyvatel 65+."},
+    "dzr": {"label": "Místa v domově se zvláštním režimem", "pillar": "socialni", "codes": ("150162",), "den": "old", "jednotka": "míst", "metrika": "Místa v domovech se zvláštním režimem",
+            "max": 200, "step": 5, "default": 24, "capex": 2.8, "provoz": 0.0,
+            "help": "Přidá místa pro lidi s demencí a podobnými potřebami a přepočte je na 100 obyvatel 65+."},
+    "pecovatelske": {"label": "Byty s pečovatelskou službou", "pillar": "socialni", "codes": ("600702",), "den": "old", "jednotka": "bytů", "metrika": "Byty s pečovatelskou službou",
+                     "max": 200, "step": 5, "default": 20, "capex": 2.2, "provoz": 0.0,
+                     "help": "Přidá byty pro seniory s pečovatelskou službou a přepočte je na 100 obyvatel 65+."},
+    "soc_sluzba": {"label": "Nová sociální služba", "pillar": "socialni", "codes": ("khk_soc",), "den": "pop", "jednotka": "služeb", "metrika": "Poskytovatelé sociálních služeb",
+                   "max": 20, "step": 1, "default": 1, "capex": 0.0, "provoz": 4.0,
+                   "help": "Přidá poskytovatele sociální služby (např. terénní pečovatelskou). Počítá se hlavně roční provoz."},
+    "knihovna": {"label": "Nová knihovna", "pillar": "kultura", "codes": ("khk_knihovny",), "den": "pop", "jednotka": "knihoven", "metrika": "Knihovny", "derived": "d_knihovny_10k",
+                 "max": 10, "step": 1, "default": 1, "capex": 8.0, "provoz": 0.0,
+                 "help": "Přidá knihovnu a přepočte knihovny na 10 000 obyvatel."},
+    "kulturni_dum": {"label": "Nový kulturní dům", "pillar": "kultura", "codes": ("khk_kd",), "den": "pop", "jednotka": "domů", "metrika": "Kulturní domy",
+                     "max": 5, "step": 1, "default": 1, "capex": 60.0, "provoz": 0.0,
+                     "help": "Přidá kulturní dům a přepočte kulturní domy na 10 000 obyvatel."},
+    "hasici": {"label": "Nová hasičská stanice", "pillar": "socialni", "codes": ("khk_hasici",), "den": "pop", "jednotka": "stanic", "metrika": "Hasičské stanice",
+               "max": 5, "step": 1, "default": 1, "capex": 15.0, "provoz": 0.0,
+               "help": "Přidá hasičskou stanici nebo pracoviště a přepočte je na 10 000 obyvatel."},
+    "komunikace": {"label": "Nové místní komunikace", "pillar": "doprava", "codes": ("600501",), "den": "pop", "jednotka": "km", "metrika": "Místní komunikace",
+                   "max": 100, "step": 1, "default": 5, "capex": 12.0, "provoz": 0.0,
+                   "help": "Přidá kilometry místních komunikací; přepočet je na 1 000 obyvatel."},
+}
+for _k, _z in ZARIZENI.items():
+    _z.setdefault("derived", f"d_zar_{_k}")
+    _den, _scale, _jedn = DEN[_z["den"]]
+    # komunikace se počítají na tisíc, ne na deset tisíc obyvatel
+    if _k == "komunikace":
+        _scale = 1000
+    _z["scale"], _z["ratio_unit"] = _scale, _jedn if _k != "komunikace" else "km na 1 000 obyvatel"
+    if _z["derived"] == f"d_zar_{_k}":
+        DERIVED = DERIVED + (Derived(_z["derived"], _z["metrika"] + " " + _z["ratio_unit"], _z["ratio_unit"], _z["pillar"], 1, _z["codes"][0], _den, _scale, _z["metrika"] + " / " + _den),)
+
 # Extra MOS codes needed only as denominators.
 AUX_MOS = ("420101",)
 

@@ -80,6 +80,16 @@ def pasmo(pocet_obyvatel: float) -> tuple[int, str]:
     return len(PASMA) - 1, PASMA[-1][2]
 
 
+def _doplň_zarizeni() -> None:
+    from ..indicators import DEN, ZARIZENI
+    for k, z in ZARIZENI.items():
+        PRAVIDLA.setdefault(k, {"code": z["derived"], "smer": 1, "vaha": DEN[z["den"]][0],
+                                "co": f"lidí v obcích s horší dostupností zařízení „{z['metrika'].lower()}“, než je obvyklé"})
+
+
+_doplň_zarizeni()
+
+
 def _median(xs: list[float]) -> float | None:
     v = sorted(xs)
     if not v:
@@ -101,8 +111,20 @@ def _kandidati(kraj_code: int, pravidlo: dict) -> tuple[list[dict], dict[int, fl
         radky.append({"id": t.id, "name": t.name, "hodnota": lv[1], "rok": lv[0], "vaha": w[1],
                       "obyvatel": obyv[1], "pasmo": idx, "pasmo_label": label, "lon": t.lon, "lat": t.lat})
     kraj_med = _median([r["hodnota"] for r in radky])
-    if kraj_med is None or kraj_med == 0:
+    if kraj_med is None:
         return [], {}, kraj_med
+    if kraj_med == 0:
+        # Zařízení je v kraji vzácné: většina obcí ho nemá, takže medián je nula
+        # a „horší než obvyklé" nejde změřit. Mezera je pak prostě „nemá žádné"
+        # a pořadí rozhoduje počet lidí, kterých se to týká.
+        for r in radky:
+            r["median_pasma"] = 0.0
+            r["mezera"] = 1.0 if r["hodnota"] == 0 else 0.0
+            r["prinos"] = round(r["mezera"] * r["vaha"])
+        radky.sort(key=lambda r: -r["prinos"])
+        for i, r in enumerate(radky):
+            r["poradi"] = i + 1
+        return radky, {i: 0.0 for i in range(len(PASMA))}, 0.0
 
     mediany: dict[int, float] = {}
     for i in range(len(PASMA)):
@@ -163,7 +185,8 @@ def porovnej(kraj_code: int, zasah: str, vybrane: list[str], pocet: int | None =
         "median": round(kraj_med, 2) if kraj_med is not None else None,
         "mediany_pasem": [{"pasmo": PASMA[i][2], "median": round(m, 2)} for i, m in sorted(mediany.items())],
         "co": pravidlo["co"],
-        "pozn_dat": pravidlo.get("pozn", ""),
+        "pozn_dat": ((pravidlo.get("pozn", "") + " ") if pravidlo.get("pozn") else "") + (
+            "Zařízení je v kraji vzácné (většina obcí ho nemá), proto se hledají nejlidnatější obce, které ho nemají vůbec." if kraj_med == 0 else ""),
         "vase": vase,
         "nejlepsi": nejlepsi,
         "rozdil": rozdil,

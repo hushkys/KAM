@@ -210,3 +210,19 @@ def test_umisteni_vraci_poradi_a_zna_vsechny_zasahy(synthetic_db):
         assert poradi == sorted(poradi) and poradi[0] == 1
         assert r["z"] >= len(r["zebricek"])
         assert r["vase"]["obce"][0]["poradi"] >= 1
+
+
+def test_zarizeni_ze_scenaru_maji_dostupnost_naklady_a_umisteni(synthetic_db):
+    """Každé zařízení z `indicators.ZARIZENI` je zásah simulátoru, má pravidlo
+    pro doporučení „kde“ a výsledek nese dostupnost a náklady, které z něj
+    plynou; předpoklady o nákladech se vrací jen u použitých zásahů."""
+    from kam.analytics import simulate, umisteni
+    from kam.indicators import ZARIZENI
+
+    for k in ZARIZENI:
+        assert k in simulate.INTERVENTIONS and k in umisteni.PRAVIDLA
+    r = simulate.compute(simulate.normalize("obec:500001", [{"type": "knihovna", "params": {"pocet": 2, "rok": 2028}}], None))
+    if r["available"]:
+        assert r["costs"]["capex"] == int(2 * ZARIZENI["knihovna"]["capex"] * 1e6)
+        klice = {a["key"] for a in r["assumptions"]}
+        assert "naklad_zar_knihovna" in klice and "naklad_zar_kulturni_dum" not in klice

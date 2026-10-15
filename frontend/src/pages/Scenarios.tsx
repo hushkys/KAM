@@ -294,12 +294,13 @@ export function Scenarios() {
               </div>
 
               <div className="stats-row">
-                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy"]].map(([k, l], n) => {
+                {[["population", "Obyvatelé"], ["zs_util", "Vytížení ZŠ"], ["tax", "Daňové příjmy"], ...res.metrics.filter((m) => m.key.startsWith("x_")).map((m) => [m.key, m.label])].map(([k, l], n) => {
                   const v = vRoce[k];
-                  const hodnota = k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
+                  const dopl = k.startsWith("x_");
+                  const hodnota = dopl ? num(v?.scenario ?? null, 2) : k === "zs_util" ? (v?.scenario != null ? `${num(v.scenario, 1)} %` : "—") : k === "tax" ? kc(v?.scenario ?? null) : num(v?.scenario ?? null);
                   const d = v?.delta ?? 0;
                   return <Stat key={k} i={n} label={`${l} · ${rok}`} value={hodnota}
-                    sub={ivs.length > 0 ? (d ? `${signed(d, k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} proti stavu bez zásahu` : "beze změny") : "výhled bez zásahu"} />;
+                    sub={ivs.length > 0 ? (d ? `${signed(d, dopl ? 2 : k === "zs_util" ? 1 : 0, k === "zs_util" ? " p. b." : "")} proti stavu bez zásahu` : "beze změny") : "výhled bez zásahu"} />;
                 })}
               </div>
 
